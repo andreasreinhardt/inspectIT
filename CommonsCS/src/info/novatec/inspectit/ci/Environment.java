@@ -128,6 +128,23 @@ public class Environment {
 	private boolean classLoadingDelegation = true;
 
 	/**
+	 * Returns the {@link IMethodSensorConfig} for the given {@link IMethodSensorConfig} class.
+	 * 
+	 * @param clazz
+	 *            Class to look for.
+	 * @return Returns the {@link IMethodSensorConfig} for the given {@link IMethodSensorConfig}
+	 *         class.
+	 */
+	public IMethodSensorConfig getMethodSensorTypeConfig(Class<? extends IMethodSensorConfig> clazz) {
+		for (IMethodSensorConfig config : methodSensorConfigs) {
+			if (config.getClass().equals(clazz)) {
+				return config;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Gets {@link #id}.
 	 * 
 	 * @return {@link #id}

@@ -79,7 +79,7 @@ public class ExceptionSensorHook implements IExceptionSensorHook {
 		// getting the actual object class and comparing to the registered sensor config target
 		// class
 		String throwableClass = object.getClass().getName();
-		String rscTragetClassname = rsc.getQualifiedTargetClassName();
+		String rscTragetClassname = rsc.getTargetClassFqn();
 		if (throwableClass.equals(rscTragetClassname)) {
 			try {
 				long platformId = idManager.getPlatformId();

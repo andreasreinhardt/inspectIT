@@ -1,5 +1,6 @@
 package info.novatec.inspectit.ci.sensor.method;
 
+import info.novatec.inspectit.agent.config.PriorityEnum;
 import info.novatec.inspectit.ci.sensor.ISensorConfig;
 
 /**
@@ -22,7 +23,7 @@ public interface IMethodSensorConfig extends ISensorConfig {
 	 * 
 	 * @return Returns priority of the sensor.
 	 */
-	MethodSensorPriorityEnum getPriority();
+	PriorityEnum getPriority();
 
 	/**
 	 * Defines if sensor is "advanced". Sensor should be marked as advanced if the end-users would

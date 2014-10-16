@@ -17,6 +17,7 @@ import info.novatec.inspectit.agent.config.impl.RegisteredSensorConfig;
 import info.novatec.inspectit.agent.core.IIdManager;
 import info.novatec.inspectit.agent.core.IdNotAvailableException;
 import info.novatec.inspectit.agent.core.impl.CoreService;
+import info.novatec.inspectit.agent.hooking.IHookSupplier;
 import info.novatec.inspectit.agent.sensor.ISensor;
 import info.novatec.inspectit.agent.sensor.exception.ExceptionSensor;
 import info.novatec.inspectit.agent.sensor.method.jdbc.ConnectionMetaDataSensor;
@@ -72,10 +73,16 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 	@Mock
 	private CoreService coreService;
 
+	@Mock
+	private IHookSupplier hookSupplier;
+
+	@Mock
+	private MethodSensorTypeConfig methodSensorTypeConfig;
+
 	@BeforeMethod
 	public void init() {
 		MockitoAnnotations.initMocks(this);
-		invocationSequenceHook = new InvocationSequenceHook(timer, idManager, propertyAccessor, Collections.<String, Object> emptyMap(), false);
+		invocationSequenceHook = new InvocationSequenceHook(timer, idManager, propertyAccessor, hookSupplier, Collections.<String, Object> emptyMap(), false);
 	}
 
 	/**
@@ -101,6 +108,8 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		double firstTimerValue = 1000.0d;
 		double secondTimerValue = 1323.0d;
 		when(timer.getCurrentTime()).thenReturn(firstTimerValue, secondTimerValue);
+		when(rsc.getSensorIds()).thenReturn(new long[] { sensorTypeId });
+		when(hookSupplier.getMethodSensorTypeConfig(sensorTypeId)).thenReturn(methodSensorTypeConfig);
 
 		invocationSequenceHook.beforeBody(methodId, sensorTypeId, object, parameters, rsc);
 
@@ -155,6 +164,8 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		double thirdTimerValue = 1881.0d;
 		double fourthTimerValue = 2562.0d;
 		when(timer.getCurrentTime()).thenReturn(firstTimerValue, secondTimerValue, thirdTimerValue, fourthTimerValue);
+		when(rsc.getSensorIds()).thenReturn(new long[] { sensorTypeId });
+		when(hookSupplier.getMethodSensorTypeConfig(sensorTypeId)).thenReturn(methodSensorTypeConfig);
 
 		invocationSequenceHook.beforeBody(methodId1, sensorTypeId, object, parameters, rsc);
 		invocationSequenceHook.beforeBody(methodId2, sensorTypeId, object, parameters, rsc);
@@ -267,6 +278,8 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("minduration", minDuration);
 		when(rsc.getSettings()).thenReturn(map);
+		when(rsc.getSensorIds()).thenReturn(new long[] { sensorTypeId });
+		when(hookSupplier.getMethodSensorTypeConfig(sensorTypeId)).thenReturn(methodSensorTypeConfig);
 
 		invocationSequenceHook.beforeBody(methodId, sensorTypeId, object, parameters, rsc);
 		invocationSequenceHook.firstAfterBody(methodId, sensorTypeId, object, parameters, result, rsc);
@@ -285,6 +298,8 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		verify(timer, times(4)).getCurrentTime();
 		verify(coreService, times(1)).addMethodSensorData(eq(sensorTypeId), eq(methodId), Mockito.<String> anyObject(), Mockito.<InvocationSequenceData> anyObject());
 	}
+
+	// TODO tests for skip, check for saving, removal
 
 	/**
 	 * Tests that when Id is not available (sensor) on start of invocation no data will be captured.

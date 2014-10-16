@@ -26,4 +26,10 @@
 			<class name="info.novatec.inspectit.versioning.VersionTest" />
 		</classes>
 	</test>
+	<test name="Agent Config">
+		<classes>
+
+			<class name="info.novatec.inspectit.pattern.WildcardMatchPatternTest" />
+		</classes>
+	</test>
 </suite>

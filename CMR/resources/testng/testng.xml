@@ -17,7 +17,8 @@
 		<classes>
 			<class name="info.novatec.inspectit.cmr.service.RegistrationServiceTest" />
 			<class name="info.novatec.inspectit.cmr.service.AgentStorageServiceTest" />
-			<class name="info.novatec.inspectit.cmr.service.GlobalDataAccessServiceTest" />
+			<class
+				name="info.novatec.inspectit.cmr.service.GlobalDataAccessServiceTest" />
 		</classes>
 	</test>
 	<test name="Util">
@@ -29,18 +30,21 @@
 	<test name="Properties">
 		<classes>
 			<class name="info.novatec.inspectit.cmr.property.PropertyManagerTest" />
-			<class name="info.novatec.inspectit.cmr.property.PropertyUpdateExecutorTest" />
+			<class
+				name="info.novatec.inspectit.cmr.property.PropertyUpdateExecutorTest" />
 			<class name="info.novatec.inspectit.cmr.property.PropertyIntegrationTest" />
 		</classes>
 	</test>
 	<test name="Serializer">
 		<classes>
-			<class name="info.novatec.inspectit.storage.serializer.impl.HibernateSerializerTest" />
+			<class
+				name="info.novatec.inspectit.storage.serializer.impl.HibernateSerializerTest" />
 		</classes>
 	</test>
 	<test name="CmrProcessors">
 		<classes>
-			<class name="info.novatec.inspectit.cmr.processor.impl.CmrDataProcessorsTest" />
+			<class
+				name="info.novatec.inspectit.cmr.processor.impl.CmrDataProcessorsTest" />
 		</classes>
 	</test>
 	<test name="Storage">
@@ -48,7 +52,28 @@
 			<class name="info.novatec.inspectit.storage.StorageIntegrationTest" />
 			<class name="info.novatec.inspectit.cmr.storage.CmrStorageManagerTest" />
 			<class name="info.novatec.inspectit.cmr.storage.CmrStorageRecorderTest" />
-			<class name="info.novatec.inspectit.cmr.service.rest.StorageRestfulServiceTest" />
+			<class
+				name="info.novatec.inspectit.cmr.service.rest.StorageRestfulServiceTest" />
+		</classes>
+	</test>
+	<test name="Asm">
+		<classes>
+			<class name="info.novatec.inspectit.cmr.asm.ClassAnalyzerTest" />
+		</classes>
+	</test>
+	<test name="Server Side Instrumentation">
+		<classes>
+			<class name="info.novatec.inspectit.cmr.classcache.ClassCacheLookupTest" />
+			<class name="info.novatec.inspectit.cmr.classcache.ClassCacheModificationTest" />
+			<class name="info.novatec.inspectit.cmr.classcache.index.FQNIndexerTest" />
+			<class name="info.novatec.inspectit.cmr.classcache.config.ClassCacheSearchNarrowerTest" />
+			<class name="info.novatec.inspectit.cmr.classcache.config.ConfigurationCreatorTest" />
+			<class name="info.novatec.inspectit.cmr.classcache.config.ConfigurationResolverTest" />
+			<class name="info.novatec.inspectit.cmr.classcache.config.InstrumentationCreatorTest" />
+			<class name="info.novatec.inspectit.cmr.classcache.config.filter.ClassSensorAssingmentFilterTest" />
+			<class name="info.novatec.inspectit.cmr.classcache.config.filter.MethodSensorAssingmentFilterTest" />
+			<class name="info.novatec.inspectit.cmr.classcache.config.job.ProfileUpdateJobTest" />
+			<class name="info.novatec.inspectit.cmr.classcache.config.job.EnvironmentUpdateJobTest" />
 		</classes>
 	</test>
 	<test name="AOP">

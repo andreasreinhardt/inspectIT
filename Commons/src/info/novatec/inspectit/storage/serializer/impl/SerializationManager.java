@@ -1,5 +1,14 @@
 package info.novatec.inspectit.storage.serializer.impl;
 
+import info.novatec.inspectit.agent.config.PriorityEnum;
+import info.novatec.inspectit.agent.config.impl.AgentConfiguration;
+import info.novatec.inspectit.agent.config.impl.ExceptionSensorTypeConfig;
+import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
+import info.novatec.inspectit.agent.config.impl.MethodSensorTypeConfig;
+import info.novatec.inspectit.agent.config.impl.PlatformSensorTypeConfig;
+import info.novatec.inspectit.agent.config.impl.PropertyPath;
+import info.novatec.inspectit.agent.config.impl.PropertyPathStart;
+import info.novatec.inspectit.agent.config.impl.StrategyConfig;
 import info.novatec.inspectit.cmr.model.MethodIdent;
 import info.novatec.inspectit.cmr.model.MethodIdentToSensorType;
 import info.novatec.inspectit.cmr.model.MethodSensorTypeIdent;
@@ -47,6 +56,8 @@ import info.novatec.inspectit.exception.TechnicalException;
 import info.novatec.inspectit.exception.enumeration.AgentManagementErrorCodeEnum;
 import info.novatec.inspectit.exception.enumeration.ConfigurationInterfaceErrorCodeEnum;
 import info.novatec.inspectit.exception.enumeration.StorageErrorCodeEnum;
+import info.novatec.inspectit.pattern.EqualsMatchPattern;
+import info.novatec.inspectit.pattern.WildcardMatchPattern;
 import info.novatec.inspectit.storage.serializer.HibernateAwareClassResolver;
 import info.novatec.inspectit.storage.serializer.IKryoProvider;
 import info.novatec.inspectit.storage.serializer.ISerializer;
@@ -286,6 +297,19 @@ public class SerializationManager implements ISerializer, IKryoProvider, Initial
 
 		// added with INSPECTIT-950
 		kryo.register(TimeFrame.class, new CustomCompatibleFieldSerializer<TimeFrame>(kryo, TimeFrame.class, schemaManager));
+
+		// added with server side config
+		kryo.register(AgentConfiguration.class, new FieldSerializer<AgentConfiguration>(kryo, AgentConfiguration.class));
+		kryo.register(PlatformSensorTypeConfig.class, new FieldSerializer<PlatformSensorTypeConfig>(kryo, PlatformSensorTypeConfig.class));
+		kryo.register(MethodSensorTypeConfig.class, new FieldSerializer<MethodSensorTypeConfig>(kryo, MethodSensorTypeConfig.class));
+		kryo.register(ExceptionSensorTypeConfig.class, new FieldSerializer<ExceptionSensorTypeConfig>(kryo, ExceptionSensorTypeConfig.class));
+		kryo.register(StrategyConfig.class, new FieldSerializer<StrategyConfig>(kryo, StrategyConfig.class));
+		kryo.register(PropertyPath.class, new FieldSerializer<PropertyPath>(kryo, PropertyPath.class));
+		kryo.register(PropertyPathStart.class, new FieldSerializer<PropertyPathStart>(kryo, PropertyPathStart.class));
+		kryo.register(InstrumentationResult.class, new FieldSerializer<InstrumentationResult>(kryo, InstrumentationResult.class));
+		kryo.register(PriorityEnum.class, new EnumSerializer(PriorityEnum.class));
+		kryo.register(EqualsMatchPattern.class, new FieldSerializer<EqualsMatchPattern>(kryo, EqualsMatchPattern.class));
+		kryo.register(WildcardMatchPattern.class, new FieldSerializer<WildcardMatchPattern>(kryo, WildcardMatchPattern.class));
 
 		// added with INSPECTIT-480
 		// needed for KryoNet

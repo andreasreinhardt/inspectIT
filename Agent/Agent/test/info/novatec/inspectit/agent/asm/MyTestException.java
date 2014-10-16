@@ -1,0 +1,24 @@
+package info.novatec.inspectit.agent.asm;
+
+@SuppressWarnings("PMD")
+public class MyTestException extends Exception {
+
+	/**
+	 * Generated UID.
+	 */
+	private static final long serialVersionUID = 5733336673451228795L;
+
+	public MyTestException() {
+		super();
+		System.out.println("Created");
+	}
+
+	public MyTestException(String message) {
+		super(message);
+	}
+
+	public MyTestException(Throwable cause) {
+		super(cause);
+	}
+
+}

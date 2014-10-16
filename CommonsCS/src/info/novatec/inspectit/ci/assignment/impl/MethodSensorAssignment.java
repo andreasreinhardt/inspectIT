@@ -3,7 +3,9 @@ package info.novatec.inspectit.ci.assignment.impl;
 import info.novatec.inspectit.ci.assignment.AbstractClassSensorAssignment;
 import info.novatec.inspectit.ci.sensor.method.IMethodSensorConfig;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -91,6 +93,14 @@ public class MethodSensorAssignment extends AbstractClassSensorAssignment<IMetho
 	@Override
 	public Class<? extends IMethodSensorConfig> getSensorConfigClass() {
 		return sensorConfig;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Map<String, Object> getSettings() {
+		return Collections.emptyMap();
 	}
 
 	/**

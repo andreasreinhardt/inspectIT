@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import info.novatec.inspectit.agent.AbstractLogSupport;
 import info.novatec.inspectit.agent.buffer.IBufferStrategy;
 import info.novatec.inspectit.agent.config.IConfigurationStorage;
+import info.novatec.inspectit.agent.config.StorageException;
 import info.novatec.inspectit.agent.connection.IConnection;
 import info.novatec.inspectit.agent.connection.ServerUnavailableException;
 import info.novatec.inspectit.agent.core.IIdManager;
@@ -74,7 +75,7 @@ public class CoreServiceTest extends AbstractLogSupport {
 	 * no reliable way to make this test always successful.
 	 */
 	@Test(enabled = false)
-	public void startStop() throws InterruptedException {
+	public void startStop() throws InterruptedException, StorageException {
 		coreService.start();
 		verify(sendingStrategy, times(1)).start(coreService);
 

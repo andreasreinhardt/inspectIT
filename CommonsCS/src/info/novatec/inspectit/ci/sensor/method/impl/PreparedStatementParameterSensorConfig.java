@@ -1,8 +1,8 @@
 package info.novatec.inspectit.ci.sensor.method.impl;
 
+import info.novatec.inspectit.agent.config.PriorityEnum;
 import info.novatec.inspectit.ci.sensor.method.AbstractMethodSensorConfig;
 import info.novatec.inspectit.ci.sensor.method.IMethodSensorConfig;
-import info.novatec.inspectit.ci.sensor.method.MethodSensorPriorityEnum;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -45,8 +45,8 @@ public class PreparedStatementParameterSensorConfig extends AbstractMethodSensor
 	 * {@inheritDoc}
 	 */
 	@Override
-	public MethodSensorPriorityEnum getPriority() {
-		return MethodSensorPriorityEnum.MIN;
+	public PriorityEnum getPriority() {
+		return PriorityEnum.MIN;
 	}
 
 	/**

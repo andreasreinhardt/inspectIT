@@ -2,7 +2,6 @@ package info.novatec.inspectit.cmr.service;
 
 import info.novatec.inspectit.exception.BusinessException;
 
-import java.rmi.Remote;
 import java.util.List;
 import java.util.Map;
 
@@ -20,8 +19,7 @@ import java.util.Map;
  * @author Patrice Bouillet
  * 
  */
-@ServiceInterface(exporter = ServiceExporterType.RMI, serviceId = 1)
-public interface IRegistrationService extends Remote {
+public interface IRegistrationService {
 
 	/**
 	 * A unique platform identifier is generated out of the network interfaces from the target

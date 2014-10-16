@@ -3,7 +3,12 @@ Bundle-ManifestVersion: 2
 Bundle-Name: inspectIT Commons
 Bundle-SymbolicName: info.novatec.inspectit.commons
 Bundle-Version: 1.5.0
-Export-Package: info.novatec.inspectit.cmr.cache,
+Export-Package: info.novatec.inspectit.agent.config,
+ info.novatec.inspectit.agent.config.impl,
+ info.novatec.inspectit.agent.config.impl.v2,
+ info.novatec.inspectit.agent.hooking,
+ info.novatec.inspectit.agent.sensor,
+ info.novatec.inspectit.cmr.cache,
  info.novatec.inspectit.cmr.model,
  info.novatec.inspectit.cmr.property.spring,
  info.novatec.inspectit.cmr.service,
@@ -35,7 +40,6 @@ Bundle-Vendor: NovaTec GmbH
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-ClassPath: .
 Require-Bundle: com.springsource.net.sf.cglib;bundle-version="2.2.0",
- info.novatec.asm;bundle-version="4.0.0",
  info.novatec.minlog;bundle-version="1.2.0",
  info.novatec.reflectasm;bundle-version="1.7.0",
  org.objenesis;bundle-version="2.1.0",
@@ -54,4 +58,5 @@ Require-Bundle: com.springsource.net.sf.cglib;bundle-version="2.2.0",
  info.novatec.kryo-serializers;bundle-version="0.23.0",
  info.novatec.kryonet;bundle-version="2.21.0",
  slf4j.api;bundle-version="1.7.5",
- com.google.guava.jdk5;bundle-version="13.0.0"
+ com.google.guava.jdk5;bundle-version="13.0.0",
+ org.objectweb.asm.all;bundle-version="5.0.3"

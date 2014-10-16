@@ -1,7 +1,5 @@
 package info.novatec.inspectit.agent.config.impl;
 
-import info.novatec.inspectit.agent.config.impl.PropertyAccessor.PropertyPathStart;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

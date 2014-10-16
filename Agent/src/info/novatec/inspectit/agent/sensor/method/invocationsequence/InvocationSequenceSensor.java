@@ -2,8 +2,10 @@ package info.novatec.inspectit.agent.sensor.method.invocationsequence;
 
 import info.novatec.inspectit.agent.config.IConfigurationStorage;
 import info.novatec.inspectit.agent.config.IPropertyAccessor;
+import info.novatec.inspectit.agent.config.StorageException;
 import info.novatec.inspectit.agent.core.IIdManager;
 import info.novatec.inspectit.agent.hooking.IHook;
+import info.novatec.inspectit.agent.hooking.IHookSupplier;
 import info.novatec.inspectit.agent.sensor.method.AbstractMethodSensor;
 import info.novatec.inspectit.agent.sensor.method.IMethodSensor;
 import info.novatec.inspectit.util.Timer;
@@ -32,6 +34,12 @@ public class InvocationSequenceSensor extends AbstractMethodSensor implements IM
 	 */
 	@Autowired
 	private IIdManager idManager;
+
+	/**
+	 * {@link IHookSupplier}.
+	 */
+	@Autowired
+	private IHookSupplier hookSupplier;
 
 	/**
 	 * The property accessor.
@@ -67,12 +75,15 @@ public class InvocationSequenceSensor extends AbstractMethodSensor implements IM
 	 *            The property accessor.
 	 * @param configurationStorage
 	 *            {@link IConfigurationStorage}.
+	 * @param hookSupplier
+	 *            {@link IHookSupplier}
 	 */
-	public InvocationSequenceSensor(Timer timer, IIdManager idManager, IPropertyAccessor propertyAccessor, IConfigurationStorage configurationStorage) {
+	public InvocationSequenceSensor(Timer timer, IIdManager idManager, IPropertyAccessor propertyAccessor, IConfigurationStorage configurationStorage, IHookSupplier hookSupplier) {
 		this.timer = timer;
 		this.idManager = idManager;
 		this.propertyAccessor = propertyAccessor;
 		this.configurationStorage = configurationStorage;
+		this.hookSupplier = hookSupplier;
 	}
 
 	/**
@@ -86,7 +97,14 @@ public class InvocationSequenceSensor extends AbstractMethodSensor implements IM
 	 * {@inheritDoc}
 	 */
 	public void init(Map<String, Object> parameter) {
-		invocationSequenceHook = new InvocationSequenceHook(timer, idManager, propertyAccessor, parameter, configurationStorage.isEnhancedExceptionSensorActivated());
+		boolean enhancedExceptionSensor;
+		try {
+			enhancedExceptionSensor = configurationStorage.isEnhancedExceptionSensorActivated();
+		} catch (StorageException storageException) {
+			enhancedExceptionSensor = false;
+		}
+
+		invocationSequenceHook = new InvocationSequenceHook(timer, idManager, propertyAccessor, hookSupplier, parameter, enhancedExceptionSensor);
 	}
 
 }

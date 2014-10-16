@@ -4,6 +4,8 @@ import info.novatec.inspectit.ci.AgentMapping;
 import info.novatec.inspectit.ci.AgentMappings;
 import info.novatec.inspectit.ci.Environment;
 import info.novatec.inspectit.ci.Profile;
+import info.novatec.inspectit.ci.assignment.impl.ExceptionSensorAssignment;
+import info.novatec.inspectit.ci.assignment.impl.MethodSensorAssignment;
 import info.novatec.inspectit.cmr.jaxb.JAXBTransformator;
 import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.exception.enumeration.ConfigurationInterfaceErrorCodeEnum;
@@ -58,6 +60,13 @@ public class ConfigurationInterfaceManager {
 	 */
 	@Autowired
 	ConfigurationInterfacePathResolver pathResolver;
+
+	/**
+	 * List of {@link IConfigurationInterfaceChangeListener} that will be informed on the changes in
+	 * the configuration.
+	 */
+	@Autowired
+	List<IConfigurationInterfaceChangeListener> listeners;
 
 	/**
 	 * {@link JAXBTransformator}.
@@ -283,6 +292,8 @@ public class ConfigurationInterfaceManager {
 			Files.deleteIfExists(pathResolver.getEnvironmentFilePath(local));
 		}
 
+		notifyListenersEnvironmentUpdate(local, environment);
+
 		return environment;
 	}
 
@@ -391,7 +402,100 @@ public class ConfigurationInterfaceManager {
 			Files.deleteIfExists(pathResolver.getProfileFilePath(local));
 		}
 
+		// notify listeners
+		notifyListenersProfileUpdate(local, profile);
+
 		return profile;
+	}
+
+	/**
+	 * Notifies listeners about profile update.
+	 * 
+	 * @param old
+	 *            Old profile instance.
+	 * @param updated
+	 *            Updated profile instance.
+	 */
+	private void notifyListenersProfileUpdate(Profile old, Profile updated) {
+		// otherwise, first calculate the differences
+		Collection<MethodSensorAssignment> removedMethodSensorAssignments = subtractSafe(old.getMethodSensorAssignments(), updated.getMethodSensorAssignments());
+		Collection<ExceptionSensorAssignment> removedExceptionSensorAssignments = subtractSafe(old.getExceptionSensorAssignments(), updated.getExceptionSensorAssignments());
+		Collection<MethodSensorAssignment> addedMethodSensorAssignments = subtractSafe(updated.getMethodSensorAssignments(), old.getMethodSensorAssignments());
+		Collection<ExceptionSensorAssignment> addedExceptionSensorAssignments = subtractSafe(updated.getExceptionSensorAssignments(), old.getExceptionSensorAssignments());
+
+		for (IConfigurationInterfaceChangeListener listener : listeners) {
+			listener.profileUpdated(updated, removedMethodSensorAssignments, removedExceptionSensorAssignments, addedMethodSensorAssignments, addedExceptionSensorAssignments);
+		}
+	}
+
+	/**
+	 * Notifies listeners about environment update.
+	 * 
+	 * @param old
+	 *            Old environment instance.
+	 * @param updated
+	 *            Updated environment instance.
+	 */
+	private void notifyListenersEnvironmentUpdate(Environment old, Environment updated) {
+		Collection<Profile> removedProfiles = new ArrayList<>();
+		Collection<Profile> addedProfiles = new ArrayList<>();
+
+		Collection<String> removedProfilesIds = subtractSafe(old.getProfileIds(), updated.getProfileIds());
+		for (String id : removedProfilesIds) {
+			try {
+				removedProfiles.add(getProfile(id));
+			} catch (Exception e) {
+				continue;
+			}
+		}
+
+		Collection<String> addedProfilesIds = subtractSafe(updated.getProfileIds(), old.getProfileIds());
+		for (String id : addedProfilesIds) {
+			try {
+				addedProfiles.add(getProfile(id));
+			} catch (Exception e) {
+				continue;
+			}
+		}
+
+		for (IConfigurationInterfaceChangeListener listener : listeners) {
+			listener.environmentUpdated(updated, removedProfiles, addedProfiles);
+		}
+
+	}
+
+	/**
+	 * Subtracts collection b from a (a-b) in safe manner. Following rules apply:
+	 * <p>
+	 * - If collection a is <code>null</code> or empty, then result is empty list<br>
+	 * - If collection b is <code>null</code> or empty, then result is a new list with same content
+	 * as a <br>
+	 * - If both collections have at least one element, results is
+	 * {@link CollectionUtils#subtract(Collection, Collection)}.<br>
+	 * 
+	 * @param <E>
+	 *            Element types in collections.
+	 * @param a
+	 *            collection to subtract from
+	 * @param b
+	 *            collection to use in subtract
+	 * @return subtraction result
+	 * @see {@link CollectionUtils#subtract(Collection, Collection)}.
+	 */
+	@SuppressWarnings("unchecked")
+	private static <E> Collection<E> subtractSafe(final Collection<E> a, final Collection<E> b) {
+		// if a is empty then return empty
+		if (CollectionUtils.isEmpty(a)) {
+			return Collections.emptyList();
+		}
+
+		// if b is empty, then return complete a as new list
+		if (CollectionUtils.isEmpty(b)) {
+			return new ArrayList<>(a);
+		}
+
+		// otherwise perform subtract
+		return CollectionUtils.subtract(a, b);
 	}
 
 	/**

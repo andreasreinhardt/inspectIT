@@ -6,7 +6,11 @@ import info.novatec.inspectit.ci.context.impl.ParameterContextCapture;
 import info.novatec.inspectit.ci.context.impl.ReturnContextCapture;
 import info.novatec.inspectit.ci.sensor.method.impl.TimerSensorConfig;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.collections.MapUtils;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -56,6 +60,28 @@ public class TimerMethodSensorAssignment extends MethodSensorAssignment {
 	 */
 	public TimerMethodSensorAssignment() {
 		super(TimerSensorConfig.class);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Map<String, Object> getSettings() {
+		Map<String, Object> settings = super.getSettings();
+		if (MapUtils.isEmpty(settings)) {
+			settings = new HashMap<>();
+		}
+
+		// charting
+		if (charting) {
+			settings.put("charting", Boolean.TRUE);
+		}
+
+		if (minInvocationDuration > 0) {
+			settings.put("minduration", minInvocationDuration);
+		}
+
+		return settings;
 	}
 
 	/**

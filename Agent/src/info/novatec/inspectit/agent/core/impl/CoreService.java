@@ -2,6 +2,7 @@ package info.novatec.inspectit.agent.core.impl;
 
 import info.novatec.inspectit.agent.buffer.IBufferStrategy;
 import info.novatec.inspectit.agent.config.IConfigurationStorage;
+import info.novatec.inspectit.agent.config.StorageException;
 import info.novatec.inspectit.agent.config.impl.PlatformSensorTypeConfig;
 import info.novatec.inspectit.agent.connection.IConnection;
 import info.novatec.inspectit.agent.core.ICoreService;
@@ -22,11 +23,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
@@ -130,6 +134,13 @@ public class CoreService implements ICoreService, InitializingBean, DisposableBe
 	private volatile SendingThread sendingThread;
 
 	/**
+	 * Executor service that other components can use for asynchronous tasks.
+	 */
+	@Autowired
+	@Qualifier("coreServiceExecutorService")
+	private ScheduledExecutorService executorService;
+
+	/**
 	 * Defines if there was an exception before while trying to send the data. Used to throttle the
 	 * printing of log statements.
 	 */
@@ -218,6 +229,25 @@ public class CoreService implements ICoreService, InitializingBean, DisposableBe
 		platformSensorRefresher = null; // NOPMD
 		synchronized (temp) {
 			temp.interrupt();
+		}
+
+		// shutdown core service
+		executorService.shutdown();
+		try {
+			// Wait a while for existing tasks to terminate
+			if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+				// Cancel currently executing tasks
+				executorService.shutdownNow();
+				// Wait a while for tasks to respond to being canceled
+				if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+					log.error("Executor service for the inspectIT Core service did not terminate.");
+				}
+			}
+		} catch (InterruptedException ie) {
+			// (Re-)Cancel if current thread also interrupted
+			executorService.shutdownNow();
+			// Preserve interrupt status
+			Thread.currentThread().interrupt();
 		}
 	}
 
@@ -343,6 +373,15 @@ public class CoreService implements ICoreService, InitializingBean, DisposableBe
 	}
 
 	/**
+	 * Gets {@link #executorService}.
+	 * 
+	 * @return {@link #executorService}
+	 */
+	public ScheduledExecutorService getExecutorService() {
+		return executorService;
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	public void addListListener(ListListener<?> listener) {
@@ -404,11 +443,16 @@ public class CoreService implements ICoreService, InitializingBean, DisposableBe
 				}
 
 				// iterate the platformSensors and update the information
-				for (PlatformSensorTypeConfig platformSensorTypeConfig : configurationStorage.getPlatformSensorTypes()) {
-					IPlatformSensor platformSensor = (IPlatformSensor) platformSensorTypeConfig.getSensorType();
-					if (platformSensor.automaticUpdate()) {
-						platformSensor.update(CoreService.this, platformSensorTypeConfig.getId());
+				try {
+					for (PlatformSensorTypeConfig platformSensorTypeConfig : configurationStorage.getPlatformSensorTypes()) {
+						IPlatformSensor platformSensor = (IPlatformSensor) platformSensorTypeConfig.getSensorType();
+						if (platformSensor.automaticUpdate()) {
+							platformSensor.update(CoreService.this, platformSensorTypeConfig.getId());
+						}
 					}
+				} catch (StorageException storageException) {
+					log.error("Platform refresher thread unable to load platform sensors. Thread will be stopped.", storageException);
+					break;
 				}
 			}
 		}

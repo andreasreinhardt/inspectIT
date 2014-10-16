@@ -7,8 +7,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import info.novatec.inspectit.agent.AbstractLogSupport;
 import info.novatec.inspectit.agent.config.PropertyAccessException;
-import info.novatec.inspectit.agent.config.impl.PropertyAccessor.PropertyPath;
-import info.novatec.inspectit.agent.config.impl.PropertyAccessor.PropertyPathStart;
 import info.novatec.inspectit.communication.data.ParameterContentData;
 import info.novatec.inspectit.communication.data.ParameterContentType;
 

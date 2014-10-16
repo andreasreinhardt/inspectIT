@@ -142,7 +142,6 @@ public class RegistrationService implements IRegistrationService {
 
 	/**
 	 * {@inheritDoc}
-	 * 
 	 * @throws BusinessException
 	 */
 	@Transactional

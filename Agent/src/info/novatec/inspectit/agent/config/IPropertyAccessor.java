@@ -1,7 +1,7 @@
 package info.novatec.inspectit.agent.config;
 
-import info.novatec.inspectit.agent.config.impl.PropertyAccessor.PropertyPath;
-import info.novatec.inspectit.agent.config.impl.PropertyAccessor.PropertyPathStart;
+import info.novatec.inspectit.agent.config.impl.PropertyPath;
+import info.novatec.inspectit.agent.config.impl.PropertyPathStart;
 import info.novatec.inspectit.communication.data.ParameterContentData;
 
 import java.util.List;

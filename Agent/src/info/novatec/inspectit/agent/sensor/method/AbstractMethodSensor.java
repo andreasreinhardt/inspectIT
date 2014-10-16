@@ -29,7 +29,7 @@ public abstract class AbstractMethodSensor implements InitializingBean, IMethodS
 			if (config.getClassName().equals(this.getClass().getName())) {
 				this.init(config.getParameters());
 				config.setSensorType(this);
-				break;
+				return;
 			}
 		}
 	}

@@ -11,6 +11,7 @@ import info.novatec.inspectit.agent.core.IObjectStorage;
 import info.novatec.inspectit.agent.core.IdNotAvailableException;
 import info.novatec.inspectit.agent.core.ListListener;
 import info.novatec.inspectit.agent.hooking.IConstructorHook;
+import info.novatec.inspectit.agent.hooking.IHookSupplier;
 import info.novatec.inspectit.agent.hooking.IMethodHook;
 import info.novatec.inspectit.agent.sending.ISendingStrategy;
 import info.novatec.inspectit.agent.sensor.exception.ExceptionSensor;
@@ -36,6 +37,7 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -69,6 +71,11 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	 * The property accessor.
 	 */
 	private final IPropertyAccessor propertyAccessor;
+
+	/**
+	 * {@link IHookSupplier}.
+	 */
+	private final IHookSupplier hookSupplier;
 
 	/**
 	 * The {@link ThreadLocal} object which holds an {@link InvocationSequenceData} object if an
@@ -123,15 +130,18 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	 *            The ID manager.
 	 * @param propertyAccessor
 	 *            The property accessor.
+	 * @param hookSupplier
+	 *            {@link IHookSupplier}
 	 * @param param
 	 *            Additional parameters.
 	 * @param enhancedExceptionSensor
 	 *            If enhanced exception sensor is ON.
 	 */
-	public InvocationSequenceHook(Timer timer, IIdManager idManager, IPropertyAccessor propertyAccessor, Map<String, Object> param, boolean enhancedExceptionSensor) {
+	public InvocationSequenceHook(Timer timer, IIdManager idManager, IPropertyAccessor propertyAccessor, IHookSupplier hookSupplier, Map<String, Object> param, boolean enhancedExceptionSensor) {
 		this.timer = timer;
 		this.idManager = idManager;
 		this.propertyAccessor = propertyAccessor;
+		this.hookSupplier = hookSupplier;
 		this.strConstraint = new StringConstraint(param);
 		this.enhancedExceptionSensor = enhancedExceptionSensor;
 	}
@@ -309,8 +319,9 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	 * @return True if the invocation should be removed.
 	 */
 	private boolean removeDueToExceptionDelegation(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
-		if (1 == rsc.getSensorTypeConfigs().size()) {
-			MethodSensorTypeConfig methodSensorTypeConfig = rsc.getSensorTypeConfigs().get(0);
+		if (1 == rsc.getSensorIds().length) {
+			long sensorId = rsc.getSensorIds()[0];
+			MethodSensorTypeConfig methodSensorTypeConfig = hookSupplier.getMethodSensorTypeConfig(sensorId);
 
 			if (ExceptionSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
 				return CollectionUtils.isEmpty(invocationSequenceData.getExceptionSensorDataObjects());
@@ -331,9 +342,9 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	 * @return True if the invocation should be removed.
 	 */
 	private boolean removeDueToWrappedSqls(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
-		if (1 == rsc.getSensorTypeConfigs().size() || (2 == rsc.getSensorTypeConfigs().size() && enhancedExceptionSensor)) {
-			for (MethodSensorTypeConfig methodSensorTypeConfig : rsc.getSensorTypeConfigs()) {
-
+		if (1 == rsc.getSensorIds().length || (2 == rsc.getSensorIds().length && enhancedExceptionSensor)) {
+			for (long sensorId : rsc.getSensorIds()) {
+				MethodSensorTypeConfig methodSensorTypeConfig = hookSupplier.getMethodSensorTypeConfig(sensorId);
 				if (PreparedStatementSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
 					if (null == invocationSequenceData.getSqlStatementData() || 0 == invocationSequenceData.getSqlStatementData().getCount()) {
 						return true;
@@ -364,9 +375,10 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	 *         otherwise.
 	 */
 	private boolean skip(RegisteredSensorConfig rsc) {
-		if (1 == rsc.getSensorTypeConfigs().size() || (2 == rsc.getSensorTypeConfigs().size() && enhancedExceptionSensor)) {
+		if (1 == rsc.getSensorIds().length || (2 == rsc.getSensorIds().length && enhancedExceptionSensor)) {
 
-			for (MethodSensorTypeConfig methodSensorTypeConfig : rsc.getSensorTypeConfigs()) {
+			for (long sensorId : rsc.getSensorIds()) {
+				MethodSensorTypeConfig methodSensorTypeConfig = hookSupplier.getMethodSensorTypeConfig(sensorId);
 				if (PreparedStatementParameterSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
 					return true;
 				}
@@ -556,6 +568,9 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	// All unsupported methods are below from here //
 	// //////////////////////////////////////////////
 
+	// TODO add this to separate extended core service interface
+	// then remove
+
 	/**
 	 * {@inheritDoc}
 	 */
@@ -623,6 +638,13 @@ public class InvocationSequenceHook implements IMethodHook, IConstructorHook, IC
 	 * {@inheritDoc}
 	 */
 	public void stop() {
+		throw new UnsupportedMethodException();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public ScheduledExecutorService getExecutorService() {
 		throw new UnsupportedMethodException();
 	}
 }

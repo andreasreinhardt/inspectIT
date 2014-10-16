@@ -2,6 +2,8 @@ package info.novatec.inspectit.ci.assignment;
 
 import info.novatec.inspectit.ci.sensor.ISensorConfig;
 
+import java.util.Map;
+
 /**
  * Base interface for all sensor assignments.
  * 
@@ -17,4 +19,11 @@ public interface ISensorAssignment<T extends ISensorConfig> {
 	 * @return Returns the class of the sensor config.
 	 */
 	Class<? extends T> getSensorConfigClass();
+
+	/**
+	 * Return settings for the sensor assignment.
+	 * 
+	 * @return Return settings for the sensor assignment.
+	 */
+	Map<String, Object> getSettings();
 }

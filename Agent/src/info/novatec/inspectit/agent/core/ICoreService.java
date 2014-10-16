@@ -4,6 +4,8 @@ import info.novatec.inspectit.communication.MethodSensorData;
 import info.novatec.inspectit.communication.SystemSensorData;
 import info.novatec.inspectit.communication.data.ExceptionSensorData;
 
+import java.util.concurrent.ScheduledExecutorService;
+
 /**
  * Interface definition for the core service. The core service is the central point of the Agent
  * where all data is collected, triggered etc.
@@ -141,5 +143,12 @@ public interface ICoreService {
 	 *            The listener to remove.
 	 */
 	void removeListListener(ListListener<?> listener);
+	
+	/**
+	 * Scheduled executor service that can be used for asynchronous tasks.
+	 * 
+	 * @return Scheduled executor service that can be used for asynchronous tasks.
+	 */
+	ScheduledExecutorService getExecutorService();
 
 }

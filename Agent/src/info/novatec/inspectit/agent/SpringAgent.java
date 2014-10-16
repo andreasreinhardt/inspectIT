@@ -1,18 +1,19 @@
 package info.novatec.inspectit.agent;
 
 import info.novatec.inspectit.agent.analyzer.IByteCodeAnalyzer;
-import info.novatec.inspectit.agent.analyzer.IMatchPattern;
 import info.novatec.inspectit.agent.config.IConfigurationStorage;
 import info.novatec.inspectit.agent.hooking.IHookDispatcher;
 import info.novatec.inspectit.agent.logback.LogInitializer;
 import info.novatec.inspectit.agent.spring.SpringConfiguration;
+import info.novatec.inspectit.pattern.IMatchPattern;
 import info.novatec.inspectit.version.VersionService;
 
-import java.util.List;
+import java.util.Collection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 /**
@@ -42,9 +43,24 @@ public class SpringAgent implements IAgent {
 	private static final String CLASS_NAME_PREFIX = "info.novatec.inspectit";
 
 	/**
+	 * Location of inspectIT jar file.
+	 */
+	private static String inspectitJarLocation;
+
+	/**
 	 * The hook dispatcher used by the instrumented methods.
 	 */
 	private IHookDispatcher hookDispatcher;
+
+	/**
+	 * The configuration storage.
+	 */
+	private IConfigurationStorage configurationStorage;
+
+	/**
+	 * The byte code analyzer.
+	 */
+	private IByteCodeAnalyzer byteCodeAnalyzer;
 
 	/**
 	 * Set to <code>true</code> if something happened while trying to initialize the pico container.
@@ -57,14 +73,23 @@ public class SpringAgent implements IAgent {
 	private BeanFactory beanFactory;
 
 	/**
+	 * Ignore classes patterns.
+	 */
+	private Collection<IMatchPattern> ignoreClassesPatterns;
+
+	/**
 	 * Constructor initializing this agent.
 	 * 
 	 * @param inspectitJarLocation
 	 *            location of inspectIT jar needed for proper logging
 	 */
 	public SpringAgent(String inspectitJarLocation) {
-		LogInitializer.setInspectitJarLocation(inspectitJarLocation);
+		SpringAgent.inspectitJarLocation = inspectitJarLocation;
+
+		// init logging
 		LogInitializer.initLogging();
+
+		// init spring
 		this.initSpring();
 	}
 
@@ -82,22 +107,39 @@ public class SpringAgent implements IAgent {
 		ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 		Thread.currentThread().setContextClassLoader(inspectITClassLoader);
 
-		AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-		ctx.register(SpringConfiguration.class);
-		ctx.refresh();
-		beanFactory = ctx;
+		// load spring context in try block, catch exception and set init error to true
+		try {
+			AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+			ctx.register(SpringConfiguration.class);
+			ctx.refresh();
+			beanFactory = ctx;
 
-		if (LOG.isInfoEnabled()) {
-			LOG.info("Spring successfully initialized");
+			if (beanFactory instanceof ConfigurableApplicationContext) {
+				((ConfigurableApplicationContext) beanFactory).registerShutdownHook();
+			}
+
+			if (LOG.isInfoEnabled()) {
+				LOG.info("Spring successfully initialized");
+			}
+
+			// log version
+			if (LOG.isInfoEnabled()) {
+				VersionService versionService = beanFactory.getBean(VersionService.class);
+				LOG.info("Using agent version " + versionService.getVersionAsString() + ".");
+			}
+
+			// load all necessary beans right away
+			hookDispatcher = beanFactory.getBean(IHookDispatcher.class);
+			configurationStorage = beanFactory.getBean(IConfigurationStorage.class);
+			byteCodeAnalyzer = beanFactory.getBean(IByteCodeAnalyzer.class);
+
+			// load ignore patterns only once
+			ignoreClassesPatterns = configurationStorage.getIgnoreClassesPatterns();
+
+		} catch (Throwable throwable) {
+			initializationError = true;
+			LOG.error("inspectIT agent initialization failed. Agent will not be active.", throwable);
 		}
-
-		// log version
-		if (LOG.isInfoEnabled()) {
-			VersionService versionService = beanFactory.getBean(VersionService.class);
-			LOG.info("Using agent version " + versionService.getVersionAsString() + ".");
-		}
-
-		hookDispatcher = beanFactory.getBean(IHookDispatcher.class);
 
 		// switch back to the original context class loader
 		Thread.currentThread().setContextClassLoader(contextClassLoader);
@@ -114,15 +156,12 @@ public class SpringAgent implements IAgent {
 		}
 
 		// ignore all classes which fit to the patterns in the configuration
-		IConfigurationStorage configurationStorage = beanFactory.getBean(IConfigurationStorage.class);
-		List<IMatchPattern> ignoreClassesPatterns = configurationStorage.getIgnoreClassesPatterns();
 		for (IMatchPattern matchPattern : ignoreClassesPatterns) {
 			if (matchPattern.match(className)) {
 				return byteCode;
 			}
 		}
 
-		IByteCodeAnalyzer byteCodeAnalyzer = beanFactory.getBean(IByteCodeAnalyzer.class);
 		try {
 			byte[] instrumentedByteCode = byteCodeAnalyzer.analyzeAndInstrument(byteCode, className, classLoader);
 			return instrumentedByteCode;
@@ -187,6 +226,15 @@ public class SpringAgent implements IAgent {
 	 */
 	public IHookDispatcher getHookDispatcher() {
 		return hookDispatcher;
+	}
+
+	/**
+	 * Gets {@link #inspectitJarLocation}.
+	 * 
+	 * @return {@link #inspectitJarLocation}
+	 */
+	public static String getInspectitJarLocation() {
+		return inspectitJarLocation;
 	}
 
 }

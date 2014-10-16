@@ -1,8 +1,7 @@
 package info.novatec.inspectit.agent.connection;
 
-import info.novatec.inspectit.agent.config.impl.MethodSensorTypeConfig;
-import info.novatec.inspectit.agent.config.impl.PlatformSensorTypeConfig;
-import info.novatec.inspectit.agent.config.impl.RegisteredSensorConfig;
+import info.novatec.inspectit.agent.config.impl.AgentConfiguration;
+import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
 import info.novatec.inspectit.communication.DefaultData;
 
 import java.net.ConnectException;
@@ -52,21 +51,21 @@ public interface IConnection {
 	void sendDataObjects(List<? extends DefaultData> dataObjects) throws ServerUnavailableException;
 
 	/**
-	 * Registers the current platform (composed of the network interface with the Agent name) in the
-	 * CMR and returns a unique value for this platform.
+	 * Registers the agent with the CMR. The CMR will answer with the {@link AgentConfiguration}
+	 * containing all necessary information for the agent initialization.
 	 * 
 	 * @param agentName
-	 *            The name of the agent.
+	 *            The self-defined name of the inspectIT Agent. Can be <code>null</code>.
 	 * @param version
-	 *            The version of the agent.
-	 * @return The unique id for this platform.
+	 *            The version the agent is currently running with.
+	 * @return {@link AgentConfiguration}.
 	 * @throws ServerUnavailableException
 	 *             If the sending wasn't successful in any way, a {@link ServerUnavailableException}
 	 *             exception is thrown.
 	 * @throws RegistrationException
 	 *             This exception is thrown when a problem with the registration process appears.
 	 */
-	long registerPlatform(String agentName, String version) throws ServerUnavailableException, RegistrationException;
+	AgentConfiguration register(String agentName, String version) throws ServerUnavailableException, RegistrationException;
 
 	/**
 	 * Unregisters the platform in the CMR by sending the agent name and the network interfaces
@@ -74,76 +73,29 @@ public interface IConnection {
 	 * 
 	 * @param agentName
 	 *            Name of the Agent.
+	 * @throws ServerUnavailableException
+	 *             If the action wasn't successful in any way, a {@link ServerUnavailableException}
+	 *             exception is thrown.
 	 * @throws RegistrationException
 	 *             This exception is thrown when a problem with the un-registration process appears.
 	 */
-	void unregisterPlatform(String agentName) throws RegistrationException;
+	void unregister(String agentName) throws ServerUnavailableException, RegistrationException;
 
 	/**
-	 * Registers the specified parameters at the server and returns a unique identifier which will
-	 * be used throughout the sensors.
+	 * Analyzes and instruments the given byte code if necessary, returning the byte code to use on
+	 * the Agent.
 	 * 
-	 * @param platformId
-	 *            The unique id for this platform.
-	 * @param sensorConfig
-	 *            The registered sensor configuration.
-	 * 
-	 * @return Returns the unique identifier.
+	 * @param platformIdent
+	 *            Id of the agent.
+	 * @param hash
+	 *            Class hash code.
+	 * @param bytecode
+	 *            ByteCode of the class.
+	 * @return Instrumentation result containing modified byte code or <code>null</code> if nothing
+	 *         was instrumented or any kind of exception occurred.
 	 * @throws ServerUnavailableException
 	 *             If the sending wasn't successful in any way, a {@link ServerUnavailableException}
 	 *             exception is thrown.
-	 * @throws RegistrationException
-	 *             This exception is thrown when a problem with the registration process appears.
 	 */
-	long registerMethod(long platformId, RegisteredSensorConfig sensorConfig) throws ServerUnavailableException, RegistrationException;
-
-	/**
-	 * Registers the specified method sensor type at the CMR.
-	 * 
-	 * @param platformId
-	 *            The unique id for this platform.
-	 * @param methodSensorTypeConfig
-	 *            The unregistered sensor type configuration.
-	 * 
-	 * @return Returns the unique identifier.
-	 * @throws ServerUnavailableException
-	 *             If the sending wasn't successful in any way, a {@link ServerUnavailableException}
-	 *             exception is thrown.
-	 * @throws RegistrationException
-	 *             This exception is thrown when a problem with the registration process appears.
-	 */
-	long registerMethodSensorType(long platformId, MethodSensorTypeConfig methodSensorTypeConfig) throws ServerUnavailableException, RegistrationException;
-
-	/**
-	 * Registers the specified platform sensor type at the CMR.
-	 * 
-	 * @param platformId
-	 *            The unique id for this platform.
-	 * @param platformSensorTypeConfig
-	 *            The unregistered sensor type configuration.
-	 * 
-	 * @return Returns the unique identifier.
-	 * @throws ServerUnavailableException
-	 *             If the sending wasn't successful in any way, a {@link ServerUnavailableException}
-	 *             exception is thrown.
-	 * @throws RegistrationException
-	 *             This exception is thrown when a problem with the registration process appears.
-	 */
-	long registerPlatformSensorType(long platformId, PlatformSensorTypeConfig platformSensorTypeConfig) throws ServerUnavailableException, RegistrationException;
-
-	/**
-	 * Adds a sensor type to an already registered sensor at the CMR.
-	 * 
-	 * @param sensorTypeId
-	 *            The id of the sensor type.
-	 * @param methodId
-	 *            The id of the method.
-	 * @throws ServerUnavailableException
-	 *             If the sending wasn't successful in any way, a {@link ServerUnavailableException}
-	 *             exception is thrown.
-	 * @throws RegistrationException
-	 *             This exception is thrown when a problem with the registration process appears.
-	 */
-	void addSensorTypeToMethod(long sensorTypeId, long methodId) throws ServerUnavailableException, RegistrationException;
-
+	InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, byte[] bytecode) throws ServerUnavailableException;
 }

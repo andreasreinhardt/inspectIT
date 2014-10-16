@@ -57,4 +57,9 @@ public class ExceptionSensor extends AbstractMethodSensor implements IExceptionS
 		exceptionSensorHook = new ExceptionSensorHook(idManager, parameter);
 	}
 
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		super.afterPropertiesSet();
+	}
+
 }

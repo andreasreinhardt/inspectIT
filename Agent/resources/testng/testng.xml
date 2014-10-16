@@ -5,13 +5,12 @@
 			<class name="info.novatec.inspectit.agent.analyzer.impl.ByteCodeAnalyzerTest" />
 			<class name="info.novatec.inspectit.agent.analyzer.impl.InheritanceAnalyzerTest" />
 			<class name="info.novatec.inspectit.agent.analyzer.impl.ClassPoolAnalyzerTest" />
+			<class name="info.novatec.inspectit.agent.analyzer.impl.SendingClassHashCacheTest" />
 		</classes>
 	</test>
 	<test name="Configuration">
 		<classes>
-			<class name="info.novatec.inspectit.agent.config.impl.ConfigurationFilesTest" />
 			<class name="info.novatec.inspectit.agent.config.impl.ConfigurationStorageTest" />
-			<class name="info.novatec.inspectit.agent.config.impl.FileConfigurationReaderTest" />
 		</classes>
 	</test>
 	<test name="Core">
@@ -23,18 +22,6 @@
 	<test name="Hooking">
 		<classes>
 			<class name="info.novatec.inspectit.agent.hooking.impl.HookDispatcherTest" />
-			<class name="info.novatec.inspectit.agent.hooking.impl.HookInstrumenterTest" />
-		</classes>
-	</test>
-	<test name="Matchers">
-		<classes>
-			<class name="info.novatec.inspectit.agent.analyzer.AnnotationMatcherTest" />
-			<class name="info.novatec.inspectit.agent.analyzer.DirectMatcherTest" />
-			<class name="info.novatec.inspectit.agent.analyzer.IndirectMatcherTest" />
-			<class name="info.novatec.inspectit.agent.analyzer.InterfaceMatcherTest" />
-			<class name="info.novatec.inspectit.agent.analyzer.ModifierMatcherTest" />
-			<class name="info.novatec.inspectit.agent.analyzer.SuperclassMatcherTest" />
-			<class name="info.novatec.inspectit.agent.analyzer.SimpleMatchPatternTest" />
 		</classes>
 	</test>
 	<test name="Hooks">
@@ -99,6 +86,11 @@
 			<class name="info.novatec.inspectit.util.WeakListTest" />
 			<class name="info.novatec.inspectit.util.StringConstraintTest" />
 			<class name="info.novatec.inspectit.util.ReflectionCacheTest" />
+		</classes>
+	</test>
+		<test name="Asm">
+		<classes>
+			<class name="info.novatec.inspectit.agent.asm.ClassInstrumenterTest" />
 		</classes>
 	</test>
 </suite>

@@ -70,4 +70,12 @@
 		<property name="scheduledExecutor" value="false" />
 		<property name="beanSingleton" value="true" />
 	</bean>
+	
+	<bean id="agentServiceExecutorService" class="info.novatec.inspectit.storage.util.ExecutorServiceFactory">
+		<property name="threadNamePrefix" value="agent-service-executor-service" />
+		<property name="daemon" value="true" />
+		<property name="executorThreads" value="1" />
+		<property name="scheduledExecutor" value="false" />
+		<property name="beanSingleton" value="true" />
+	</bean>
 </beans>

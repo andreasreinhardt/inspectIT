@@ -4,15 +4,22 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import info.novatec.inspectit.ci.AgentMapping;
 import info.novatec.inspectit.ci.AgentMappings;
 import info.novatec.inspectit.ci.Environment;
 import info.novatec.inspectit.ci.Profile;
+import info.novatec.inspectit.ci.assignment.impl.ExceptionSensorAssignment;
+import info.novatec.inspectit.ci.assignment.impl.MethodSensorAssignment;
 import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.storage.util.DeleteFileVisitor;
 
@@ -21,10 +28,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -42,7 +52,7 @@ import org.testng.annotations.Test;
  * @author Ivan Senic
  * 
  */
-@SuppressWarnings("PMD")
+@SuppressWarnings({ "PMD", "all" })
 public class ConfigurationInterfaceManagerTest {
 
 	/**
@@ -58,6 +68,9 @@ public class ConfigurationInterfaceManagerTest {
 
 	@Mock
 	private ConfigurationInterfacePathResolver pathResolver;
+
+	@Mock
+	private IConfigurationInterfaceChangeListener configurationInterfaceChangeListener;
 
 	@Mock
 	private Logger logger;
@@ -88,6 +101,7 @@ public class ConfigurationInterfaceManagerTest {
 			}
 		}).when(pathResolver).getProfileFilePath(Mockito.<Profile> any());
 
+		manager.listeners = Collections.singletonList(configurationInterfaceChangeListener);
 		manager.init();
 	}
 
@@ -134,6 +148,75 @@ public class ConfigurationInterfaceManagerTest {
 
 		assertThat(updated.getName(), is("new"));
 		assertThat(updated.getRevision(), is(2));
+
+		verify(configurationInterfaceChangeListener, times(1)).profileUpdated(updated, Collections.<MethodSensorAssignment> emptyList(), Collections.<ExceptionSensorAssignment> emptyList(),
+				Collections.<MethodSensorAssignment> emptyList(), Collections.<ExceptionSensorAssignment> emptyList());
+	}
+
+	@Test
+	public void updateProfileMethodAssignmentsChange() throws Exception {
+		MethodSensorAssignment methodSensorAssignment1 = mock(MethodSensorAssignment.class);
+		MethodSensorAssignment methodSensorAssignment2 = mock(MethodSensorAssignment.class);
+
+		Profile profile = new Profile();
+		profile.setName("test");
+		profile.setMethodSensorAssignments(Collections.singletonList(methodSensorAssignment1));
+		Profile created = manager.createProfile(profile);
+		assertThat(profile.getMethodSensorAssignments(), hasItem(methodSensorAssignment1));
+
+		profile = new Profile();
+		profile.setId(created.getId());
+		profile.setRevision(created.getRevision());
+		profile.setName(created.getName());
+		profile.setMethodSensorAssignments(Collections.singletonList(methodSensorAssignment2));
+		Profile updated = manager.updateProfile(profile);
+		assertThat(profile.getMethodSensorAssignments(), hasItem(methodSensorAssignment2));
+		assertThat(updated.getRevision(), is(2));
+
+		ArgumentCaptor<Collection> addedSensorsCaptor = ArgumentCaptor.forClass(Collection.class);
+		ArgumentCaptor<Collection> removedSensorsCaptor = ArgumentCaptor.forClass(Collection.class);
+
+		verify(configurationInterfaceChangeListener, times(1)).profileUpdated(eq(updated), removedSensorsCaptor.capture(), eq(Collections.<ExceptionSensorAssignment> emptyList()),
+				addedSensorsCaptor.capture(), eq(Collections.<ExceptionSensorAssignment> emptyList()));
+
+		assertThat((Collection<? extends Object>) addedSensorsCaptor.getValue(), hasSize(1));
+		assertThat((MethodSensorAssignment) addedSensorsCaptor.getValue().iterator().next(), is(methodSensorAssignment2));
+
+		assertThat((Collection<? extends Object>) removedSensorsCaptor.getValue(), hasSize(1));
+		assertThat((MethodSensorAssignment) removedSensorsCaptor.getValue().iterator().next(), is(methodSensorAssignment1));
+	}
+
+	@Test
+	public void updateProfileExceptionAssignmentsChange() throws Exception {
+		ExceptionSensorAssignment exceptionSensorAssignment1 = mock(ExceptionSensorAssignment.class);
+		ExceptionSensorAssignment exceptionSensorAssignment2 = mock(ExceptionSensorAssignment.class);
+
+		Profile profile = new Profile();
+		profile.setName("test");
+		profile.setExceptionSensorAssignments(Collections.singletonList(exceptionSensorAssignment1));
+		Profile created = manager.createProfile(profile);
+		assertThat(profile.getExceptionSensorAssignments(), hasItem(exceptionSensorAssignment1));
+
+		profile = new Profile();
+		profile.setId(created.getId());
+		profile.setRevision(created.getRevision());
+		profile.setName(created.getName());
+		profile.setExceptionSensorAssignments(Collections.singletonList(exceptionSensorAssignment2));
+		Profile updated = manager.updateProfile(profile);
+		assertThat(profile.getExceptionSensorAssignments(), hasItem(exceptionSensorAssignment2));
+		assertThat(updated.getRevision(), is(2));
+
+		ArgumentCaptor<Collection> addedSensorsCaptor = ArgumentCaptor.forClass(Collection.class);
+		ArgumentCaptor<Collection> removedSensorsCaptor = ArgumentCaptor.forClass(Collection.class);
+
+		verify(configurationInterfaceChangeListener, times(1)).profileUpdated(eq(updated), eq(Collections.<MethodSensorAssignment> emptyList()), removedSensorsCaptor.capture(),
+				eq(Collections.<MethodSensorAssignment> emptyList()), addedSensorsCaptor.capture());
+
+		assertThat((Collection<? extends Object>) addedSensorsCaptor.getValue(), hasSize(1));
+		assertThat((ExceptionSensorAssignment) addedSensorsCaptor.getValue().iterator().next(), is(exceptionSensorAssignment2));
+
+		assertThat((Collection<? extends Object>) removedSensorsCaptor.getValue(), hasSize(1));
+		assertThat((ExceptionSensorAssignment) removedSensorsCaptor.getValue().iterator().next(), is(exceptionSensorAssignment1));
 	}
 
 	@Test(expectedExceptions = { Exception.class })
@@ -190,6 +273,46 @@ public class ConfigurationInterfaceManagerTest {
 
 		assertThat(updated.getName(), is("new"));
 		assertThat(updated.getRevision(), is(2));
+
+		verify(configurationInterfaceChangeListener, times(1)).environmentUpdated(updated, Collections.<Profile> emptyList(), Collections.<Profile> emptyList());
+	}
+
+	@Test
+	public void updateEnvironmentProfileUpdate() throws Exception {
+		Profile profile1 = new Profile();
+		profile1.setName("profile1");
+		profile1 = manager.createProfile(profile1);
+		Profile profile2 = new Profile();
+		profile2.setName("profile2");
+		profile2 = manager.createProfile(profile2);
+
+		Environment environment = new Environment();
+		environment.setName("test");
+		environment = manager.createEnvironment(environment);
+
+		environment.setProfileIds(Collections.singleton(profile1.getId()));
+		Environment updated = manager.updateEnvironment(environment, true);
+		assertThat(updated.getRevision(), is(2));
+		assertThat(updated.getProfileIds(), hasItem(profile1.getId()));
+
+		environment = new Environment();
+		environment.setId(updated.getId());
+		environment.setRevision(updated.getRevision());
+		environment.setName(updated.getName());
+		environment.setProfileIds(Collections.singleton(profile2.getId()));
+		updated = manager.updateEnvironment(environment, false);
+		assertThat(updated.getRevision(), is(3));
+		assertThat(updated.getProfileIds(), hasItem(profile2.getId()));
+
+		ArgumentCaptor<Collection> addedProfilesCaptor = ArgumentCaptor.forClass(Collection.class);
+		ArgumentCaptor<Collection> removedProfilesCaptor = ArgumentCaptor.forClass(Collection.class);
+		verify(configurationInterfaceChangeListener, times(1)).environmentUpdated(eq(updated), removedProfilesCaptor.capture(), addedProfilesCaptor.capture());
+
+		assertThat((Collection<? extends Object>) addedProfilesCaptor.getValue(), hasSize(1));
+		assertThat((Profile) addedProfilesCaptor.getValue().iterator().next(), is(profile2));
+
+		assertThat((Collection<? extends Object>) removedProfilesCaptor.getValue(), hasSize(1));
+		assertThat((Profile) removedProfilesCaptor.getValue().iterator().next(), is(profile1));
 	}
 
 	@Test
