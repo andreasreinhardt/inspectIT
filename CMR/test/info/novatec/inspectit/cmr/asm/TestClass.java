@@ -1,7 +1,9 @@
 package info.novatec.inspectit.cmr.asm;
 
-@SuppressWarnings("PMD")
-final public class TestClass extends AbstractTestClass implements TestInterface {
+import java.lang.annotation.Annotation;
+
+@SuppressWarnings("all")
+final public class TestClass extends AbstractTestClass implements TestInterface, TestAnnotation {
 
 	/**
 	 * Generated UID.
@@ -17,5 +19,15 @@ final public class TestClass extends AbstractTestClass implements TestInterface 
 	}
 
 	void methodWithException() throws Exception {
+	}
+
+	@Override
+	public Class<? extends Annotation> annotationType() {
+		return TestAnnotation.class;
+	}
+
+	@Override
+	public String value() {
+		return "";
 	}
 }

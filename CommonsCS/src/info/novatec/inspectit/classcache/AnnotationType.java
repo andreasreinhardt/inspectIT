@@ -1,6 +1,5 @@
 package info.novatec.inspectit.classcache;
 
-import info.novatec.inspectit.classcache.util.TypeSet;
 import info.novatec.inspectit.classcache.util.TypeWithAnnotationsSet;
 import info.novatec.inspectit.classcache.util.UpdateableSet;
 
@@ -13,12 +12,7 @@ import java.util.Set;
  * @author Stefan Siegl
  * @author Ivan Senic
  */
-public final class AnnotationType extends Type implements TypeWithAnnotations, ImmutableAnnotationType {
-
-	/**
-	 * A list of all annotations assigned to this type.
-	 */
-	private UpdateableSet<AnnotationType> annotations = null;
+public final class AnnotationType extends AbstractInterfaceType implements ImmutableAnnotationType {
 
 	/**
 	 * A list of methods annotated with this interface.
@@ -119,35 +113,6 @@ public final class AnnotationType extends Type implements TypeWithAnnotations, I
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void addAnnotationNoBidirectionalUpdate(AnnotationType annotationType) {
-		if (null == annotations) {
-			initAnnotations();
-		}
-		annotations.addOrUpdate(annotationType);
-	}
-
-	/**
-	 * Init {@link #annotations}.
-	 */
-	private void initAnnotations() {
-		annotations = new TypeSet<>();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public Set<AnnotationType> getAnnotations() {
-		if (null == annotations) {
-			return Collections.emptySet();
-		}
-		return Collections.unmodifiableSet(annotations);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
 	public Set<? extends ImmutableAnnotationType> getImmutableAnnotations() {
 		return getAnnotations();
 	}
@@ -157,6 +122,7 @@ public final class AnnotationType extends Type implements TypeWithAnnotations, I
 	 */
 	@Override
 	public void clearUnmeaningfulBackReferences() {
+		super.clearUnmeaningfulBackReferences();
 		if (null != annotatedTypes) {
 			annotatedTypes.clear();
 		}

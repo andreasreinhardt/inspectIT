@@ -17,7 +17,7 @@ package info.novatec.inspectit.classcache;
  * 
  * @author Stefan Siegl
  */
-public interface ImmutableType {
+public interface ImmutableType extends ImmutableTypeWithAnnotations {
 
 	/**
 	 * returns if this type is an annotation.

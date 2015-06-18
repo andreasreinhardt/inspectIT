@@ -13,12 +13,7 @@ import java.util.Set;
  * @author Stefan Siegl
  * @author Ivan Senic
  */
-public final class InterfaceType extends Type implements TypeWithMethods, TypeWithAnnotations, ImmutableInterfaceType {
-
-	/**
-	 * A list of all annotations assigned to this type.
-	 */
-	private UpdateableSet<AnnotationType> annotations = null;
+public class InterfaceType extends AbstractInterfaceType implements TypeWithMethods, ImmutableInterfaceType {
 
 	/**
 	 * A list of all direct super interfaces of this interface.
@@ -29,11 +24,6 @@ public final class InterfaceType extends Type implements TypeWithMethods, TypeWi
 	 * A list of all sub interfaces of this interface.
 	 */
 	private UpdateableSet<InterfaceType> subInterfaces = null;
-
-	/**
-	 * A list of all classes that directly realize this interface.
-	 */
-	private UpdateableSet<ClassType> realizingClasses = null;
 
 	/**
 	 * A list of all methods of this interface.
@@ -64,61 +54,6 @@ public final class InterfaceType extends Type implements TypeWithMethods, TypeWi
 	 */
 	public InterfaceType(String fqn, String hash, int modifiers) {
 		super(fqn, hash, modifiers);
-	}
-
-	/**
-	 * Adds a class that is annotated with this annotation and ensures that the back-reference on
-	 * the referred entity is set as well.
-	 * 
-	 * @param type
-	 *            the class that uses this annotation.
-	 */
-	public void addRealizingClass(ClassType type) {
-		addRealizingClassNoBidirectionalUpdate(type);
-		type.addInterfaceNoBidirectionalUpdate(this);
-	}
-
-	/**
-	 * Adds a class that is annotated with this annotation WITHOUT setting the back-reference.
-	 * Please be aware that this method should only be called internally as this might mess up the
-	 * bidirectional structure.
-	 * 
-	 * @param type
-	 *            the class that uses this annotation.
-	 */
-	public void addRealizingClassNoBidirectionalUpdate(ClassType type) {
-		if (null == realizingClasses) {
-			initRealizingClasses();
-		}
-		realizingClasses.addOrUpdate(type);
-	}
-
-	/**
-	 * Init {@link #realizingClasses}.
-	 */
-	private void initRealizingClasses() {
-		realizingClasses = new TypeSet<>();
-	}
-
-	/**
-	 * Gets {@link #realizingClasses} as an unmodifiableSet. If you want to add something to the
-	 * list, use the provided adders, as they ensure that the bidirectional links are created.
-	 * 
-	 * @return {@link #realizingClasses}
-	 */
-	public Set<ClassType> getRealizingClasses() {
-		if (null == realizingClasses) {
-			return Collections.emptySet();
-		}
-		return Collections.unmodifiableSet(realizingClasses);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public Set<? extends ImmutableClassType> getImmutableRealizingClasses() {
-		return getRealizingClasses();
 	}
 
 	/**
@@ -299,35 +234,6 @@ public final class InterfaceType extends Type implements TypeWithMethods, TypeWi
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void addAnnotationNoBidirectionalUpdate(AnnotationType annotationType) {
-		if (null == annotations) {
-			initAnnotations();
-		}
-		annotations.addOrUpdate(annotationType);
-	}
-
-	/**
-	 * Init {@link #annotations}.
-	 */
-	private void initAnnotations() {
-		annotations = new TypeSet<>();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public Set<AnnotationType> getAnnotations() {
-		if (null == annotations) {
-			return Collections.emptySet();
-		}
-		return Collections.unmodifiableSet(annotations);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
 	public Set<? extends ImmutableAnnotationType> getImmutableAnnotations() {
 		return getAnnotations();
 	}
@@ -337,9 +243,7 @@ public final class InterfaceType extends Type implements TypeWithMethods, TypeWi
 	 */
 	@Override
 	public void clearUnmeaningfulBackReferences() {
-		if (null != realizingClasses) {
-			realizingClasses.clear();
-		}
+		super.clearUnmeaningfulBackReferences();
 
 		if (null != subInterfaces) {
 			subInterfaces.clear();

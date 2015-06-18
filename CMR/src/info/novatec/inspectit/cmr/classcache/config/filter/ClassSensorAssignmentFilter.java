@@ -1,9 +1,9 @@
 package info.novatec.inspectit.cmr.classcache.config.filter;
 
 import info.novatec.inspectit.ci.assignment.AbstractClassSensorAssignment;
+import info.novatec.inspectit.classcache.ImmutableAbstractInterfaceType;
 import info.novatec.inspectit.classcache.ImmutableAnnotationType;
 import info.novatec.inspectit.classcache.ImmutableClassType;
-import info.novatec.inspectit.classcache.ImmutableInterfaceType;
 import info.novatec.inspectit.pattern.IMatchPattern;
 import info.novatec.inspectit.pattern.PatternFactory;
 
@@ -66,7 +66,7 @@ public class ClassSensorAssignmentFilter {
 		} else if (classSensorAssignment.isInterf()) {
 			// match any interface
 			// TODO not sure if realized interfaces include the super-interfaces?
-			for (ImmutableInterfaceType interfaceType : classType.getImmutableRealizedInterfaces()) {
+			for (ImmutableAbstractInterfaceType interfaceType : classType.getImmutableRealizedInterfaces()) {
 				if (pattern.match(interfaceType.getFQN())) {
 					return true;
 				}
@@ -129,7 +129,7 @@ public class ClassSensorAssignmentFilter {
 
 		// then all interfaces.
 		// TODO not sure if realized interfaces include the super-interfaces?
-		for (ImmutableInterfaceType interfaceType : classType.getImmutableRealizedInterfaces()) {
+		for (ImmutableAbstractInterfaceType interfaceType : classType.getImmutableRealizedInterfaces()) {
 			if (checkAnnotations(interfaceType.getImmutableAnnotations(), pattern)) {
 				return true;
 			}

@@ -2,6 +2,8 @@ package info.novatec.inspectit.classcache;
 
 
 import info.novatec.inspectit.classcache.util.ArraySet;
+import info.novatec.inspectit.classcache.util.TypeSet;
+import info.novatec.inspectit.classcache.util.UpdateableSet;
 
 import java.util.Collections;
 import java.util.Set;
@@ -11,7 +13,7 @@ import java.util.Set;
  * 
  * @author Stefan Siegl
  */
-public abstract class Type implements ImmutableType {
+public abstract class Type implements ImmutableType, TypeWithAnnotations {
 
 	/**
 	 * The FQN of the type.
@@ -33,6 +35,11 @@ public abstract class Type implements ImmutableType {
 	 * The modifiers of the type.
 	 */
 	protected int modifiers;
+
+	/**
+	 * A list of all annotations assigned to this type.
+	 */
+	private UpdateableSet<AnnotationType> annotations = null;
 
 	/**
 	 * Creates a new <code> Type </code> instance. This constructor is usually invoked to add a
@@ -174,6 +181,52 @@ public abstract class Type implements ImmutableType {
 	@Override
 	public boolean isInitialized() {
 		return initialized;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void addAnnotation(AnnotationType annotationType) {
+		addAnnotationNoBidirectionalUpdate(annotationType);
+		annotationType.addAnnotatedType(this);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Set<? extends ImmutableAnnotationType> getImmutableAnnotations() {
+		return getAnnotations();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void addAnnotationNoBidirectionalUpdate(AnnotationType annotationType) {
+		if (null == annotations) {
+			initAnnotations();
+		}
+		annotations.addOrUpdate(annotationType);
+	}
+
+	/**
+	 * Init {@link #annotations}.
+	 */
+	private void initAnnotations() {
+		annotations = new TypeSet<>();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Set<AnnotationType> getAnnotations() {
+		if (null == annotations) {
+			return Collections.emptySet();
+		}
+		return Collections.unmodifiableSet(annotations);
 	}
 
 	/**

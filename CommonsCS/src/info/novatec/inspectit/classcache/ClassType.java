@@ -18,17 +18,12 @@ import org.apache.commons.collections.CollectionUtils;
  * @author Stefan Siegl
  * @author Ivan Senic
  */
-public class ClassType extends Type implements TypeWithMethods, TypeWithAnnotations, ImmutableClassType {
+public class ClassType extends Type implements TypeWithMethods, ImmutableClassType {
 
 	/**
 	 * static final reference to the class name of the java.lang.Throwable class.
 	 */
 	private static final String FQN_THROWABLE = Throwable.class.getName();
-
-	/**
-	 * A list of all annotations assigned to this type.
-	 */
-	private UpdateableSet<AnnotationType> annotations = null;
 
 	/**
 	 * The super-classes of this class.
@@ -43,7 +38,7 @@ public class ClassType extends Type implements TypeWithMethods, TypeWithAnnotati
 	/**
 	 * A list of all interfaces realized by this class.
 	 */
-	private UpdateableSet<InterfaceType> realizedInterfaces = null;
+	private UpdateableSet<AbstractInterfaceType> realizedInterfaces = null;
 
 	/**
 	 * A list of all methods of this interface.
@@ -88,7 +83,7 @@ public class ClassType extends Type implements TypeWithMethods, TypeWithAnnotati
 	 * @param type
 	 *            the class that uses this annotation.
 	 */
-	public void addInterface(InterfaceType type) {
+	public void addInterface(AbstractInterfaceType type) {
 		addInterfaceNoBidirectionalUpdate(type);
 		type.addRealizingClassNoBidirectionalUpdate(this);
 	}
@@ -101,7 +96,7 @@ public class ClassType extends Type implements TypeWithMethods, TypeWithAnnotati
 	 * @param type
 	 *            the class that uses this annotation.
 	 */
-	public void addInterfaceNoBidirectionalUpdate(InterfaceType type) {
+	public void addInterfaceNoBidirectionalUpdate(AbstractInterfaceType type) {
 		if (null == realizedInterfaces) {
 			initRealizedInterfaces();
 		}
@@ -121,7 +116,7 @@ public class ClassType extends Type implements TypeWithMethods, TypeWithAnnotati
 	 * 
 	 * @return {@link #realizedInterfaces}
 	 */
-	public Set<InterfaceType> getRealizedInterfaces() {
+	public Set<AbstractInterfaceType> getRealizedInterfaces() {
 		if (null == realizedInterfaces) {
 			return Collections.emptySet();
 		}
@@ -132,7 +127,7 @@ public class ClassType extends Type implements TypeWithMethods, TypeWithAnnotati
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Set<? extends ImmutableInterfaceType> getImmutableRealizedInterfaces() {
+	public Set<? extends ImmutableAbstractInterfaceType> getImmutableRealizedInterfaces() {
 		return getRealizedInterfaces();
 	}
 
@@ -346,52 +341,6 @@ public class ClassType extends Type implements TypeWithMethods, TypeWithAnnotati
 			return Collections.emptySet();
 		}
 		return Collections.unmodifiableSet(methodsThrowingThisException);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void addAnnotation(AnnotationType annotationType) {
-		addAnnotationNoBidirectionalUpdate(annotationType);
-		annotationType.addAnnotatedType(this);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void addAnnotationNoBidirectionalUpdate(AnnotationType annotationType) {
-		if (null == annotations) {
-			initAnnotations();
-		}
-		annotations.addOrUpdate(annotationType);
-	}
-
-	/**
-	 * Init {@link #annotations}.
-	 */
-	private void initAnnotations() {
-		annotations = new TypeSet<>();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public Set<AnnotationType> getAnnotations() {
-		if (null == annotations) {
-			return Collections.emptySet();
-		}
-		return Collections.unmodifiableSet(annotations);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public Set<? extends ImmutableAnnotationType> getImmutableAnnotations() {
-		return getAnnotations();
 	}
 
 	/**

@@ -1,5 +1,6 @@
 package info.novatec.inspectit.cmr.classcache;
 
+import info.novatec.inspectit.classcache.AbstractInterfaceType;
 import info.novatec.inspectit.classcache.AnnotationType;
 import info.novatec.inspectit.classcache.ClassType;
 import info.novatec.inspectit.classcache.ImmutableType;
@@ -109,12 +110,6 @@ class ClassCacheModification implements IClassCacheModification {
 					Type inStructureRaw = (Type) lookup.findByFQN(given.getFQN());
 
 					if (null != inStructureRaw) {
-						// (check) FQN is available but is specifying another type
-						if (!inStructureRaw.getClass().equals(given.getClass())) {
-							throw new ClassCacheModificationException("We found a type with the FQN " + given.getFQN() + " but the types do not match. The given one had "
-									+ given.getClass().toString() + " the available one had " + inStructureRaw.getClass().toString());
-						}
-
 						// (shortcut) Safety check, if we have the same hash (or the hash is already
 						// in the
 						// type), then we are done. Note that this check needs to be done after the
@@ -157,8 +152,16 @@ class ClassCacheModification implements IClassCacheModification {
 			// RESOLVE the references of the type
 			resolveReferences(givenType, events);
 		} else {
-			// MERGE the existing element with the information from the given entity
-			merge(inputType, givenType, events);
+			if (givenType instanceof AnnotationType && inputType instanceof InterfaceType) {
+
+				// special case, when annotation is used as interface must be handled in different
+				// way
+				mergeAnnotationAsInterface((AnnotationType) givenType, (InterfaceType) inputType, events);
+			} else {
+
+				// MERGE the existing element with the information from the given entity
+				merge(inputType, givenType, events);
+			}
 		}
 	}
 
@@ -279,9 +282,9 @@ class ClassCacheModification implements IClassCacheModification {
 	 * @param events
 	 *            write notifications here.
 	 */
-	private void addInterface(ClassType type, Set<InterfaceType> interfaces, Events events) {
-		for (InterfaceType i : interfaces) {
-			InterfaceType lookupUp = getOrAddReferredType(i, events);
+	private void addInterface(ClassType type, Set<AbstractInterfaceType> interfaces, Events events) {
+		for (AbstractInterfaceType i : interfaces) {
+			AbstractInterfaceType lookupUp = getOrAddReferredType(i, events);
 			fireAndSave(new ReferenceEvent(type, lookupUp, ReferenceType.REALIZE_INTERFACE), events);
 			type.addInterface(lookupUp);
 		}
@@ -453,6 +456,26 @@ class ClassCacheModification implements IClassCacheModification {
 		} else {
 			return inStructure;
 		}
+	}
+
+	/**
+	 * Merges given annotation when it exist in the structure as interface.
+	 * 
+	 * @param given
+	 *            {@link AnnotationType}
+	 * @param inStructure
+	 *            {@link InterfaceType}
+	 * @param events
+	 *            Eventts to process.
+	 */
+	private void mergeAnnotationAsInterface(AnnotationType given, InterfaceType inStructure, Events events) {
+		for (ClassType classType : inStructure.getRealizingClasses()) {
+			// this should update the references in the class type correctly
+			classType.addInterface(given);
+		}
+
+		// must be specified as new, no other way
+		fireAndSave(new NodeEvent(given, NodeEventType.NEW, NodeEventDetails.INITIALIZED, given.getHash()), events);
 	}
 
 	/**

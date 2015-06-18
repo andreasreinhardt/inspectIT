@@ -45,7 +45,7 @@ public interface ImmutableClassType extends ImmutableType {
 	 * 
 	 * @return Returns immutable realized interfaces as an unmodifiableSet.
 	 */
-	Set<? extends ImmutableInterfaceType> getImmutableRealizedInterfaces();
+	Set<? extends ImmutableAbstractInterfaceType> getImmutableRealizedInterfaces();
 
 	/**
 	 * Does the class type have instrumentation points.

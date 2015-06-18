@@ -7,7 +7,7 @@ import java.util.Set;
  * 
  * @author Stefan Siegl
  */
-public interface ImmutableInterfaceType extends ImmutableType {
+public interface ImmutableInterfaceType extends ImmutableAbstractInterfaceType {
 
 	/**
 	 * Returns immutable methods as an unmodifiableSet.
@@ -36,12 +36,5 @@ public interface ImmutableInterfaceType extends ImmutableType {
 	 * @return Returns immutable sub interfaces as an unmodifiableSet.
 	 */
 	Set<? extends ImmutableInterfaceType> getImmutableSubInterfaces();
-
-	/**
-	 * Gets immutable realizing classes as an unmodifiableSet.
-	 * 
-	 * @return Immutable realizing classes as an unmodifiableSet.
-	 */
-	Set<? extends ImmutableClassType> getImmutableRealizingClasses();
 
 }

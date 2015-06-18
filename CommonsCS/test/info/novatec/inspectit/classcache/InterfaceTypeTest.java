@@ -92,7 +92,7 @@ public class InterfaceTypeTest {
 
 		test.addRealizingClass(i);
 		assertThat(test.getRealizingClasses(), contains(i));
-		assertThat(i.getRealizedInterfaces(), contains(test));
+		assertThat(i.getRealizedInterfaces(), contains((AbstractInterfaceType) test));
 	}
 
 

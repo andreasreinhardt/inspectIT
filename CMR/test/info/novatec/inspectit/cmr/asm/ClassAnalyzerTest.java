@@ -229,18 +229,18 @@ public class ClassAnalyzerTest {
 		assertThat(superClass.isInitialized(), is(false));
 
 		// has one interface
-		assertThat(type.getRealizedInterfaces(), hasSize(1));
-		InterfaceType interfaceType = type.getRealizedInterfaces().iterator().next();
-		assertThat(interfaceType.getFQN(), is(equalTo(TestInterface.class.getName())));
-		assertThat(interfaceType.isInitialized(), is(false));
+		assertThat(type.getRealizedInterfaces(), hasSize(2));
+		assertThat(type.getRealizedInterfaces(), hasItem(new InterfaceType(TestInterface.class.getName())));
+		assertThat(type.getRealizedInterfaces(), hasItem(new InterfaceType(TestAnnotation.class.getName())));
 
 		// note that there are methods + no-arg constructor
-		assertThat(type.getMethods(), hasSize(4));
+		assertThat(type.getMethods(), hasSize(6));
 
 		MethodType method0 = null;
 		MethodType method1 = null;
 		MethodType methodWithException = null;
 		MethodType constructor = null;
+		// ignoring the methods from annotation
 
 		for (Iterator<MethodType> it = type.getMethods().iterator(); it.hasNext();) {
 			MethodType methodType = it.next();

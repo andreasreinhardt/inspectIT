@@ -7,14 +7,7 @@ import java.util.Set;
  * 
  * @author Stefan Siegl
  */
-public interface ImmutableAnnotationType extends ImmutableType {
-
-	/**
-	 * Returns immutable annotations as an unmodifiableSet.
-	 * 
-	 * @return Returns immutable annotations as an unmodifiableSet.
-	 */
-	Set<? extends ImmutableAnnotationType> getImmutableAnnotations();
+public interface ImmutableAnnotationType extends ImmutableAbstractInterfaceType {
 
 	/**
 	 * Returns immutable annotated types as an unmodifiableSet.
