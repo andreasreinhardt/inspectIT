@@ -28,6 +28,9 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
@@ -78,6 +81,11 @@ public class JavaAgent implements ClassFileTransformer {
 	private static Set<String> selfFirstClasses = new HashSet<String>();
 
 	/**
+	 * Executor service.
+	 */
+	private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+
+	/**
 	 * The premain method will be executed before anything else.
 	 * 
 	 * @param agentArgs
@@ -114,7 +122,7 @@ public class JavaAgent implements ClassFileTransformer {
 			// now we are analysing the already loaded classes by the jvm to instrument those
 			// classes, too
 			analyzeAlreadyLoadedClasses();
-			inst.addTransformer(new JavaAgent());
+			inst.addTransformer(new JavaAgent(), true);
 		} catch (Exception e) {
 			LOGGER.severe("Something unexpected happened while trying to initialize the Agent, aborting!");
 			e.printStackTrace(); // NOPMD
@@ -145,13 +153,16 @@ public class JavaAgent implements ClassFileTransformer {
 			}
 
 			// now the real inspectit agent will handle this class
+			String modifiedClassName = className.replaceAll("/", ".");
 			if (!operationInProgress) {
 				operationInProgress = true;
-				String modifiedClassName = className.replaceAll("/", ".");
 				byte[] instrumentedData = Agent.agent.inspectByteCode(data, modifiedClassName, classLoader);
 				operationInProgress = false;
 				return instrumentedData;
+			} else {
+				executorService.schedule(new RetransformHelper(modifiedClassName, classLoader), 5, TimeUnit.SECONDS);
 			}
+
 			// LOGGER.severe("Parallel loading of classes: Skipping class "+className);
 			return data;
 		} catch (Throwable ex) { // NOPMD
@@ -508,6 +519,51 @@ public class JavaAgent implements ClassFileTransformer {
 			PermissionCollection pc = allPerm.newPermissionCollection();
 			pc.add(allPerm);
 			return pc;
+		}
+
+	}
+
+	/**
+	 * @author Ivan Senic
+	 * 
+	 */
+	private static final class RetransformHelper implements Runnable {
+
+		/**
+		 * Class name.
+		 */
+		private String name;
+
+		/**
+		 * Class loader.
+		 */
+		private ClassLoader classLoader;
+
+		/**
+		 * @param name
+		 *            Class name
+		 * @param classLoader
+		 *            Class loader.
+		 */
+		public RetransformHelper(String name, ClassLoader classLoader) {
+			super();
+			this.name = name;
+			this.classLoader = classLoader;
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public void run() {
+			try {
+				Class<?> retranformClass = Class.forName(name, true, classLoader);
+				if (null != retranformClass) {
+					instrumentation.retransformClasses(retranformClass);
+				}
+			} catch (Throwable t) {
+				t.printStackTrace();
+			}
 		}
 
 	}
