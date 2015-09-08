@@ -11,10 +11,9 @@ import info.novatec.inspectit.cmr.classcache.config.AgentCacheEntry;
 import info.novatec.inspectit.cmr.classcache.config.ClassCacheSearchNarrower;
 import info.novatec.inspectit.cmr.classcache.config.ConfigurationCreator;
 import info.novatec.inspectit.cmr.classcache.config.InstrumentationCreator;
-import info.novatec.inspectit.cmr.service.exception.ServiceException;
+import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.spring.logger.Log;
 
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -80,7 +79,7 @@ public abstract class AbstractConfigurationChangeJob implements Runnable {
 			agentCacheEntry.setAgentConfiguration(agentConfiguration);
 
 			return true;
-		} catch (RemoteException | ServiceException e) {
+		} catch (BusinessException e) { // TODO check enxeptions
 			log.error("Error occurred trying to create updated Agent configuration during environment update job. ");
 			return false;
 		}

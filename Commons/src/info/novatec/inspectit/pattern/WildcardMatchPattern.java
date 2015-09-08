@@ -10,8 +10,12 @@ import org.apache.commons.lang.StringUtils;
  * the form "xxx" for an exact match, "xxx*" for a match on leading characters only, "*xxx" to match
  * on trailing characters only, or "xxx*yyy" to match on both leading and trailing. It can also
  * include multiple '*' characters when more than one part of the match is wildcarded.
- * 
- * This code is copied from http://www.ibm.com/developerworks/java/library/j-dyn0203.html.
+ * <p>
+ * <b>IMPORTANT:</b> The class code is copied/taken from <a
+ * href="http://www.ibm.com/developerworks/java/library/j-dyn0203.html">IBM developers Works</a>.
+ * Original author is Dennis Sosnoski. License info can be found <a
+ * href="http://www.ibm.com/developerworks/apps/download/index.jsp
+ * ?contentid=10908&filename=j-dyn0203-source.zip&method=http&locale=">here</a>.
  * 
  * @author Dennis Sosnoski
  */
@@ -59,7 +63,7 @@ public class WildcardMatchPattern implements IMatchPattern {
 		if (null == template) {
 			throw new IllegalArgumentException("Template for the matching can not be null.");
 		}
-		
+
 		if ("*".equals(template)) {
 			everything = true;
 			isLeadText = false;

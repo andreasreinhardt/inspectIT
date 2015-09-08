@@ -3,6 +3,7 @@ package info.novatec.inspectit.agent.connection;
 import info.novatec.inspectit.agent.config.impl.AgentConfiguration;
 import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
 import info.novatec.inspectit.communication.DefaultData;
+import info.novatec.inspectit.exception.BusinessException;
 
 import java.net.ConnectException;
 import java.util.List;
@@ -96,6 +97,7 @@ public interface IConnection {
 	 * @throws ServerUnavailableException
 	 *             If the sending wasn't successful in any way, a {@link ServerUnavailableException}
 	 *             exception is thrown.
+	 * @throws BusinessException
 	 */
-	InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, byte[] bytecode) throws ServerUnavailableException;
+	InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, byte[] bytecode) throws ServerUnavailableException, BusinessException;
 }

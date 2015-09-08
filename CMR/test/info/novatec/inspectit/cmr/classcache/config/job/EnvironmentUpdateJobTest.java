@@ -23,7 +23,7 @@ import info.novatec.inspectit.cmr.classcache.config.AgentCacheEntry;
 import info.novatec.inspectit.cmr.classcache.config.ClassCacheSearchNarrower;
 import info.novatec.inspectit.cmr.classcache.config.ConfigurationCreator;
 import info.novatec.inspectit.cmr.classcache.config.InstrumentationCreator;
-import info.novatec.inspectit.cmr.service.exception.ServiceException;
+import info.novatec.inspectit.exception.BusinessException;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -113,12 +113,12 @@ public class EnvironmentUpdateJobTest {
 		doAnswer(callableAnswer).when(classCache).executeWithWriteLock(Mockito.<Callable<?>> anyObject());
 
 		when(configurationCreator.environmentToConfiguration(updateEnvironment, PLATFORM_ID)).thenReturn(updateConfiguration);
-		
+
 		job.setEnvironment(updateEnvironment);
 	}
 
 	@Test
-	public void onlyConfigurationUpdate() throws RemoteException, ServiceException {
+	public void onlyConfigurationUpdate() throws RemoteException, BusinessException {
 		job.run();
 
 		verify(agentCacheEntry, times(1)).setEnvironment(updateEnvironment);
@@ -130,7 +130,7 @@ public class EnvironmentUpdateJobTest {
 	}
 
 	@Test
-	public void profileAddedWithMethodSensor() throws RemoteException, ServiceException {
+	public void profileAddedWithMethodSensor() throws RemoteException, BusinessException {
 		doReturn(Collections.singleton(classType)).when(classCacheSearchNarrower).narrowByMethodSensorAssignment(classCache, methodSensorAssignment);
 		doReturn(true).when(instrumentationCreator).addInstrumentationPoints(eq(agentConfiguration), eq(environment), eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(),
 				Mockito.<Collection<ExceptionSensorAssignment>> any());
@@ -156,7 +156,7 @@ public class EnvironmentUpdateJobTest {
 	}
 
 	@Test
-	public void profileAddedWithExceptionSensor() throws RemoteException, ServiceException {
+	public void profileAddedWithExceptionSensor() throws RemoteException, BusinessException {
 		doReturn(Collections.singleton(classType)).when(classCacheSearchNarrower).narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment);
 		doReturn(true).when(instrumentationCreator).addInstrumentationPoints(eq(agentConfiguration), eq(environment), eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(),
 				Mockito.<Collection<ExceptionSensorAssignment>> any());
@@ -181,7 +181,7 @@ public class EnvironmentUpdateJobTest {
 	}
 
 	@Test
-	public void profileRemovedWithMethodSensor() throws RemoteException, ServiceException {
+	public void profileRemovedWithMethodSensor() throws RemoteException, BusinessException {
 		doReturn(Collections.singleton(classType)).when(classCacheSearchNarrower).narrowByMethodSensorAssignment(classCache, methodSensorAssignment);
 		doReturn(true).when(instrumentationCreator).removeInstrumentationPoints(eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(),
 				Mockito.<Collection<ExceptionSensorAssignment>> any());
@@ -210,7 +210,7 @@ public class EnvironmentUpdateJobTest {
 	}
 
 	@Test
-	public void profileRemovedWithExceptionSensor() throws RemoteException, ServiceException {
+	public void profileRemovedWithExceptionSensor() throws RemoteException, BusinessException {
 		doReturn(Collections.singleton(classType)).when(classCacheSearchNarrower).narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment);
 		doReturn(true).when(instrumentationCreator).removeInstrumentationPoints(eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(),
 				Mockito.<Collection<ExceptionSensorAssignment>> any());
@@ -239,4 +239,3 @@ public class EnvironmentUpdateJobTest {
 	}
 
 }
-

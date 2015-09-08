@@ -275,14 +275,6 @@ public class ConfigurationStorage implements IConfigurationStorage, Initializing
 	}
 
 	/**
-	 * {@inheritDoc}
-	 */
-	public void afterPropertiesSet() throws Exception {
-		loadConfigurationFromJvmParameters();
-		createClassLoaderDelegationMatcher();
-	}
-
-	/**
 	 * Checks if the JVM parameters have the repository and agent information.
 	 */
 	private void loadConfigurationFromJvmParameters() {

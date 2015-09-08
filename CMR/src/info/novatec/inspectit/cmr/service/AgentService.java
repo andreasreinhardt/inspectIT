@@ -20,11 +20,10 @@ import info.novatec.inspectit.cmr.classcache.config.ConfigurationResolver;
 import info.novatec.inspectit.cmr.classcache.config.InstrumentationCreator;
 import info.novatec.inspectit.cmr.classcache.config.job.EnvironmentUpdateJob;
 import info.novatec.inspectit.cmr.classcache.config.job.ProfileUpdateJob;
-import info.novatec.inspectit.cmr.service.exception.ServiceException;
 import info.novatec.inspectit.cmr.spring.aop.MethodLog;
+import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.spring.logger.Log;
 
-import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -120,13 +119,13 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	 */
 	@Override
 	@MethodLog
-	public AgentConfiguration register(List<String> definedIPs, String agentName, String version) throws RemoteException, ServiceException {
+	public AgentConfiguration register(List<String> definedIPs, String agentName, String version) throws BusinessException {
 		// load environment for the agent
 		Environment environment;
 		try {
 			environment = configurationResolver.getEnvironmentForAgent(definedIPs, agentName);
 		} catch (Exception e) {
-			throw new ServiceException("Can not find matching environment for the agent.", e);
+			throw new BusinessException("Can not find matching environment for the agent.", null); // TODO
 		}
 
 		// if environment load is success register agent
@@ -164,7 +163,7 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void unregister(List<String> definedIPs, String agentName) throws RemoteException, ServiceException {
+	public void unregister(List<String> definedIPs, String agentName) throws BusinessException {
 		registrationService.unregisterPlatformIdent(definedIPs, agentName);
 	}
 
@@ -173,11 +172,11 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	 */
 	@Override
 	@MethodLog
-	public InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, final byte[] bytecode) throws RemoteException {
+	public InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, final byte[] bytecode) throws BusinessException {
 		AgentCacheEntry agentCacheEntry = agentCacheMap.get(Long.valueOf(platformIdent));
 		if (null == agentCacheEntry) {
 			// change to service exception
-			throw new RemoteException("");
+			throw new BusinessException(null);// TODO
 		}
 
 		ClassCache classCache = agentCacheEntry.getClassCache();

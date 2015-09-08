@@ -234,19 +234,12 @@ public class KryoNetConnection implements IConnection {
 	/**
 	 * {@inheritDoc}
 	 */
-	public InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, byte[] bytecode) throws ServerUnavailableException {
+	public InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, byte[] bytecode) throws ServerUnavailableException, BusinessException {
 		if (!connected) {
 			throw new ServerUnavailableException();
 		}
 
-		try {
-			return agentService.analyzeAndInstrument(platformIdent, hash, bytecode);
-		} catch (RemoteException e) {
-			if (log.isTraceEnabled()) {
-				log.trace("analyzeAndInstrument(long, String, byte[])", e);
-			}
-			return null;
-		}
+		return agentService.analyzeAndInstrument(platformIdent, hash, bytecode);
 	}
 
 	/**

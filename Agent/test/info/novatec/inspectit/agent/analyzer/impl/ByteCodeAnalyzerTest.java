@@ -7,7 +7,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -21,6 +21,7 @@ import info.novatec.inspectit.agent.connection.ServerUnavailableException;
 import info.novatec.inspectit.agent.core.IIdManager;
 import info.novatec.inspectit.agent.core.IdNotAvailableException;
 import info.novatec.inspectit.agent.hooking.IHookDispatcherMapper;
+import info.novatec.inspectit.exception.BusinessException;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -104,7 +105,7 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 	}
 
 	@Test
-	public void noInstrumentation() throws NotFoundException, IOException, CannotCompileException, ServerUnavailableException {
+	public void noInstrumentation() throws NotFoundException, IOException, CannotCompileException, ServerUnavailableException, BusinessException {
 		String className = TestClass.class.getName();
 		ClassLoader classLoader = TestClass.class.getClassLoader();
 		byte[] byteCode = getByteCode(className);
@@ -129,7 +130,7 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 	}
 
 	@Test
-	public void instrumentation() throws NotFoundException, IOException, CannotCompileException, ServerUnavailableException {
+	public void instrumentation() throws NotFoundException, IOException, CannotCompileException, ServerUnavailableException, BusinessException {
 		String className = TestClass.class.getName();
 		ClassLoader classLoader = TestClass.class.getClassLoader();
 		byte[] byteCode = getByteCode(className);
@@ -145,7 +146,7 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 		when(registeredSensorConfig.getId()).thenReturn(rscId);
 
 		byte[] instrumentedByteCode = byteCodeAnalyzer.analyzeAndInstrument(byteCode, className, classLoader);
-		
+
 		// as no instrumentation happened, we get a null object
 		assertThat(instrumentedByteCode, is(not(nullValue())));
 
@@ -154,6 +155,5 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 		verify(sendingClassCache, times(1)).markSending(hashCaptor.getValue(), true);
 		verify(hookDispatcherMapper, times(1)).addMapping(rscId, registeredSensorConfig);
 		verifyNoMoreInteractions(hookDispatcherMapper, connection, sendingClassCache);
-		verifyNoMoreInteractions(hookInstrumenter);
 	}
 }

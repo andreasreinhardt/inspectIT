@@ -12,12 +12,11 @@ import info.novatec.inspectit.ci.sensor.method.IMethodSensorConfig;
 import info.novatec.inspectit.ci.sensor.platform.IPlatformSensorConfig;
 import info.novatec.inspectit.ci.strategy.IStrategyConfig;
 import info.novatec.inspectit.cmr.service.IRegistrationService;
-import info.novatec.inspectit.cmr.service.exception.ServiceException;
+import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.pattern.EqualsMatchPattern;
 import info.novatec.inspectit.pattern.IMatchPattern;
 import info.novatec.inspectit.pattern.WildcardMatchPattern;
 
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,12 +55,10 @@ public class ConfigurationCreator {
 	 * @param platformId
 	 *            Id of the agent to create configuration for.
 	 * @return {@link AgentConfiguration}.
-	 * @throws ServiceException
-	 *             TODO
-	 * @throws RemoteException
+	 * @throws BusinessException
 	 *             TODO
 	 */
-	public AgentConfiguration environmentToConfiguration(Environment environment, long platformId) throws ServiceException, RemoteException {
+	public AgentConfiguration environmentToConfiguration(Environment environment, long platformId) throws BusinessException {
 		AgentConfiguration agentConfiguration = new AgentConfiguration();
 		agentConfiguration.setPlatformId(platformId);
 		agentConfiguration.setInstrumentationLastModified(System.currentTimeMillis());
@@ -128,10 +125,8 @@ public class ConfigurationCreator {
 	 * @param platformSensorConfig
 	 *            {@link IPlatformSensorConfig} defined in the {@link Environment}.
 	 * @return {@link PlatformSensorTypeConfig}.
-	 * @throws RemoteException
-	 *             TODO
 	 */
-	private PlatformSensorTypeConfig getPlatformSensorTypeConfig(long platformId, IPlatformSensorConfig platformSensorConfig) throws RemoteException {
+	private PlatformSensorTypeConfig getPlatformSensorTypeConfig(long platformId, IPlatformSensorConfig platformSensorConfig) {
 		long id = registrationService.registerPlatformSensorTypeIdent(platformId, platformSensorConfig.getClassName());
 
 		PlatformSensorTypeConfig platformSensorTypeConfig = new PlatformSensorTypeConfig();
@@ -150,10 +145,8 @@ public class ConfigurationCreator {
 	 * @param methodSensorConfig
 	 *            {@link IMethodSensorConfig} defined in the {@link Environment}.
 	 * @return {@link MethodSensorTypeConfig}.
-	 * @throws RemoteException
-	 *             TODO
 	 */
-	private MethodSensorTypeConfig getMethodSensorTypeConfig(long platformId, IMethodSensorConfig methodSensorConfig) throws RemoteException {
+	private MethodSensorTypeConfig getMethodSensorTypeConfig(long platformId, IMethodSensorConfig methodSensorConfig) {
 		long id = registrationService.registerMethodSensorTypeIdent(platformId, methodSensorConfig.getClassName(), methodSensorConfig.getParameters());
 
 		MethodSensorTypeConfig methodSensorTypeConfig = new MethodSensorTypeConfig();
@@ -174,10 +167,8 @@ public class ConfigurationCreator {
 	 * @param exceptionSensorConfig
 	 *            {@link IExceptionSensorConfig} defined in the {@link Environment}.
 	 * @return {@link ExceptionSensorTypeConfig}.
-	 * @throws RemoteException
-	 *             TODO
 	 */
-	private ExceptionSensorTypeConfig getExceptionSensorTypeConfig(long platformId, IExceptionSensorConfig exceptionSensorConfig) throws RemoteException {
+	private ExceptionSensorTypeConfig getExceptionSensorTypeConfig(long platformId, IExceptionSensorConfig exceptionSensorConfig) {
 		long id = registrationService.registerMethodSensorTypeIdent(platformId, exceptionSensorConfig.getClassName(), exceptionSensorConfig.getParameters());
 
 		ExceptionSensorTypeConfig exceptionSensorTypeConfig = new ExceptionSensorTypeConfig();

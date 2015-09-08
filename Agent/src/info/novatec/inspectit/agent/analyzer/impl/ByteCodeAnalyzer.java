@@ -11,6 +11,7 @@ import info.novatec.inspectit.agent.connection.ServerUnavailableException;
 import info.novatec.inspectit.agent.core.IIdManager;
 import info.novatec.inspectit.agent.core.IdNotAvailableException;
 import info.novatec.inspectit.agent.hooking.IHookDispatcherMapper;
+import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.spring.logger.Log;
 
 import java.io.IOException;
@@ -66,7 +67,7 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 	 * If class loader delegation should be active.
 	 */
 	@Value("${instrumentation.classLoaderDelegation}")
-	boolean classLoaderDelegation;
+	boolean classLoaderDelegation; // TODO
 
 	/**
 	 * {@link IHookDispatcherMapper}.
@@ -138,6 +139,9 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 		} catch (CannotCompileException cannotCompileException) {
 			log.error("Error occurred instrumenting the byte code of class " + className, cannotCompileException);
 			return null;
+		} catch (BusinessException businessException) {
+			log.error("Error occurred instrumenting the byte code of class " + className, businessException);
+			return null;
 		} finally {
 			// TODO what with the class pools
 			// Remove the byte array class path from the class pool. The class
@@ -151,13 +155,5 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 			// }
 		}
 	}
-
-		if (!classLoaderDelegation) {
-			return Collections.emptyList();
-		}
-
-		if (log.isTraceEnabled()) {
-			log.trace("analyzeForClassLoaderDelegation: " + className);
-		}
 
 }

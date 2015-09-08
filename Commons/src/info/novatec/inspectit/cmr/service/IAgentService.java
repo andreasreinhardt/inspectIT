@@ -2,7 +2,7 @@ package info.novatec.inspectit.cmr.service;
 
 import info.novatec.inspectit.agent.config.impl.AgentConfiguration;
 import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
-import info.novatec.inspectit.cmr.service.exception.ServiceException;
+import info.novatec.inspectit.exception.BusinessException;
 
 import java.rmi.RemoteException;
 import java.util.List;
@@ -32,7 +32,7 @@ public interface IAgentService {
 	 * @throws RemoteException
 	 *             TODO
 	 */
-	AgentConfiguration register(List<String> definedIPs, String agentName, String version) throws RemoteException, ServiceException;
+	AgentConfiguration register(List<String> definedIPs, String agentName, String version) throws BusinessException;
 
 	/**
 	 * Unregisters the platform in the CMR by sending the agent name and the network interfaces
@@ -45,7 +45,7 @@ public interface IAgentService {
 	 * @throws RemoteException
 	 *             TODO
 	 */
-	void unregister(List<String> definedIPs, String agentName) throws RemoteException, ServiceException;
+	void unregister(List<String> definedIPs, String agentName) throws BusinessException;
 
 	/**
 	 * Analyzes and instruments the given byte code if necessary, returning the byte code to use on
@@ -59,9 +59,8 @@ public interface IAgentService {
 	 *            ByteCode of the class.
 	 * @return Instrumentation result containing modified byte code or <code>null</code> if nothing
 	 *         was instrumented.
-	 * @throws RemoteException
-	 *             TODO remove these exceptions
+	 * @throws BusinessException
 	 */
-	InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, byte[] bytecode) throws RemoteException;
+	InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, byte[] bytecode) throws BusinessException;
 
 }
