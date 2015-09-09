@@ -84,13 +84,23 @@ public class SpringAgent implements IAgent {
 	 *            location of inspectIT jar needed for proper logging
 	 */
 	public SpringAgent(String inspectitJarLocation) {
-		SpringAgent.inspectitJarLocation = inspectitJarLocation;
+		setInspectITJarLocaltion(inspectitJarLocation);
 
 		// init logging
 		LogInitializer.initLogging();
 
 		// init spring
 		this.initSpring();
+	}
+
+	/**
+	 * Sets {@link #inspectitJarLocation} in synch mode.
+	 * 
+	 * @param inspectitJarLocation
+	 *            Location of the inspectIT jar.
+	 */
+	private synchronized void setInspectITJarLocaltion(String inspectitJarLocation) {
+		SpringAgent.inspectitJarLocation = inspectitJarLocation;
 	}
 
 	/**
@@ -136,7 +146,7 @@ public class SpringAgent implements IAgent {
 			// load ignore patterns only once
 			ignoreClassesPatterns = configurationStorage.getIgnoreClassesPatterns();
 
-		} catch (Throwable throwable) {
+		} catch (Throwable throwable) { // NOPMD
 			initializationError = true;
 			LOG.error("inspectIT agent initialization failed. Agent will not be active.", throwable);
 		}

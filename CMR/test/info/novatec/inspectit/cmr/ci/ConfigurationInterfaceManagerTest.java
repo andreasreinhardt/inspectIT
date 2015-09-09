@@ -52,7 +52,7 @@ import org.testng.annotations.Test;
  * @author Ivan Senic
  * 
  */
-@SuppressWarnings({ "PMD", "all" })
+@SuppressWarnings("all")
 public class ConfigurationInterfaceManagerTest {
 
 	/**

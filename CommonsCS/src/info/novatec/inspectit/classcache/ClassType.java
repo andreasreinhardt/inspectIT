@@ -399,8 +399,13 @@ public class ClassType extends Type implements TypeWithMethods, TypeWithAnnotati
 	 */
 	@Override
 	public void clearUnmeaningfulBackReferences() {
-		methodsThrowingThisException = null;
-		subClasses = null;
+		if (null != methodsThrowingThisException) {
+			methodsThrowingThisException.clear();
+		}
+
+		if (null != subClasses) {
+			subClasses.clear();
+		}
 	}
 
 	/**

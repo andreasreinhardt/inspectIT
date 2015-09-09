@@ -157,7 +157,9 @@ public final class AnnotationType extends Type implements TypeWithAnnotations, I
 	 */
 	@Override
 	public void clearUnmeaningfulBackReferences() {
-		annotatedTypes = null;
+		if (null != annotatedTypes) {
+			annotatedTypes.clear();
+		}
 	}
 
 	/**

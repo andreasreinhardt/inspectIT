@@ -130,7 +130,7 @@ class ClassCacheModification implements IClassCacheModification {
 					return events;
 				}
 			});
-		} catch (ClassCacheModificationException e) {
+		} catch (ClassCacheModificationException e) { // NOPMD
 			throw e;
 		} catch (Exception e) {
 			// this should never happen
@@ -142,23 +142,23 @@ class ClassCacheModification implements IClassCacheModification {
 	/**
 	 * merges/adds the given entity to the type in the structure.
 	 * 
-	 * @param inStructure
+	 * @param inputType
 	 *            the type in the structure or null if not existing
-	 * @param given
+	 * @param givenType
 	 *            the given entity
 	 * @param events
 	 *            write notifications here.
 	 */
-	private void handleBaseEntity(Type inStructure, Type given, Events events) {
-		if (null == inStructure) {
+	private void handleBaseEntity(Type inputType, Type givenType, Events events) {
+		if (null == inputType) {
 			// ADD the new element to the structure
-			fireAndSave(new NodeEvent(given, NodeEventType.NEW, NodeEventDetails.INITIALIZED, given.getHash()), events);
+			fireAndSave(new NodeEvent(givenType, NodeEventType.NEW, NodeEventDetails.INITIALIZED, givenType.getHash()), events);
 
 			// RESOLVE the references of the type
-			resolveReferences(given, events);
+			resolveReferences(givenType, events);
 		} else {
 			// MERGE the existing element with the information from the given entity
-			merge(inStructure, given, events);
+			merge(inputType, givenType, events);
 		}
 	}
 
@@ -389,12 +389,12 @@ class ClassCacheModification implements IClassCacheModification {
 		}
 
 		if (given instanceof ClassType) {
-			addSuperclass(((ClassType) base), findNewEntries(((ClassType) base).getSuperClasses(), (((ClassType) given).getSuperClasses())), events);
-			addInterface(((ClassType) base), findNewEntries(((ClassType) base).getRealizedInterfaces(), (((ClassType) given).getRealizedInterfaces())), events);
+			addSuperclass((ClassType) base, findNewEntries(((ClassType) base).getSuperClasses(), ((ClassType) given).getSuperClasses()), events);
+			addInterface((ClassType) base, findNewEntries(((ClassType) base).getRealizedInterfaces(), ((ClassType) given).getRealizedInterfaces()), events);
 		}
 
 		if (given instanceof InterfaceType) {
-			addSuperinterface(((InterfaceType) base), findNewEntries(((InterfaceType) base).getSuperInterfaces(), (((InterfaceType) given).getSuperInterfaces())), events);
+			addSuperinterface((InterfaceType) base, findNewEntries(((InterfaceType) base).getSuperInterfaces(), ((InterfaceType) given).getSuperInterfaces()), events);
 		}
 	}
 

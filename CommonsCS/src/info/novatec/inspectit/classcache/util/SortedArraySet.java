@@ -85,7 +85,7 @@ public class SortedArraySet<E> extends AbstractCollection<E> implements Updateab
 	@Override
 	public boolean add(E e) {
 		if (null == e) {
-			throw new NullPointerException("Null element");
+			throw new NullPointerException("Null element"); // NOPMD
 		}
 
 		E[] update;
@@ -116,7 +116,7 @@ public class SortedArraySet<E> extends AbstractCollection<E> implements Updateab
 	@SuppressWarnings("unchecked")
 	public void addOrUpdate(E e) {
 		if (null == e) {
-			throw new NullPointerException("Null element");
+			throw new NullPointerException("Null element"); // NOPMD
 		}
 
 		E[] update;
@@ -153,7 +153,7 @@ public class SortedArraySet<E> extends AbstractCollection<E> implements Updateab
 	@Override
 	public boolean remove(Object o) {
 		if (null == o) {
-			throw new NullPointerException("Null element");
+			throw new NullPointerException("Null element"); // NOPMD
 		}
 
 		E[] update;

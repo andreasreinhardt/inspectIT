@@ -198,7 +198,7 @@ public class SendingClassHashCache implements InitializingBean, DisposableBean {
 				// then cache, but deserialize map
 				Map<String, Boolean> map = (Map<String, Boolean>) serializationManager.deserialize(input);
 				createCache(map);
-			} catch (Throwable t) {
+			} catch (Throwable t) { // NOPMD
 				log.warn("Unable to load sending classes cache from disk.", t);
 				createCache(Collections.<String, Boolean> emptyMap());
 			} finally {
@@ -226,9 +226,13 @@ public class SendingClassHashCache implements InitializingBean, DisposableBean {
 		File file = getCacheFile();
 
 		if (file.exists()) {
-			file.delete();
+			if (!file.delete()) {
+				log.warn("Unable to delete the existing class cache file: " + file.getAbsolutePath());
+			}
 		} else {
-			file.getParentFile().mkdirs();
+			if (!file.getParentFile().mkdirs()) {
+				log.warn("Unable to create needed directory for the cache file: " + file.getParentFile().getAbsolutePath());
+			}
 		}
 
 		FileOutputStream fileOutputStream = null;
@@ -244,7 +248,7 @@ public class SendingClassHashCache implements InitializingBean, DisposableBean {
 			serializationManager.serialize(map, output);
 
 			dirty = false;
-		} catch (Throwable t) {
+		} catch (Throwable t) { // NOPMD
 			log.warn("Unable to save sending classes cache to disk.", t);
 		} finally {
 			if (null != fileOutputStream) {

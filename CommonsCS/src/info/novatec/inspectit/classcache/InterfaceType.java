@@ -337,8 +337,13 @@ public final class InterfaceType extends Type implements TypeWithMethods, TypeWi
 	 */
 	@Override
 	public void clearUnmeaningfulBackReferences() {
-		realizingClasses = null;
-		subInterfaces = null;
+		if (null != realizingClasses) {
+			realizingClasses.clear();
+		}
+
+		if (null != subInterfaces) {
+			subInterfaces.clear();
+		}
 	}
 
 	/**

@@ -47,11 +47,7 @@ public final class LogInitializer extends PropertyDefinerBase {
 			return;
 		}
 
-		if (null == logDirLocation) {
-			// set the location of logs to just [agent-path]/logs/startup for start
-			File agentJar = new File(SpringAgent.getInspectitJarLocation()).getAbsoluteFile();
-			logDirLocation = agentJar.getParent() + File.separator + "logs" + File.separator + "startup";
-		}
+		initLogDirLocation();
 
 		// set the location of logs
 		File agentJar = new File(SpringAgent.getInspectitJarLocation()).getAbsoluteFile();
@@ -100,6 +96,17 @@ public final class LogInitializer extends PropertyDefinerBase {
 		// not sure if we can do this, this would also bridge application logging if they use
 		// minlong
 		MinlogToSLF4JLogger.init();
+	}
+
+	/**
+	 * Initializes log directory location.
+	 */
+	private static synchronized void initLogDirLocation() {
+		if (null == logDirLocation) {
+			// set the location of logs to just [agent-path]/logs/startup for start
+			File agentJar = new File(SpringAgent.getInspectitJarLocation()).getAbsoluteFile();
+			logDirLocation = agentJar.getParent() + File.separator + "logs" + File.separator + "startup"; // NOPMD
+		}
 	}
 
 	/**

@@ -164,7 +164,7 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	public InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, final byte[] bytecode) throws BusinessException {
 		AgentCacheEntry agentCacheEntry = agentCacheMap.get(Long.valueOf(platformIdent));
 		if (null == agentCacheEntry) {
-			new BusinessException("Instrumenting class with hash '" + hash + "' for the agent with id=" + platformIdent, AgentManagementErrorCodeEnum.AGENT_DOES_NOT_EXIST);
+			throw new BusinessException("Instrumenting class with hash '" + hash + "' for the agent with id=" + platformIdent, AgentManagementErrorCodeEnum.AGENT_DOES_NOT_EXIST);
 		}
 
 		ClassCache classCache = agentCacheEntry.getClassCache();

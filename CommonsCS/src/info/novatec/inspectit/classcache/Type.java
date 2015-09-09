@@ -21,7 +21,7 @@ public abstract class Type implements ImmutableType {
 	/**
 	 * Marks whether the type is completely initialized.
 	 */
-	protected boolean isInitialized = false;
+	protected boolean initialized = false;
 
 	/**
 	 * The hash of the byte code of this class. As we can have multiple version, we can keep a list
@@ -61,7 +61,7 @@ public abstract class Type implements ImmutableType {
 		this.modifiers = modifiers;
 		initHashes();
 		hashes.add(hash);
-		isInitialized = true;
+		initialized = true;
 	}
 
 
@@ -164,7 +164,7 @@ public abstract class Type implements ImmutableType {
 	 */
 	protected void checkInitialized() {
 		if (!getHashes().isEmpty() && 0 != modifiers) {
-			isInitialized = true;
+			initialized = true;
 		}
 	}
 
@@ -173,7 +173,7 @@ public abstract class Type implements ImmutableType {
 	 */
 	@Override
 	public boolean isInitialized() {
-		return isInitialized;
+		return initialized;
 	}
 
 	/**

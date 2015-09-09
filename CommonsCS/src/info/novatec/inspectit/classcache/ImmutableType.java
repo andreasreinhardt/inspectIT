@@ -69,9 +69,9 @@ public interface ImmutableType {
 	String getFQN();
 
 	/**
-	 * Gets {@link #isInitialized}.
+	 * Gets {@link #initialized}.
 	 * 
-	 * @return {@link #isInitialized}
+	 * @return {@link #initialized}
 	 */
 	boolean isInitialized();
 

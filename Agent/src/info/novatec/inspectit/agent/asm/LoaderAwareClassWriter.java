@@ -74,7 +74,7 @@ public class LoaderAwareClassWriter extends ClassWriter {
 			c = Class.forName(type1.replace('/', '.'), false, classLoader);
 			d = Class.forName(type2.replace('/', '.'), false, classLoader);
 		} catch (Exception e) {
-			throw new RuntimeException(e.toString());
+			throw new RuntimeException(e.toString(), e);
 		}
 		if (c.isAssignableFrom(d)) {
 			return type1;
