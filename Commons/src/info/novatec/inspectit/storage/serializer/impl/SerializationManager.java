@@ -298,19 +298,6 @@ public class SerializationManager implements ISerializer, IKryoProvider, Initial
 		// added with INSPECTIT-950
 		kryo.register(TimeFrame.class, new CustomCompatibleFieldSerializer<TimeFrame>(kryo, TimeFrame.class, schemaManager));
 
-		// added with server side config
-		kryo.register(AgentConfiguration.class, new FieldSerializer<AgentConfiguration>(kryo, AgentConfiguration.class));
-		kryo.register(PlatformSensorTypeConfig.class, new FieldSerializer<PlatformSensorTypeConfig>(kryo, PlatformSensorTypeConfig.class));
-		kryo.register(MethodSensorTypeConfig.class, new FieldSerializer<MethodSensorTypeConfig>(kryo, MethodSensorTypeConfig.class));
-		kryo.register(ExceptionSensorTypeConfig.class, new FieldSerializer<ExceptionSensorTypeConfig>(kryo, ExceptionSensorTypeConfig.class));
-		kryo.register(StrategyConfig.class, new FieldSerializer<StrategyConfig>(kryo, StrategyConfig.class));
-		kryo.register(PropertyPath.class, new FieldSerializer<PropertyPath>(kryo, PropertyPath.class));
-		kryo.register(PropertyPathStart.class, new FieldSerializer<PropertyPathStart>(kryo, PropertyPathStart.class));
-		kryo.register(InstrumentationResult.class, new FieldSerializer<InstrumentationResult>(kryo, InstrumentationResult.class));
-		kryo.register(PriorityEnum.class, new EnumSerializer(PriorityEnum.class));
-		kryo.register(EqualsMatchPattern.class, new FieldSerializer<EqualsMatchPattern>(kryo, EqualsMatchPattern.class));
-		kryo.register(WildcardMatchPattern.class, new FieldSerializer<WildcardMatchPattern>(kryo, WildcardMatchPattern.class));
-
 		// added with INSPECTIT-480
 		// needed for KryoNet
 		kryoNetNetwork.register(kryo);
@@ -330,6 +317,19 @@ public class SerializationManager implements ISerializer, IKryoProvider, Initial
 
 		// added with INSPECTIT-1924
 		kryo.register(ConfigurationInterfaceErrorCodeEnum.class, new EnumSerializer(ConfigurationInterfaceErrorCodeEnum.class));
+		
+		// added with server side instrumentation
+		kryo.register(AgentConfiguration.class, new FieldSerializer<AgentConfiguration>(kryo, AgentConfiguration.class));
+		kryo.register(PlatformSensorTypeConfig.class, new FieldSerializer<PlatformSensorTypeConfig>(kryo, PlatformSensorTypeConfig.class));
+		kryo.register(MethodSensorTypeConfig.class, new FieldSerializer<MethodSensorTypeConfig>(kryo, MethodSensorTypeConfig.class));
+		kryo.register(ExceptionSensorTypeConfig.class, new FieldSerializer<ExceptionSensorTypeConfig>(kryo, ExceptionSensorTypeConfig.class));
+		kryo.register(StrategyConfig.class, new FieldSerializer<StrategyConfig>(kryo, StrategyConfig.class));
+		kryo.register(PropertyPath.class, new FieldSerializer<PropertyPath>(kryo, PropertyPath.class));
+		kryo.register(PropertyPathStart.class, new FieldSerializer<PropertyPathStart>(kryo, PropertyPathStart.class));
+		kryo.register(InstrumentationResult.class, new FieldSerializer<InstrumentationResult>(kryo, InstrumentationResult.class));
+		kryo.register(PriorityEnum.class, new EnumSerializer(PriorityEnum.class));
+		kryo.register(EqualsMatchPattern.class, new FieldSerializer<EqualsMatchPattern>(kryo, EqualsMatchPattern.class));
+		kryo.register(WildcardMatchPattern.class, new FieldSerializer<WildcardMatchPattern>(kryo, WildcardMatchPattern.class));
 	}
 
 	/**

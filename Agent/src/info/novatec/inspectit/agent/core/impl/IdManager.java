@@ -101,7 +101,7 @@ public class IdManager implements IIdManager, InitializingBean {
 	 * Just return given method id, there's no difference any more.
 	 */
 	public long getRegisteredMethodId(long methodId) throws IdNotAvailableException {
-		// TODO Remove this later
+		// TODO Remove this later, use givenb id
 		return methodId;
 	}
 
@@ -111,7 +111,7 @@ public class IdManager implements IIdManager, InitializingBean {
 	 * Just return given sensor id, there's no difference any more.
 	 */
 	public long getRegisteredSensorTypeId(long sensorTypeId) throws IdNotAvailableException {
-		// TODO Remove this later
+		// TODO Remove this later, use givenb id
 		return sensorTypeId;
 	}
 

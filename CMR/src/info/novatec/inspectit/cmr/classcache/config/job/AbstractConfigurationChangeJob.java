@@ -11,7 +11,6 @@ import info.novatec.inspectit.cmr.classcache.config.AgentCacheEntry;
 import info.novatec.inspectit.cmr.classcache.config.ClassCacheSearchNarrower;
 import info.novatec.inspectit.cmr.classcache.config.ConfigurationCreator;
 import info.novatec.inspectit.cmr.classcache.config.InstrumentationCreator;
-import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.spring.logger.Log;
 
 import java.util.ArrayList;
@@ -72,17 +71,12 @@ public abstract class AbstractConfigurationChangeJob implements Runnable {
 	 * @return If update was successful.
 	 */
 	protected boolean updateConfiguration(Environment update) {
-		try {
-			AgentConfiguration agentConfiguration = configurationCreator.environmentToConfiguration(update, getAgentId());
+		AgentConfiguration agentConfiguration = configurationCreator.environmentToConfiguration(update, getAgentId());
 
-			agentCacheEntry.setEnvironment(update);
-			agentCacheEntry.setAgentConfiguration(agentConfiguration);
+		agentCacheEntry.setEnvironment(update);
+		agentCacheEntry.setAgentConfiguration(agentConfiguration);
 
-			return true;
-		} catch (BusinessException e) { // TODO check enxeptions
-			log.error("Error occurred trying to create updated Agent configuration during environment update job. ");
-			return false;
-		}
+		return true;
 	}
 
 	/**

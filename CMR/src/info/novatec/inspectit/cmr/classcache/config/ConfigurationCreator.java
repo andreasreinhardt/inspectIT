@@ -12,7 +12,6 @@ import info.novatec.inspectit.ci.sensor.method.IMethodSensorConfig;
 import info.novatec.inspectit.ci.sensor.platform.IPlatformSensorConfig;
 import info.novatec.inspectit.ci.strategy.IStrategyConfig;
 import info.novatec.inspectit.cmr.service.IRegistrationService;
-import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.pattern.EqualsMatchPattern;
 import info.novatec.inspectit.pattern.IMatchPattern;
 import info.novatec.inspectit.pattern.WildcardMatchPattern;
@@ -55,10 +54,8 @@ public class ConfigurationCreator {
 	 * @param platformId
 	 *            Id of the agent to create configuration for.
 	 * @return {@link AgentConfiguration}.
-	 * @throws BusinessException
-	 *             TODO
 	 */
-	public AgentConfiguration environmentToConfiguration(Environment environment, long platformId) throws BusinessException {
+	public AgentConfiguration environmentToConfiguration(Environment environment, long platformId) {
 		AgentConfiguration agentConfiguration = new AgentConfiguration();
 		agentConfiguration.setPlatformId(platformId);
 		agentConfiguration.setInstrumentationLastModified(System.currentTimeMillis());

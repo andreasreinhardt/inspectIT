@@ -11,6 +11,7 @@ import java.util.Set;
  * @author Ivan Senic
  * 
  * @param <E>
+ *            Type of element in the set.
  */
 public interface UpdateableSet<E> extends Set<E> {
 

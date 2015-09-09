@@ -142,7 +142,7 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 		} catch (BusinessException businessException) {
 			log.error("Error occurred instrumenting the byte code of class " + className, businessException);
 			return null;
-		} finally {
+		} finally { // NOCHK //NOPMD
 			// TODO what with the class pools
 			// Remove the byte array class path from the class pool. The class
 			// loader now should know this class, thus it can be accessed

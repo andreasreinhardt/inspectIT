@@ -154,10 +154,11 @@ public class FQNIndexer<E extends Type> extends TypeSet<E> implements INodeChang
 		int minIndex = -1;
 		int maxIndex = -1;
 
+		// first search for any element that starts with and remember the index
+		int anyElementIndex = -1;
 		int min = 0;
 		int max = size - 1;
 
-		// first search for any element that starts with and remember the index
 		while (max >= min) {
 
 			int mid = midpoint(min, max);
@@ -165,11 +166,8 @@ public class FQNIndexer<E extends Type> extends TypeSet<E> implements INodeChang
 			String fqn = getAt(mid).getFQN();
 			if (fqn.startsWith(fqnWildCard)) {
 				// setting index for the found element in both
-				minIndex = mid;
-				maxIndex = mid;
+				anyElementIndex = mid;
 				break;
-
-				// TODO create found index, make max/minIndex remember min/max scope to search for
 			}
 
 			int compare = fqn.compareTo(fqnWildCard);
@@ -180,14 +178,15 @@ public class FQNIndexer<E extends Type> extends TypeSet<E> implements INodeChang
 
 		}
 
-		// if we did not find any element then return
-		if (minIndex == -1) {
+		// if we did not find any element then return nothing
+		if (anyElementIndex == -1) {
 			return pack(0, -1);
 		}
 
-		// go for minimum index then
+		// else first go for minimum index then
+		// somewhere between 0 and anyElementIndex
 		min = 0;
-		max = maxIndex;
+		max = anyElementIndex;
 
 		while (max >= min) {
 
@@ -210,7 +209,8 @@ public class FQNIndexer<E extends Type> extends TypeSet<E> implements INodeChang
 		}
 
 		// and then for maximum index
-		min = maxIndex;
+		// somewhere between anyElementIndex and last
+		min = anyElementIndex;
 		max = size - 1;
 
 		while (max >= min) {
@@ -233,6 +233,7 @@ public class FQNIndexer<E extends Type> extends TypeSet<E> implements INodeChang
 
 		}
 
+		// pack result and return
 		return pack(maxIndex, minIndex);
 	}
 

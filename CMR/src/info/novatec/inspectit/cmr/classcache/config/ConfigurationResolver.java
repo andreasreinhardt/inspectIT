@@ -7,6 +7,8 @@ import info.novatec.inspectit.ci.assignment.impl.ExceptionSensorAssignment;
 import info.novatec.inspectit.ci.assignment.impl.MethodSensorAssignment;
 import info.novatec.inspectit.ci.exclude.ExcludeRule;
 import info.novatec.inspectit.cmr.ci.ConfigurationInterfaceManager;
+import info.novatec.inspectit.exception.BusinessException;
+import info.novatec.inspectit.exception.enumeration.ConfigurationInterfaceErrorCodeEnum;
 import info.novatec.inspectit.pattern.EqualsMatchPattern;
 import info.novatec.inspectit.pattern.IMatchPattern;
 import info.novatec.inspectit.pattern.WildcardMatchPattern;
@@ -122,11 +124,11 @@ public class ConfigurationResolver {
 	 * @param agentName
 	 *            The self-defined name of the inspectIT Agent. Can be <code>null</code>.
 	 * @return {@link Environment}.
-	 * @throws Exception
+	 * @throws BusinessException
 	 *             Throws {@link Exception} if there is no matching environment for the agent or if
 	 *             there is more than one valid environment for the agent.
 	 */
-	public Environment getEnvironmentForAgent(List<String> definedIPs, String agentName) throws Exception {
+	public Environment getEnvironmentForAgent(List<String> definedIPs, String agentName) throws BusinessException {
 		List<AgentMapping> mappings = new ArrayList<>(configurationInterfaceManager.getAgentMappings().getMappings());
 
 		for (Iterator<AgentMapping> it = mappings.iterator(); it.hasNext();) {
@@ -136,18 +138,12 @@ public class ConfigurationResolver {
 			}
 		}
 
-		// TODO Change to business exception type when exception ticket is integrated
-		if (CollectionUtils.isEmpty(mappings)) {
-			throw new Exception("No agent mapping found for the specified agent name and IP address(es).");
-		} else if (1 < mappings.size()) {
-			throw new Exception("More than one agent mapping can be assigned to the agent.");
+		if (CollectionUtils.isEmpty(mappings) || mappings.size() > 1) {
+			throw new BusinessException("Determing an environment to use for the agent with name '" + agentName + "' and IP adress(es): " + definedIPs,
+					ConfigurationInterfaceErrorCodeEnum.ENVIRONMENT_FOR_AGENT_NOT_FOUND);
 		} else {
 			String environmentId = mappings.get(0).getEnvironmentId();
-			try {
-				return configurationInterfaceManager.getEnvironment(environmentId);
-			} catch (Exception e) {
-				throw new Exception("No agent mapping found for the specified agent name and IP address(es).", e);
-			}
+			return configurationInterfaceManager.getEnvironment(environmentId);
 		}
 	}
 

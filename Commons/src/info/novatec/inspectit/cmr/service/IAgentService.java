@@ -4,7 +4,6 @@ import info.novatec.inspectit.agent.config.impl.AgentConfiguration;
 import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
 import info.novatec.inspectit.exception.BusinessException;
 
-import java.rmi.RemoteException;
 import java.util.List;
 
 /**
@@ -27,10 +26,8 @@ public interface IAgentService {
 	 * @param version
 	 *            The version the agent is currently running with.
 	 * @return {@link AgentConfiguration}.
-	 * @throws ServiceException
-	 *             TODO remove these exceptions
-	 * @throws RemoteException
-	 *             TODO
+	 * @throws BusinessException
+	 *             When no environment can be located for the agent based on the mapping settings.
 	 */
 	AgentConfiguration register(List<String> definedIPs, String agentName, String version) throws BusinessException;
 
@@ -41,9 +38,9 @@ public interface IAgentService {
 	 * @param definedIPs
 	 *            The list of all network interfaces.
 	 * @param agentName
-	 *            Name of the Agent. * @throws ServiceException TODO remove these exceptions
-	 * @throws RemoteException
-	 *             TODO
+	 *            Name of the Agent.
+	 * @throws BusinessException
+	 *             If un-registration fails.
 	 */
 	void unregister(List<String> definedIPs, String agentName) throws BusinessException;
 
@@ -60,6 +57,7 @@ public interface IAgentService {
 	 * @return Instrumentation result containing modified byte code or <code>null</code> if nothing
 	 *         was instrumented.
 	 * @throws BusinessException
+	 *             If agent with specified id does not exist.
 	 */
 	InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, byte[] bytecode) throws BusinessException;
 

@@ -14,7 +14,6 @@ import info.novatec.inspectit.cmr.ci.IConfigurationInterfaceChangeListener;
 import info.novatec.inspectit.cmr.classcache.ClassCache;
 import info.novatec.inspectit.cmr.classcache.ClassCacheModificationException;
 import info.novatec.inspectit.cmr.classcache.config.AgentCacheEntry;
-import info.novatec.inspectit.cmr.classcache.config.ClassCacheSearchNarrower;
 import info.novatec.inspectit.cmr.classcache.config.ConfigurationCreator;
 import info.novatec.inspectit.cmr.classcache.config.ConfigurationResolver;
 import info.novatec.inspectit.cmr.classcache.config.InstrumentationCreator;
@@ -22,6 +21,7 @@ import info.novatec.inspectit.cmr.classcache.config.job.EnvironmentUpdateJob;
 import info.novatec.inspectit.cmr.classcache.config.job.ProfileUpdateJob;
 import info.novatec.inspectit.cmr.spring.aop.MethodLog;
 import info.novatec.inspectit.exception.BusinessException;
+import info.novatec.inspectit.exception.enumeration.AgentManagementErrorCodeEnum;
 import info.novatec.inspectit.spring.logger.Log;
 
 import java.util.Collection;
@@ -97,12 +97,6 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	private InstrumentationCreator instrumentationCreator;
 
 	/**
-	 * {@link ClassCacheSearchNarrower}.
-	 */
-	@Autowired
-	private ClassCacheSearchNarrower classCacheSearchNarrower;
-
-	/**
 	 * Executor for dealing with configuration updates.
 	 */
 	@Autowired
@@ -121,12 +115,7 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	@MethodLog
 	public AgentConfiguration register(List<String> definedIPs, String agentName, String version) throws BusinessException {
 		// load environment for the agent
-		Environment environment;
-		try {
-			environment = configurationResolver.getEnvironmentForAgent(definedIPs, agentName);
-		} catch (Exception e) {
-			throw new BusinessException("Can not find matching environment for the agent.", null); // TODO
-		}
+		Environment environment = configurationResolver.getEnvironmentForAgent(definedIPs, agentName);
 
 		// if environment load is success register agent
 		long id = registrationService.registerPlatformIdent(definedIPs, agentName, version);
@@ -175,8 +164,7 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	public InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, final byte[] bytecode) throws BusinessException {
 		AgentCacheEntry agentCacheEntry = agentCacheMap.get(Long.valueOf(platformIdent));
 		if (null == agentCacheEntry) {
-			// change to service exception
-			throw new BusinessException(null);// TODO
+			new BusinessException("Instrumenting class with hash '" + hash + "' for the agent with id=" + platformIdent, AgentManagementErrorCodeEnum.AGENT_DOES_NOT_EXIST);
 		}
 
 		ClassCache classCache = agentCacheEntry.getClassCache();
@@ -233,7 +221,7 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 				log.error("Byte code can not be analyzed for instrumentation points due to the exception during configuration processing.", e);
 				return null;
 			}
-		} else {
+		} else { // NOCHK //NOPMD
 			// TODO refresh registration time-stamps of the RSC!
 		}
 

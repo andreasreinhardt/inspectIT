@@ -98,6 +98,7 @@ public interface IConnection {
 	 *             If the sending wasn't successful in any way, a {@link ServerUnavailableException}
 	 *             exception is thrown.
 	 * @throws BusinessException
+	 *             If {@link BusinessException} is thrown on the server.
 	 */
 	InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, byte[] bytecode) throws ServerUnavailableException, BusinessException;
 }
