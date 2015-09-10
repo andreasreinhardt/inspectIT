@@ -119,7 +119,8 @@ public class RegistrationService implements IRegistrationService {
 		} else if (platformIdentResults.size() > 1) {
 			// this cannot occur anymore, if it occurs, then there is something totally wrong!
 			log.error("More than one platform ident has been retrieved! Please send your Database to the NovaTec inspectIT support!");
-			throw new BusinessException("Register the agent with name " + agentName + " and following network interfaces " + definedIPs + ".", AgentManagementErrorCodeEnum.MORE_THAN_ONE_AGENT_REGISTERED);
+			throw new BusinessException("Register the agent with name " + agentName + " and following network interfaces " + definedIPs + ".",
+					AgentManagementErrorCodeEnum.MORE_THAN_ONE_AGENT_REGISTERED);
 		}
 
 		// always update the time stamp and ips, no matter if this is an old or new record.
@@ -142,6 +143,7 @@ public class RegistrationService implements IRegistrationService {
 
 	/**
 	 * {@inheritDoc}
+	 * 
 	 * @throws BusinessException
 	 */
 	@Transactional
@@ -281,6 +283,19 @@ public class RegistrationService implements IRegistrationService {
 		}
 
 		return platformSensorTypeIdent.getId();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Transactional
+	@MethodLog
+	public void refreshMethodIdent(long methodId) {
+		MethodIdent methodIdent = methodIdentDao.load(methodId);
+		if (null != methodIdent) {
+			methodIdent.setTimeStamp(new Timestamp(GregorianCalendar.getInstance().getTimeInMillis()));
+			methodIdentDao.saveOrUpdate(methodIdent);
+		}
 	}
 
 	/**

@@ -19,6 +19,7 @@ import info.novatec.inspectit.cmr.classcache.config.ConfigurationResolver;
 import info.novatec.inspectit.cmr.classcache.config.InstrumentationCreator;
 import info.novatec.inspectit.cmr.classcache.config.job.EnvironmentUpdateJob;
 import info.novatec.inspectit.cmr.classcache.config.job.ProfileUpdateJob;
+import info.novatec.inspectit.cmr.classcache.config.job.RefreshInstrumentationTimestampsJob;
 import info.novatec.inspectit.cmr.spring.aop.MethodLog;
 import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.exception.enumeration.AgentManagementErrorCodeEnum;
@@ -71,6 +72,12 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	 */
 	@Autowired
 	private ObjectFactory<EnvironmentUpdateJob> environmentUpdateJobFactory;
+
+	/**
+	 * Factory for creating new {@link EnvironmentUpdateJob}.
+	 */
+	@Autowired
+	private ObjectFactory<RefreshInstrumentationTimestampsJob> refreshInstrumentationTimestampsJobFactory;
 
 	/**
 	 * Registration service.
@@ -152,6 +159,7 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	 * {@inheritDoc}
 	 */
 	@Override
+	@MethodLog
 	public void unregister(List<String> definedIPs, String agentName) throws BusinessException {
 		registrationService.unregisterPlatformIdent(definedIPs, agentName);
 	}
@@ -221,8 +229,11 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 				log.error("Byte code can not be analyzed for instrumentation points due to the exception during configuration processing.", e);
 				return null;
 			}
-		} else { // NOCHK //NOPMD
-			// TODO refresh registration time-stamps of the RSC!
+		} else {
+			// refresh the time-stamps of the instrumentation points in the DB
+			RefreshInstrumentationTimestampsJob job = refreshInstrumentationTimestampsJobFactory.getObject();
+			job.setClassType(classType);
+			executor.execute(job);
 		}
 
 		// we need read lock for this

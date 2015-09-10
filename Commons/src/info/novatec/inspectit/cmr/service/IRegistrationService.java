@@ -1,5 +1,6 @@
 package info.novatec.inspectit.cmr.service;
 
+import info.novatec.inspectit.cmr.model.MethodIdent;
 import info.novatec.inspectit.exception.BusinessException;
 
 import java.util.List;
@@ -111,5 +112,17 @@ public interface IRegistrationService {
 	 * @return Returns the unique platform sensor type identifier.
 	 */
 	long registerPlatformSensorTypeIdent(long platformIdent, String fullyQualifiedClassName);
+
+	/**
+	 * Refreshes the time-stamp of {@link MethodIdent} with the given id if one exists.
+	 * <p>
+	 * This is helper method for the server-side instrumentation that can reduce work when a
+	 * instrumentation for the agent does not change, thus we don't need to register complete method
+	 * but just update the time-stamp in the DB.
+	 * 
+	 * @param methodId
+	 *            Id for the {@link MethodIdent}.
+	 */
+	void refreshMethodIdent(long methodId);
 
 }
