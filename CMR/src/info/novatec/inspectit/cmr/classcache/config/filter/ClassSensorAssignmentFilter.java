@@ -4,9 +4,8 @@ import info.novatec.inspectit.ci.assignment.AbstractClassSensorAssignment;
 import info.novatec.inspectit.classcache.ImmutableAnnotationType;
 import info.novatec.inspectit.classcache.ImmutableClassType;
 import info.novatec.inspectit.classcache.ImmutableInterfaceType;
-import info.novatec.inspectit.pattern.EqualsMatchPattern;
 import info.novatec.inspectit.pattern.IMatchPattern;
-import info.novatec.inspectit.pattern.WildcardMatchPattern;
+import info.novatec.inspectit.pattern.PatternFactory;
 
 import java.util.Collection;
 
@@ -55,9 +54,7 @@ public class ClassSensorAssignmentFilter {
 	 *         in the {@link AbstractClassSensorAssignment}.
 	 */
 	private boolean matchesClassName(AbstractClassSensorAssignment<?> classSensorAssignment, ImmutableClassType classType) {
-		// TODO Idea: Save and read pattern directly form the assignment
-		String classNamePattern = classSensorAssignment.getClassName();
-		IMatchPattern pattern = WildcardMatchPattern.isPattern(classNamePattern) ? new WildcardMatchPattern(classNamePattern) : new EqualsMatchPattern(classNamePattern);
+		IMatchPattern pattern = PatternFactory.getPattern(classSensorAssignment.getClassName());
 
 		if (classSensorAssignment.isSuperclass()) {
 			// match any superclass
@@ -123,9 +120,7 @@ public class ClassSensorAssignmentFilter {
 			return true;
 		}
 
-		// TODO Idea: Save and read pattern directly form the assignment
-		String annotationPattern = classSensorAssignment.getAnnotation();
-		IMatchPattern pattern = WildcardMatchPattern.isPattern(annotationPattern) ? new WildcardMatchPattern(annotationPattern) : new EqualsMatchPattern(annotationPattern);
+		IMatchPattern pattern = PatternFactory.getPattern(classSensorAssignment.getAnnotation());
 
 		// check class and super classes first
 		if (checkClassAndSuperClassForAnnotation(classType, pattern)) {

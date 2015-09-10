@@ -12,9 +12,8 @@ import info.novatec.inspectit.ci.sensor.method.IMethodSensorConfig;
 import info.novatec.inspectit.ci.sensor.platform.IPlatformSensorConfig;
 import info.novatec.inspectit.ci.strategy.IStrategyConfig;
 import info.novatec.inspectit.cmr.service.IRegistrationService;
-import info.novatec.inspectit.pattern.EqualsMatchPattern;
 import info.novatec.inspectit.pattern.IMatchPattern;
-import info.novatec.inspectit.pattern.WildcardMatchPattern;
+import info.novatec.inspectit.pattern.PatternFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -100,11 +99,7 @@ public class ConfigurationCreator {
 		if (CollectionUtils.isNotEmpty(excludeRules)) {
 			Collection<IMatchPattern> excludeClassesPatterns = new ArrayList<>();
 			for (ExcludeRule excludeRule : excludeRules) {
-				if (WildcardMatchPattern.isPattern(excludeRule.getClassName())) {
-					excludeClassesPatterns.add(new WildcardMatchPattern(excludeRule.getClassName()));
-				} else {
-					excludeClassesPatterns.add(new EqualsMatchPattern(excludeRule.getClassName()));
-				}
+				excludeClassesPatterns.add(PatternFactory.getPattern(excludeRule.getClassName()));
 			}
 			agentConfiguration.setExcludeClassesPatterns(excludeClassesPatterns);
 		} else {

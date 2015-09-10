@@ -9,9 +9,8 @@ import info.novatec.inspectit.ci.exclude.ExcludeRule;
 import info.novatec.inspectit.cmr.ci.ConfigurationInterfaceManager;
 import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.exception.enumeration.ConfigurationInterfaceErrorCodeEnum;
-import info.novatec.inspectit.pattern.EqualsMatchPattern;
 import info.novatec.inspectit.pattern.IMatchPattern;
-import info.novatec.inspectit.pattern.WildcardMatchPattern;
+import info.novatec.inspectit.pattern.PatternFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -162,14 +161,14 @@ public class ConfigurationResolver {
 	private boolean matches(AgentMapping agentMapping, List<String> definedIPs, String agentName) {
 		// first match name
 		String definedName = agentMapping.getAgentName();
-		IMatchPattern namePattern = WildcardMatchPattern.isPattern(definedName) ? new WildcardMatchPattern(definedName) : new EqualsMatchPattern(definedName);
+		IMatchPattern namePattern = PatternFactory.getPattern(definedName);
 		if (!namePattern.match(agentName)) {
 			return false;
 		}
 
 		String definedIps = agentMapping.getIpAddress();
 		// then all IPs, if any matches return true
-		IMatchPattern ipPattern = WildcardMatchPattern.isPattern(definedIps) ? new WildcardMatchPattern(definedIps) : new EqualsMatchPattern(definedIps);
+		IMatchPattern ipPattern = PatternFactory.getPattern(definedIps);
 		for (String ip : definedIPs) {
 			if (ipPattern.match(ip)) {
 				return true;

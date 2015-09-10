@@ -63,7 +63,7 @@ public class ClassCacheLookup implements IClassCacheLookup {
 	 * Init the {@link ClassCacheLookup}.
 	 * 
 	 * @param classcache
-	 *            {@link ClassCache} it belogs to.
+	 *            {@link ClassCache} it belongs to.
 	 */
 	public void init(ClassCache classcache) {
 		this.classcache = classcache;

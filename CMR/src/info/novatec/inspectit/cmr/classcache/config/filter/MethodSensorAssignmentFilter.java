@@ -5,9 +5,8 @@ import info.novatec.inspectit.classcache.ClassType;
 import info.novatec.inspectit.classcache.ImmutableMethodType;
 import info.novatec.inspectit.classcache.MethodType;
 import info.novatec.inspectit.classcache.Modifiers;
-import info.novatec.inspectit.pattern.EqualsMatchPattern;
 import info.novatec.inspectit.pattern.IMatchPattern;
-import info.novatec.inspectit.pattern.WildcardMatchPattern;
+import info.novatec.inspectit.pattern.PatternFactory;
 
 /**
  * Filter that filters the class types and method type based on the given assignment and vice versa.
@@ -65,10 +64,7 @@ public class MethodSensorAssignmentFilter extends ClassSensorAssignmentFilter {
 				return false;
 			}
 
-			// TODO Idea: Save and read pattern directly form the assignment
-			String methodNamePattern = methodSensorAssignment.getMethodName();
-			IMatchPattern pattern = WildcardMatchPattern.isPattern(methodNamePattern) ? new WildcardMatchPattern(methodNamePattern) : new EqualsMatchPattern(methodNamePattern);
-
+			IMatchPattern pattern = PatternFactory.getPattern(methodSensorAssignment.getMethodName());
 			return pattern.match(methodType.getName());
 		}
 	}
@@ -112,9 +108,8 @@ public class MethodSensorAssignmentFilter extends ClassSensorAssignmentFilter {
 			int size = methodSensorAssignment.getParameters().size();
 
 			for (int i = 0; i < size; i++) {
-				// TODO Idea: Save and read pattern directly form the assignment
 				String parameterPattern = methodSensorAssignment.getParameters().get(i);
-				IMatchPattern pattern = WildcardMatchPattern.isPattern(parameterPattern) ? new WildcardMatchPattern(parameterPattern) : new EqualsMatchPattern(parameterPattern);
+				IMatchPattern pattern = PatternFactory.getPattern(parameterPattern);
 
 				if (!pattern.match(methodType.getParameters().get(i))) {
 					return false;
