@@ -12,9 +12,7 @@ import info.novatec.inspectit.agent.sensor.exception.IExceptionSensorHook;
 import info.novatec.inspectit.agent.sensor.method.IMethodSensor;
 import info.novatec.inspectit.spring.logger.Log;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import org.cliffc.high_scale_lib.NonBlockingHashMapLong;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -47,9 +45,10 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 	private final IHookSupplier hookSupplier;
 
 	/**
-	 * Contains all hooks.
+	 * Contains all hooks. Using concurrent map as we need to enable thread-safety of
+	 * {@link #addMapping(long, RegisteredSensorConfig)}.
 	 */
-	private Map<Long, RegisteredSensorConfig> hooks = new HashMap<Long, RegisteredSensorConfig>();
+	private NonBlockingHashMapLong<RegisteredSensorConfig> hooks = new NonBlockingHashMapLong<RegisteredSensorConfig>();
 
 	/**
 	 * Stores the current Status of the invocation sequence tracer in a {@link ThreadLocal} object.
@@ -86,7 +85,7 @@ public class HookDispatcher implements IHookDispatcherMapper, IHookDispatcher {
 	 * {@inheritDoc}
 	 */
 	public void addMapping(long id, RegisteredSensorConfig rsc) {
-		hooks.put(Long.valueOf(id), rsc);
+		hooks.put(id, rsc);
 	}
 
 	/**

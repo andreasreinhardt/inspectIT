@@ -50,6 +50,8 @@
 		
 		<dependency org="com.google.guava" name="guava-jdk5" rev="13.0" conf="prod->default" />
 		
+		<dependency org="com.github.stephenc.high-scale-lib" name="info.novatec.high-scale-lib" rev="1.1.2" conf="prod->default" />
+		
 		<!-- Test -->
 		<!-- Test NG should be on the build path via the Eclipse plug-in -->
 		<dependency org="org.mockito" name="mockito-core" rev="1.9.0" conf="test->default" />
