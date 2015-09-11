@@ -12,7 +12,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import info.novatec.inspectit.agent.AbstractLogSupport;
-import info.novatec.inspectit.agent.analyzer.IClassPoolAnalyzer;
 import info.novatec.inspectit.agent.analyzer.classes.TestClass;
 import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
 import info.novatec.inspectit.agent.config.impl.RegisteredSensorConfig;
@@ -26,14 +25,11 @@ import info.novatec.inspectit.exception.BusinessException;
 import java.io.IOException;
 import java.util.Collections;
 
-import javassist.CannotCompileException;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.NotFoundException;
-
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -42,9 +38,6 @@ import org.testng.annotations.Test;
 public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 
 	private ByteCodeAnalyzer byteCodeAnalyzer;
-
-	@Mock
-	private IClassPoolAnalyzer classPoolAnalyzer;
 
 	@Mock
 	private IIdManager idManager;
@@ -69,7 +62,6 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 	@BeforeMethod(dependsOnMethods = { "initMocks" })
 	public void initTestClass() throws IdNotAvailableException, ServerUnavailableException {
 		byteCodeAnalyzer = new ByteCodeAnalyzer();
-		byteCodeAnalyzer.classPoolAnalyzer = classPoolAnalyzer;
 		byteCodeAnalyzer.idManager = idManager;
 		byteCodeAnalyzer.connection = connection;
 		byteCodeAnalyzer.hookDispatcherMapper = hookDispatcherMapper;
@@ -79,19 +71,20 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 		when(idManager.getPlatformId()).thenReturn(platformId);
 	}
 
-	private byte[] getByteCode(String className) throws NotFoundException, IOException, CannotCompileException {
-		CtClass ctClass = ClassPool.getDefault().get(className);
-		return ctClass.toBytecode();
+	private byte[] getByteCode(String className) throws IOException {
+		// get byte-code via ASM
+		ClassReader reader = new ClassReader(className);
+		ClassWriter writer = new ClassWriter(reader, 0);
+		reader.accept(writer, 0);
+		return writer.toByteArray();
 	}
 
 	@Test
-	public void notToBeSent() throws NotFoundException, IOException, CannotCompileException {
+	public void notToBeSent() throws IOException {
 		String className = TestClass.class.getName();
 		ClassLoader classLoader = TestClass.class.getClassLoader();
 		byte[] byteCode = getByteCode(className);
 
-		ClassPool classPool = ClassPool.getDefault();
-		when(classPoolAnalyzer.getClassPool(classLoader)).thenReturn(classPool);
 		ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
 		when(sendingClassCache.isSending(hashCaptor.capture())).thenReturn(false);
 
@@ -105,13 +98,10 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 	}
 
 	@Test
-	public void noInstrumentation() throws NotFoundException, IOException, CannotCompileException, ServerUnavailableException, BusinessException {
+	public void noInstrumentation() throws ServerUnavailableException, BusinessException, IOException {
 		String className = TestClass.class.getName();
 		ClassLoader classLoader = TestClass.class.getClassLoader();
 		byte[] byteCode = getByteCode(className);
-
-		ClassPool classPool = ClassPool.getDefault();
-		when(classPoolAnalyzer.getClassPool(classLoader)).thenReturn(classPool);
 
 		ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
 		when(sendingClassCache.isSending(hashCaptor.capture())).thenReturn(true);
@@ -130,13 +120,10 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 	}
 
 	@Test
-	public void instrumentation() throws NotFoundException, IOException, CannotCompileException, ServerUnavailableException, BusinessException {
+	public void instrumentation() throws ServerUnavailableException, BusinessException, IOException {
 		String className = TestClass.class.getName();
 		ClassLoader classLoader = TestClass.class.getClassLoader();
 		byte[] byteCode = getByteCode(className);
-
-		ClassPool classPool = ClassPool.getDefault();
-		when(classPoolAnalyzer.getClassPool(classLoader)).thenReturn(classPool);
 
 		ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
 		when(sendingClassCache.isSending(hashCaptor.capture())).thenReturn(true);

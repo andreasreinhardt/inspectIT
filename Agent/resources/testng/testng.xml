@@ -3,8 +3,6 @@
 	<test name="Analyzers">
 		<classes>
 			<class name="info.novatec.inspectit.agent.analyzer.impl.ByteCodeAnalyzerTest" />
-			<class name="info.novatec.inspectit.agent.analyzer.impl.InheritanceAnalyzerTest" />
-			<class name="info.novatec.inspectit.agent.analyzer.impl.ClassPoolAnalyzerTest" />
 			<class name="info.novatec.inspectit.agent.analyzer.impl.SendingClassHashCacheTest" />
 		</classes>
 	</test>

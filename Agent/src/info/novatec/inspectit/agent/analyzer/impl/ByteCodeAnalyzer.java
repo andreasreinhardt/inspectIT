@@ -1,7 +1,6 @@
 package info.novatec.inspectit.agent.analyzer.impl;
 
 import info.novatec.inspectit.agent.analyzer.IByteCodeAnalyzer;
-import info.novatec.inspectit.agent.analyzer.IClassPoolAnalyzer;
 import info.novatec.inspectit.agent.asm.ClassInstrumenter;
 import info.novatec.inspectit.agent.asm.LoaderAwareClassWriter;
 import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
@@ -13,12 +12,6 @@ import info.novatec.inspectit.agent.core.IdNotAvailableException;
 import info.novatec.inspectit.agent.hooking.IHookDispatcherMapper;
 import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.spring.logger.Log;
-
-import java.io.IOException;
-
-import javassist.CannotCompileException;
-import javassist.ClassPool;
-import javassist.NotFoundException;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -44,12 +37,6 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 	 */
 	@Log
 	Logger log;
-
-	/**
-	 * Class pool analyzer for the classes that have null as byte code.
-	 */
-	@Autowired
-	IClassPoolAnalyzer classPoolAnalyzer;
 
 	/**
 	 * Id manager.
@@ -88,11 +75,11 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 	public byte[] analyzeAndInstrument(byte[] byteCode, String className, final ClassLoader classLoader) {
 		try {
 			if (null == byteCode) {
-				// TODO Patrice and class pool stuff
-				// this occurs if we are in the initialization phase and are instrumenting classes
-				// where we don't have the byte code directly. Thus we try to load it.
-				ClassPool classPool = classPoolAnalyzer.getClassPool(classLoader);
-				byteCode = classPool.get(className).toBytecode();
+				// no support for null byte-codes
+				// in future we want to have possibility to analyze also the null byte-codes
+				// in earlier versions we used javassist for this, however we want to use something
+				// ours in future
+				return null;
 			}
 
 			// create the hash
@@ -130,29 +117,9 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 		} catch (ServerUnavailableException serverUnavailableException) {
 			log.error("Error occurred instrumenting the byte code of class " + className, serverUnavailableException);
 			return null;
-		} catch (NotFoundException notFoundException) {
-			log.error("Error occurred instrumenting the byte code of class " + className, notFoundException);
-			return null;
-		} catch (IOException iOException) {
-			log.error("Error occurred instrumenting the byte code of class " + className, iOException);
-			return null;
-		} catch (CannotCompileException cannotCompileException) {
-			log.error("Error occurred instrumenting the byte code of class " + className, cannotCompileException);
-			return null;
 		} catch (BusinessException businessException) {
 			log.error("Error occurred instrumenting the byte code of class " + className, businessException);
 			return null;
-		} finally { // NOCHK //NOPMD
-			// TODO what with the class pools
-			// Remove the byte array class path from the class pool. The class
-			// loader now should know this class, thus it can be accessed
-			// through the standard way.
-			// if (null != classPath) {
-			// classPool.removeClassPath(classPath);
-			// }
-			// if (null != loaderClassPath) {
-			// classPool.removeClassPath(loaderClassPath);
-			// }
 		}
 	}
 

@@ -13,7 +13,6 @@
 	</configurations>
 
 	<dependencies>
-		<dependency org="org.javassist" name="info.novatec.javassist" rev="3.20.0-GA" conf="prod->default" />
 		<!-- newer commons-codec versions require java 1.6 -->
 		<dependency org="commons-codec" name="commons-codec" rev="1.6" conf="prod->default" />
 		
