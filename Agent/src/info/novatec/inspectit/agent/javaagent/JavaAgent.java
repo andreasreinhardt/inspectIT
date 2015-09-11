@@ -341,9 +341,6 @@ public class JavaAgent implements ClassFileTransformer {
 
 			// ignore hook dispatcher because it is defined in the IAgent interface and thus must be
 			// available in the standard classloader.
-
-			// TODO hook dispatcher is now in Commons but this does not work
-			// FIXME so we also have it in the Agent, we must fix this
 			ignoreClasses.add(IHookDispatcher.class.getCanonicalName());
 
 			// ignore the following classes because they are used in the JavaAgent class

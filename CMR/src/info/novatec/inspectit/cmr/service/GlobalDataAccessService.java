@@ -101,6 +101,7 @@ public class GlobalDataAccessService implements IGlobalDataAccessService {
 			platformIdentDao.delete(platformIdent);
 			defaultDataDao.deleteAll(platformIdent.getId());
 			agentStatusProvider.registerDeleted(platformId);
+			// TODO delete the agent info in the class cache
 
 			log.info("The Agent '" + platformIdent.getAgentName() + "' with the ID " + platformIdent.getId() + " was successfully deleted from the CMR.");
 		} else {
