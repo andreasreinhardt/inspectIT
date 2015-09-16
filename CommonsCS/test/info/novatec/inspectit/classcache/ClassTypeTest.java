@@ -3,9 +3,12 @@ package info.novatec.inspectit.classcache;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import info.novatec.inspectit.agent.config.impl.RegisteredSensorConfig;
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 import org.testng.annotations.Test;
@@ -136,6 +139,48 @@ public class ClassTypeTest {
 
 		assertThat(test.getMethodsThrowingThisException(), hasItem(m));
 		assertThat(m.getExceptions(), hasItem(test));
+	}
+
+	@Test
+	public void noInstrumentationPoints() {
+		test = new ClassType(fqn1);
+
+		assertThat(test.hasInstrumentationPoints(), is(false));
+		assertThat(test.getInstrumentationPoints(), is(empty()));
+
+		MethodType m = new MethodType();
+		test.addMethod(m);
+
+		assertThat(test.hasInstrumentationPoints(), is(false));
+		assertThat(test.getInstrumentationPoints(), is(empty()));
+	}
+
+	@Test
+	public void addInstrumentationPoints() {
+		test = new ClassType(fqn1);
+
+		RegisteredSensorConfig rsc = new RegisteredSensorConfig();
+		MethodType m = new MethodType();
+		m.setRegisteredSensorConfig(rsc);
+		test.addMethod(m);
+
+		assertThat(test.hasInstrumentationPoints(), is(true));
+		assertThat(test.getInstrumentationPoints(), hasSize(1));
+		assertThat(test.getInstrumentationPoints(), hasItem(rsc));
+	}
+
+	@Test
+	public void isException() {
+		test = new ClassType(fqn1);
+		assertThat(test.isException(), is(false));
+
+		ClassType superClass = new ClassType("some.Class");
+		test.addSuperClass(superClass);
+		assertThat(test.isException(), is(false));
+
+		superClass = new ClassType("java.lang.Throwable");
+		test.addSuperClass(superClass);
+		assertThat(test.isException(), is(true));
 	}
 
 	@Test

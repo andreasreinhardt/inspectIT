@@ -379,6 +379,10 @@ public class ClassType extends Type implements TypeWithMethods, ImmutableClassTy
 	 */
 	@Override
 	public boolean hasInstrumentationPoints() {
+		if (CollectionUtils.isEmpty(methods)) {
+			return false;
+		}
+
 		for (MethodType methodType : methods) {
 			if (null != methodType.getRegisteredSensorConfig()) {
 				return true;
@@ -393,6 +397,10 @@ public class ClassType extends Type implements TypeWithMethods, ImmutableClassTy
 	 */
 	@Override
 	public Collection<RegisteredSensorConfig> getInstrumentationPoints() {
+		if (CollectionUtils.isEmpty(methods)) {
+			return Collections.emptyList();
+		}
+
 		Collection<RegisteredSensorConfig> instrumentationPoints = new ArrayList<>();
 		for (MethodType methodType : methods) {
 			CollectionUtils.addIgnoreNull(instrumentationPoints, methodType.getRegisteredSensorConfig());
