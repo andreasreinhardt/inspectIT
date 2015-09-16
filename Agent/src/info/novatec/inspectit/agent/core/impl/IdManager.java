@@ -143,7 +143,7 @@ public class IdManager implements IIdManager, InitializingBean {
 			}
 		} catch (RegistrationException registrationException) {
 			if (!serverErrorOccured) {
-				log.error("Registration exception occurred while trying to register something at the server.");
+				log.error("Registration exception occurred while trying to register something at the server.", registrationException);
 			}
 			serverErrorOccured = true;
 			if (log.isTraceEnabled()) {
