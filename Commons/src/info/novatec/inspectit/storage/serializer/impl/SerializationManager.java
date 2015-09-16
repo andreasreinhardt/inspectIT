@@ -319,6 +319,7 @@ public class SerializationManager implements ISerializer, IKryoProvider, Initial
 		kryo.register(ConfigurationInterfaceErrorCodeEnum.class, new EnumSerializer(ConfigurationInterfaceErrorCodeEnum.class));
 		
 		// added with server side instrumentation
+		kryo.register(ConfigurationInterfaceErrorCodeEnum.class, new EnumSerializer(ConfigurationInterfaceErrorCodeEnum.class));
 		kryo.register(AgentConfiguration.class, new FieldSerializer<AgentConfiguration>(kryo, AgentConfiguration.class));
 		kryo.register(PlatformSensorTypeConfig.class, new FieldSerializer<PlatformSensorTypeConfig>(kryo, PlatformSensorTypeConfig.class));
 		kryo.register(MethodSensorTypeConfig.class, new FieldSerializer<MethodSensorTypeConfig>(kryo, MethodSensorTypeConfig.class));
