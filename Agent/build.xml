@@ -244,11 +244,6 @@
 		<delete dir="${build.release}/sun1.5-data" failonerror="false" />
 		<mkdir dir="${build.release}/sun1.5-data" />
 		<mkdir dir="${build.release}/sun1.5-data/agent" />
-		<mkdir dir="${build.release}/sun1.5-data/agent/config" />
-
-		<copy todir="${build.release}/sun1.5-data/agent/config">
-			<fileset dir="${config.root}" includes="**/*.*" />
-		</copy>
 		
 		<copy todir="${build.release}/sun1.5-data/agent">
 			<fileset dir="${basedir}" includes="logging-config.xml" />
