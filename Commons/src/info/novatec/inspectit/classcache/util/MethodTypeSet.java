@@ -21,11 +21,10 @@ public class MethodTypeSet extends SortedArraySet<MethodType> {
 		/**
 		 * {@inheritDoc}
 		 */
-		@Override
 		public int compare(MethodType o1, MethodType o2) {
 			// first name
 			int result = o1.getName().compareTo(o2.getName());
-			
+
 			if (result != 0) {
 				return result;
 			}
@@ -38,7 +37,7 @@ public class MethodTypeSet extends SortedArraySet<MethodType> {
 			List<String> parameters1 = o1.getParameters();
 			List<String> parameters2 = o2.getParameters();
 			// then parameter size
-			result = Integer.compare(parameters1.size(), parameters2.size());
+			result = compareInts(parameters1.size(), parameters2.size());
 
 			if (result != 0) {
 				return result;
@@ -62,6 +61,19 @@ public class MethodTypeSet extends SortedArraySet<MethodType> {
 	 */
 	public MethodTypeSet() {
 		super(METHOD_COMPARATOR);
+	}
+
+	/**
+	 * Compares two int values.
+	 * 
+	 * @param x
+	 *            first
+	 * @param y
+	 *            second
+	 * @return result based on the copare interface
+	 */
+	public static int compareInts(int x, int y) {
+		return (x < y) ? -1 : ((x == y) ? 0 : 1);
 	}
 
 }

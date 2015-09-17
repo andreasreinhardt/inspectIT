@@ -1,6 +1,6 @@
-package info.novatec.inspectit.cmr.classcache.asm;
+package info.novatec.inspectit.agent.asm;
 
-import info.novatec.inspectit.cmr.asm.ClassAnalyzer;
+import info.novatec.inspectit.agent.asm.ClassAnalyzer;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;

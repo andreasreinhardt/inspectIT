@@ -1,6 +1,7 @@
 package info.novatec.inspectit.agent.analyzer.impl;
 
 import info.novatec.inspectit.agent.analyzer.IByteCodeAnalyzer;
+import info.novatec.inspectit.agent.asm.ClassAnalyzer;
 import info.novatec.inspectit.agent.asm.ClassInstrumenter;
 import info.novatec.inspectit.agent.asm.LoaderAwareClassWriter;
 import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
@@ -10,6 +11,7 @@ import info.novatec.inspectit.agent.connection.ServerUnavailableException;
 import info.novatec.inspectit.agent.core.IIdManager;
 import info.novatec.inspectit.agent.core.IdNotAvailableException;
 import info.novatec.inspectit.agent.hooking.IHookDispatcherMapper;
+import info.novatec.inspectit.classcache.Type;
 import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.spring.logger.Log;
 
@@ -90,8 +92,14 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 				return null;
 			}
 
+			// parse first
+			ClassReader classReader = new ClassReader(byteCode);
+			ClassAnalyzer classAnalyzer = new ClassAnalyzer(hash, null, true);
+			classReader.accept(classAnalyzer, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+			Type type = (Type) classAnalyzer.getType();
+
 			// try connecting to server
-			InstrumentationResult instrumentationResult = connection.analyzeAndInstrument(idManager.getPlatformId(), hash, byteCode);
+			InstrumentationResult instrumentationResult = connection.analyzeAndInstrument(idManager.getPlatformId(), hash, type);
 
 			if (null == instrumentationResult || CollectionUtils.isEmpty(instrumentationResult.getRegisteredSensorConfigs())) {
 				sendingClassHashCache.markSending(hash, false);
@@ -99,7 +107,7 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 			}
 
 			// here do the instrumentation
-			ClassReader classReader = new ClassReader(byteCode);
+			classReader = new ClassReader(byteCode);
 			ClassWriter classWriter = new LoaderAwareClassWriter(ClassWriter.COMPUTE_FRAMES, classLoader);
 			ClassInstrumenter classInstrumenter = new ClassInstrumenter(classWriter, instrumentationResult.getRegisteredSensorConfigs(), false);
 			classReader.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);

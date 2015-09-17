@@ -9,6 +9,13 @@ import info.novatec.inspectit.agent.config.impl.PlatformSensorTypeConfig;
 import info.novatec.inspectit.agent.config.impl.PropertyPath;
 import info.novatec.inspectit.agent.config.impl.PropertyPathStart;
 import info.novatec.inspectit.agent.config.impl.StrategyConfig;
+import info.novatec.inspectit.classcache.AnnotationType;
+import info.novatec.inspectit.classcache.ClassType;
+import info.novatec.inspectit.classcache.InterfaceType;
+import info.novatec.inspectit.classcache.MethodType;
+import info.novatec.inspectit.classcache.util.ArraySet;
+import info.novatec.inspectit.classcache.util.MethodTypeSet;
+import info.novatec.inspectit.classcache.util.TypeWithAnnotationsSet;
 import info.novatec.inspectit.cmr.model.MethodIdent;
 import info.novatec.inspectit.cmr.model.MethodIdentToSensorType;
 import info.novatec.inspectit.cmr.model.MethodSensorTypeIdent;
@@ -83,6 +90,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections.set.TypedSet;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -331,6 +339,15 @@ public class SerializationManager implements ISerializer, IKryoProvider, Initial
 		kryo.register(PriorityEnum.class, new EnumSerializer(PriorityEnum.class));
 		kryo.register(EqualsMatchPattern.class, new FieldSerializer<EqualsMatchPattern>(kryo, EqualsMatchPattern.class));
 		kryo.register(WildcardMatchPattern.class, new FieldSerializer<WildcardMatchPattern>(kryo, WildcardMatchPattern.class));
+		// class cache structures
+		kryo.register(ClassType.class, new FieldSerializer<ClassType>(kryo, ClassType.class));
+		kryo.register(InterfaceType.class, new FieldSerializer<InterfaceType>(kryo, InterfaceType.class));
+		kryo.register(AnnotationType.class, new FieldSerializer<AnnotationType>(kryo, AnnotationType.class));
+		kryo.register(MethodType.class, new FieldSerializer<MethodType>(kryo, MethodType.class));
+		kryo.register(ArraySet.class, new CollectionSerializer());
+		kryo.register(MethodTypeSet.class, new CollectionSerializer());
+		kryo.register(TypedSet.class, new CollectionSerializer());
+		kryo.register(TypeWithAnnotationsSet.class, new CollectionSerializer());
 	}
 
 	/**

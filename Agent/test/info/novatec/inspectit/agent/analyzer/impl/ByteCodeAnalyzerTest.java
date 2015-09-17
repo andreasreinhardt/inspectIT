@@ -27,7 +27,6 @@ import java.util.Collections;
 
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.slf4j.LoggerFactory;
@@ -105,14 +104,14 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 
 		ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
 		when(sendingClassCache.isSending(hashCaptor.capture())).thenReturn(true);
-		when(connection.analyzeAndInstrument(eq(platformId.longValue()), anyString(), Mockito.<byte[]> any())).thenReturn(null);
+		when(connection.analyzeAndInstrument(eq(platformId.longValue()), anyString(), null)).thenReturn(null);
 
 		byte[] instrumentedByteCode = byteCodeAnalyzer.analyzeAndInstrument(byteCode, className, classLoader);
 
 		// as no instrumentation happened, we get a null object
 		assertThat(instrumentedByteCode, is(nullValue()));
 
-		verify(connection, times(1)).analyzeAndInstrument(platformId.longValue(), hashCaptor.getValue(), byteCode);
+		verify(connection, times(1)).analyzeAndInstrument(platformId.longValue(), hashCaptor.getValue(), null);
 		verify(sendingClassCache, times(1)).isSending(hashCaptor.getValue());
 		verify(sendingClassCache, times(1)).markSending(hashCaptor.getValue(), false);
 		verifyZeroInteractions(hookDispatcherMapper);
@@ -127,7 +126,7 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 
 		ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
 		when(sendingClassCache.isSending(hashCaptor.capture())).thenReturn(true);
-		when(connection.analyzeAndInstrument(eq(platformId.longValue()), anyString(), Mockito.<byte[]> any())).thenReturn(instrumentationResult);
+		when(connection.analyzeAndInstrument(eq(platformId.longValue()), anyString(), null)).thenReturn(instrumentationResult);
 		when(instrumentationResult.getRegisteredSensorConfigs()).thenReturn(Collections.singleton(registeredSensorConfig));
 		long rscId = 13L;
 		when(registeredSensorConfig.getId()).thenReturn(rscId);
@@ -137,7 +136,7 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 		// as no instrumentation happened, we get a null object
 		assertThat(instrumentedByteCode, is(not(nullValue())));
 
-		verify(connection, times(1)).analyzeAndInstrument(platformId.longValue(), hashCaptor.getValue(), byteCode);
+		verify(connection, times(1)).analyzeAndInstrument(platformId.longValue(), hashCaptor.getValue(), null);
 		verify(sendingClassCache, times(1)).isSending(hashCaptor.getValue());
 		verify(sendingClassCache, times(1)).markSending(hashCaptor.getValue(), true);
 		verify(hookDispatcherMapper, times(1)).addMapping(rscId, registeredSensorConfig);

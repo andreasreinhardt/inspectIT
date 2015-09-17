@@ -17,7 +17,6 @@ import java.util.Set;
  */
 public class MethodType implements TypeWithAnnotations, ImmutableMethodType {
 
-
 	/**
 	 * The type of the method.
 	 * 
@@ -219,7 +218,7 @@ public class MethodType implements TypeWithAnnotations, ImmutableMethodType {
 	 * Init {@link #parameters}.
 	 */
 	private void initParameters() {
-		parameters = new ArrayList<>(1);
+		parameters = new ArrayList<String>(1);
 	}
 
 	/**
@@ -253,7 +252,7 @@ public class MethodType implements TypeWithAnnotations, ImmutableMethodType {
 	 * Init {@link #exceptions}.
 	 */
 	private void initExceptions() {
-		exceptions = new TypeSet<>();
+		exceptions = new TypeSet<ClassType>();
 	}
 
 	/**
@@ -272,7 +271,6 @@ public class MethodType implements TypeWithAnnotations, ImmutableMethodType {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<? extends ImmutableClassType> getImmutableExceptions() {
 		return getExceptions();
 	}
@@ -280,7 +278,6 @@ public class MethodType implements TypeWithAnnotations, ImmutableMethodType {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public void addAnnotation(AnnotationType annotationType) {
 		addAnnotationNoBidirectionalUpdate(annotationType);
 		annotationType.addAnnotatedType(this);
@@ -289,7 +286,6 @@ public class MethodType implements TypeWithAnnotations, ImmutableMethodType {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public void addAnnotationNoBidirectionalUpdate(AnnotationType annotationType) {
 		if (null == annotations) {
 			initAnnotations();
@@ -301,13 +297,12 @@ public class MethodType implements TypeWithAnnotations, ImmutableMethodType {
 	 * Init {@link #annotations}.
 	 */
 	private void initAnnotations() {
-		annotations = new TypeSet<>();
+		annotations = new TypeSet<AnnotationType>();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<AnnotationType> getAnnotations() {
 		if (null == annotations) {
 			return Collections.emptySet();
@@ -318,7 +313,6 @@ public class MethodType implements TypeWithAnnotations, ImmutableMethodType {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<? extends ImmutableAnnotationType> getImmutableAnnotations() {
 		return getAnnotations();
 	}

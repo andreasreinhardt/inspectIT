@@ -45,7 +45,6 @@
 		<dependency org="de.javakaffee" name="info.novatec.kryo-serializers" rev="0.23" conf="prod->default" />
 		<dependency org="com.esotericsoftware.reflectasm" name="info.novatec.reflectasm" rev="1.07" conf="prod->default" />
 		<dependency org="com.esotericsoftware.minlog" name="info.novatec.minlog" rev="1.2" conf="prod->default" />
-		<dependency org="org.ow2.asm" name="asm-all" rev="5.0.3" conf="prod->default" />
 		<dependency org="org.objenesis" name="objenesis" rev="2.1" conf="prod->default" />
 		
 		<dependency org="com.google.guava" name="guava-jdk5" rev="13.0" conf="prod->default" />

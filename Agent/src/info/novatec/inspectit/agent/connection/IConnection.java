@@ -2,6 +2,7 @@ package info.novatec.inspectit.agent.connection;
 
 import info.novatec.inspectit.agent.config.impl.AgentConfiguration;
 import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
+import info.novatec.inspectit.classcache.Type;
 import info.novatec.inspectit.communication.DefaultData;
 import info.novatec.inspectit.exception.BusinessException;
 
@@ -90,8 +91,7 @@ public interface IConnection {
 	 *            Id of the agent.
 	 * @param hash
 	 *            Class hash code.
-	 * @param bytecode
-	 *            ByteCode of the class.
+	 * @param type TODO
 	 * @return Instrumentation result containing modified byte code or <code>null</code> if nothing
 	 *         was instrumented or any kind of exception occurred.
 	 * @throws ServerUnavailableException
@@ -100,5 +100,5 @@ public interface IConnection {
 	 * @throws BusinessException
 	 *             If {@link BusinessException} is thrown on the server.
 	 */
-	InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, byte[] bytecode) throws ServerUnavailableException, BusinessException;
+	InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, Type type) throws ServerUnavailableException, BusinessException;
 }

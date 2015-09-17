@@ -64,6 +64,17 @@ public interface ImmutableClassType extends ImmutableType {
 	boolean isException();
 
 	/**
+	 * Determines if this {@link ClassType} is sub-class of the given class fully qualified name.
+	 * This is quick helper method that iterates all sub-class and checks it's FQN's and compares it
+	 * with the given one. No wild-cards can be used here.
+	 * 
+	 * @param superClassFqn
+	 *            Class FQN that this {@link ClassType} should extend.
+	 * @return <code>true</code> if this class type is in hierarchy a sub-class of given class FQN
+	 */
+	boolean isSubClassOf(String superClassFqn);
+
+	/**
 	 * Returns collection of all {@link RegisteredSensorConfig} that have been added to methods as
 	 * instrumentation points.
 	 * 

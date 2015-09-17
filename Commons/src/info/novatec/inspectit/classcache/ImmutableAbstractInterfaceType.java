@@ -2,6 +2,12 @@ package info.novatec.inspectit.classcache;
 
 import java.util.Set;
 
+/**
+ * Immutable version of the {@link AbstractInterfaceType}.
+ * 
+ * @author Ivan Senic
+ * 
+ */
 public interface ImmutableAbstractInterfaceType extends ImmutableType {
 
 	/**

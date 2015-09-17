@@ -7,6 +7,7 @@ import info.novatec.inspectit.agent.connection.IConnection;
 import info.novatec.inspectit.agent.connection.RegistrationException;
 import info.novatec.inspectit.agent.connection.ServerUnavailableException;
 import info.novatec.inspectit.agent.spring.PrototypesProvider;
+import info.novatec.inspectit.classcache.Type;
 import info.novatec.inspectit.cmr.service.IAgentService;
 import info.novatec.inspectit.cmr.service.IAgentStorageService;
 import info.novatec.inspectit.cmr.service.ServiceInterface;
@@ -234,12 +235,12 @@ public class KryoNetConnection implements IConnection {
 	/**
 	 * {@inheritDoc}
 	 */
-	public InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, byte[] bytecode) throws ServerUnavailableException, BusinessException {
+	public InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, Type type) throws ServerUnavailableException, BusinessException {
 		if (!connected) {
 			throw new ServerUnavailableException();
 		}
 
-		return agentService.analyzeAndInstrument(platformIdent, hash, bytecode);
+		return agentService.analyzeAndInstrument(platformIdent, hash, type);
 	}
 
 	/**

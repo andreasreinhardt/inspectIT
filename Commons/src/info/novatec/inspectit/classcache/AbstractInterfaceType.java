@@ -70,7 +70,7 @@ public abstract class AbstractInterfaceType extends Type implements ImmutableAbs
 	 * Init {@link #realizingClasses}.
 	 */
 	private void initRealizingClasses() {
-		realizingClasses = new TypeSet<>();
+		realizingClasses = new TypeSet<ClassType>();
 	}
 
 	/**
@@ -89,7 +89,6 @@ public abstract class AbstractInterfaceType extends Type implements ImmutableAbs
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<? extends ImmutableClassType> getImmutableRealizingClasses() {
 		return getRealizingClasses();
 	}

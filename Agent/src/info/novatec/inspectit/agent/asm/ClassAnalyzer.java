@@ -1,4 +1,4 @@
-package info.novatec.inspectit.cmr.asm;
+package info.novatec.inspectit.agent.asm;
 
 import info.novatec.inspectit.classcache.AnnotationType;
 import info.novatec.inspectit.classcache.ClassType;
@@ -7,7 +7,6 @@ import info.novatec.inspectit.classcache.InterfaceType;
 import info.novatec.inspectit.classcache.MethodType;
 import info.novatec.inspectit.classcache.TypeWithAnnotations;
 import info.novatec.inspectit.classcache.TypeWithMethods;
-import info.novatec.inspectit.cmr.classcache.IClassCacheModification;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -191,7 +190,7 @@ public class ClassAnalyzer extends ClassVisitor {
 		// parameters
 		int params = methodTypeHelper.getArgumentTypes().length;
 		if (params > 0) {
-			List<String> parameters = new ArrayList<>(params);
+			List<String> parameters = new ArrayList<String>(params);
 			for (Type parameterType : methodTypeHelper.getArgumentTypes()) {
 				if (internFQNs) {
 					parameters.add(parameterType.getClassName().intern());

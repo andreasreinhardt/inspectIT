@@ -20,8 +20,6 @@ Export-Package: info.novatec.inspectit.ci;uses:="info.novatec.inspectit.ci.senso
  info.novatec.inspectit.ci.sensor.platform.impl;uses:="info.novatec.inspectit.ci.sensor.platform",
  info.novatec.inspectit.ci.strategy,
  info.novatec.inspectit.ci.strategy.impl;uses:="info.novatec.inspectit.ci.strategy",
- info.novatec.inspectit.classcache,
- info.novatec.inspectit.classcache.util,
  info.novatec.inspectit.cmr.property,
  info.novatec.inspectit.cmr.property.configuration,
  info.novatec.inspectit.cmr.property.configuration.impl,

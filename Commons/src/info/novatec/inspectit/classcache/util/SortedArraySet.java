@@ -1,7 +1,7 @@
 package info.novatec.inspectit.classcache.util;
 
+import java.lang.reflect.Array;
 import java.util.AbstractCollection;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicReference;
@@ -214,7 +214,7 @@ public class SortedArraySet<E> extends AbstractCollection<E> implements Updateab
 	 */
 	@Override
 	public Object[] toArray() {
-		return Arrays.copyOf(array, array.length);
+		return arrayCopyOf(array, array.length, array.getClass());
 	}
 
 	/**
@@ -360,6 +360,34 @@ public class SortedArraySet<E> extends AbstractCollection<E> implements Updateab
 			return array[index];
 		}
 		return null;
+	}
+
+	/**
+	 * JDK7 version of the Arrays.copyOf.
+	 * <p>
+	 * <b>IMPORTANT:</b> The class code is copied/taken from <a
+	 * href="http://hg.openjdk.java.net/jdk7">OpenJDK JDK7</a>. Original authors are Josh Bloch,
+	 * Neal Gafter and John Rose. License info can be found <a
+	 * href="http://openjdk.java.net/faq/">here</a>.
+	 * 
+	 * @param <T>
+	 *            type of array
+	 * @param <U>
+	 *            original
+	 * @param original
+	 *            the array to be copied
+	 * @param newLength
+	 *            the length of the copy to be returned
+	 * @param newType
+	 *            the class of the copy to be returned
+	 * @return a copy of the original array, truncated or padded with nulls to obtain the specified
+	 *         length
+	 */
+	@SuppressWarnings("unchecked")
+	private static <T, U> T[] arrayCopyOf(U[] original, int newLength, Class<? extends T[]> newType) {
+		T[] copy = ((Object) newType == (Object) Object[].class) ? (T[]) new Object[newLength] : (T[]) Array.newInstance(newType.getComponentType(), newLength);
+		System.arraycopy(original, 0, copy, 0, Math.min(original.length, newLength));
+		return copy;
 	}
 
 	/**

@@ -1,4 +1,4 @@
-package info.novatec.inspectit.cmr.asm;
+package info.novatec.inspectit.agent.asm;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import info.novatec.inspectit.agent.asm.ClassAnalyzer;
 import info.novatec.inspectit.classcache.AnnotationType;
 import info.novatec.inspectit.classcache.ClassType;
 import info.novatec.inspectit.classcache.ImmutableType;

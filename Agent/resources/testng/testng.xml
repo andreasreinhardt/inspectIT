@@ -89,6 +89,7 @@
 		<test name="Asm">
 		<classes>
 			<class name="info.novatec.inspectit.agent.asm.ClassInstrumenterTest" />
+			<class name="info.novatec.inspectit.agent.asm.ClassAnalyzerTest" />
 		</classes>
 	</test>
 </suite>

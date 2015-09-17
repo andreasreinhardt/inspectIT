@@ -47,7 +47,6 @@ public class ArraySet<E> extends ArrayList<E> implements UpdateableSet<E> {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public void addOrUpdate(E e) {
 		int i = super.indexOf(e);
 		if (i >= 0) {

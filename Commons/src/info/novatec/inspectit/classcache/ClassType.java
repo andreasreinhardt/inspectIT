@@ -51,6 +51,13 @@ public class ClassType extends Type implements TypeWithMethods, ImmutableClassTy
 	private Set<MethodType> methodsThrowingThisException = null;
 
 	/**
+	 * No-arg constructor for serialization.
+	 */
+	protected ClassType() {
+		super(null);
+	}
+
+	/**
 	 * Creates a new <code> ClassType </code> without setting the hash and the modifiers. This
 	 * constructor is usually used if you want to add the entity without the class being loaded.
 	 * 
@@ -107,7 +114,7 @@ public class ClassType extends Type implements TypeWithMethods, ImmutableClassTy
 	 * Init {@link #realizedInterfaces}.
 	 */
 	private void initRealizedInterfaces() {
-		realizedInterfaces = new TypeSet<>();
+		realizedInterfaces = new TypeSet<AbstractInterfaceType>();
 	}
 
 	/**
@@ -126,7 +133,6 @@ public class ClassType extends Type implements TypeWithMethods, ImmutableClassTy
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<? extends ImmutableAbstractInterfaceType> getImmutableRealizedInterfaces() {
 		return getRealizedInterfaces();
 	}
@@ -181,7 +187,6 @@ public class ClassType extends Type implements TypeWithMethods, ImmutableClassTy
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<? extends ImmutableMethodType> getImmutableMethods() {
 		return getMethods();
 	}
@@ -217,7 +222,7 @@ public class ClassType extends Type implements TypeWithMethods, ImmutableClassTy
 	 * Init {@link #superClasses}.
 	 */
 	private void initSuperClasses() {
-		superClasses = new TypeSet<>();
+		superClasses = new TypeSet<ClassType>();
 	}
 
 	/**
@@ -236,7 +241,6 @@ public class ClassType extends Type implements TypeWithMethods, ImmutableClassTy
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<? extends ImmutableClassType> getImmutableSuperClasses() {
 		return getSuperClasses();
 	}
@@ -271,7 +275,7 @@ public class ClassType extends Type implements TypeWithMethods, ImmutableClassTy
 	 * Init {@link #subClasses}.
 	 */
 	private void initSubClasses() {
-		subClasses = new TypeSet<>();
+		subClasses = new TypeSet<ClassType>();
 	}
 
 	/**
@@ -290,7 +294,6 @@ public class ClassType extends Type implements TypeWithMethods, ImmutableClassTy
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<? extends ImmutableClassType> getImmutableSubClasses() {
 		return getSubClasses();
 	}
@@ -360,13 +363,23 @@ public class ClassType extends Type implements TypeWithMethods, ImmutableClassTy
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public boolean isException() {
+		return isSubClassOf(FQN_THROWABLE);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean isSubClassOf(String superClassFqn) {
+		if (null == superClassFqn) {
+			return false;
+		}
+
 		if (CollectionUtils.isNotEmpty(superClasses)) {
 			for (ClassType superClass : superClasses) {
-				if (FQN_THROWABLE.equals(superClass.getFQN())) {
+				if (superClassFqn.equals(superClass.getFQN())) {
 					return true;
-				} else if (superClass.isException()) {
+				} else if (superClass.isSubClassOf(superClassFqn)) {
 					return true;
 				}
 			}
@@ -377,7 +390,6 @@ public class ClassType extends Type implements TypeWithMethods, ImmutableClassTy
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public boolean hasInstrumentationPoints() {
 		if (CollectionUtils.isEmpty(methods)) {
 			return false;
@@ -395,13 +407,12 @@ public class ClassType extends Type implements TypeWithMethods, ImmutableClassTy
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Collection<RegisteredSensorConfig> getInstrumentationPoints() {
 		if (CollectionUtils.isEmpty(methods)) {
 			return Collections.emptyList();
 		}
 
-		Collection<RegisteredSensorConfig> instrumentationPoints = new ArrayList<>();
+		Collection<RegisteredSensorConfig> instrumentationPoints = new ArrayList<RegisteredSensorConfig>();
 		for (MethodType methodType : methods) {
 			CollectionUtils.addIgnoreNull(instrumentationPoints, methodType.getRegisteredSensorConfig());
 		}

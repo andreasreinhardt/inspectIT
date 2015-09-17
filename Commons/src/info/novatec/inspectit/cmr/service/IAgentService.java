@@ -2,6 +2,7 @@ package info.novatec.inspectit.cmr.service;
 
 import info.novatec.inspectit.agent.config.impl.AgentConfiguration;
 import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
+import info.novatec.inspectit.classcache.Type;
 import info.novatec.inspectit.exception.BusinessException;
 
 import java.util.List;
@@ -52,13 +53,13 @@ public interface IAgentService {
 	 *            Id of the agent.
 	 * @param hash
 	 *            Class hash code.
-	 * @param bytecode
-	 *            ByteCode of the class.
+	 * @param type
+	 *            Parsed {@link Type} representing class being loaded on the agent.
 	 * @return Instrumentation result containing modified byte code or <code>null</code> if nothing
 	 *         was instrumented.
 	 * @throws BusinessException
 	 *             If agent with specified id does not exist.
 	 */
-	InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, byte[] bytecode) throws BusinessException;
+	InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, Type type) throws BusinessException;
 
 }

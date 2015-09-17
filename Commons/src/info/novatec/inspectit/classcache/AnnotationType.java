@@ -20,6 +20,13 @@ public final class AnnotationType extends AbstractInterfaceType implements Immut
 	private UpdateableSet<TypeWithAnnotations> annotatedTypes = null;
 
 	/**
+	 * No-arg constructor for serialization.
+	 */
+	protected AnnotationType() {
+		super(null);
+	}
+
+	/**
 	 * Creates a new <code> AnnotationType </code> without setting the hash and the modifiers. This
 	 * constructor is usually used if you want to add the entity without the class being loaded.
 	 * 
@@ -95,7 +102,6 @@ public final class AnnotationType extends AbstractInterfaceType implements Immut
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<? extends ImmutableTypeWithAnnotations> getImmutableAnnotatedTypes() {
 		return getAnnotatedTypes();
 	}

@@ -1,4 +1,4 @@
-package info.novatec.inspectit.cmr.asm;
+package info.novatec.inspectit.agent.asm;
 
 import java.io.Serializable;
 

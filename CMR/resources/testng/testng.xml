@@ -56,11 +56,6 @@
 				name="info.novatec.inspectit.cmr.service.rest.StorageRestfulServiceTest" />
 		</classes>
 	</test>
-	<test name="Asm">
-		<classes>
-			<class name="info.novatec.inspectit.cmr.asm.ClassAnalyzerTest" />
-		</classes>
-	</test>
 	<test name="Server Side Instrumentation">
 		<classes>
 			<class name="info.novatec.inspectit.cmr.classcache.ClassCacheLookupTest" />

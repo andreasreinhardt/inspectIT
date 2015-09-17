@@ -31,6 +31,13 @@ public class InterfaceType extends AbstractInterfaceType implements TypeWithMeth
 	private Set<MethodType> methods = null;
 
 	/**
+	 * No-arg constructor for serialization.
+	 */
+	protected InterfaceType() {
+		super(null);
+	}
+
+	/**
 	 * Creates a new <code> InterfaceType </code> without setting the hash and the modifiers. This
 	 * constructor is usually used if you want to add the entity without the class being loaded.
 	 * 
@@ -106,7 +113,6 @@ public class InterfaceType extends AbstractInterfaceType implements TypeWithMeth
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<? extends ImmutableMethodType> getImmutableMethods() {
 		return getMethods();
 	}
@@ -142,7 +148,7 @@ public class InterfaceType extends AbstractInterfaceType implements TypeWithMeth
 	 * Init {@link #superInterfaces}.
 	 */
 	private void initSuperInterfaces() {
-		superInterfaces = new TypeSet<>();
+		superInterfaces = new TypeSet<InterfaceType>();
 	}
 
 	/**
@@ -161,7 +167,6 @@ public class InterfaceType extends AbstractInterfaceType implements TypeWithMeth
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<? extends ImmutableInterfaceType> getImmutableSuperInterfaces() {
 		return getSuperInterfaces();
 	}
@@ -197,7 +202,7 @@ public class InterfaceType extends AbstractInterfaceType implements TypeWithMeth
 	 * Init {@link #subInterfaces}.
 	 */
 	private void initSubInterfaces() {
-		subInterfaces = new TypeSet<>();
+		subInterfaces = new TypeSet<InterfaceType>();
 	}
 
 	/**
@@ -216,7 +221,6 @@ public class InterfaceType extends AbstractInterfaceType implements TypeWithMeth
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<? extends ImmutableInterfaceType> getImmutableSubInterfaces() {
 		return getSubInterfaces();
 	}

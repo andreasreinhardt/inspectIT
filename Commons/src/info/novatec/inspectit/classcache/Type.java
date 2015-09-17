@@ -1,6 +1,5 @@
 package info.novatec.inspectit.classcache;
 
-
 import info.novatec.inspectit.classcache.util.ArraySet;
 import info.novatec.inspectit.classcache.util.TypeSet;
 import info.novatec.inspectit.classcache.util.UpdateableSet;
@@ -71,7 +70,6 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 		initialized = true;
 	}
 
-
 	/**
 	 * Removes all references from the type which are only back references. The merging logic will
 	 * ensure that a given instance will only have forward references set by executing this method.
@@ -81,7 +79,6 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public String getFQN() {
 		return fqn;
 	}
@@ -114,13 +111,12 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 	 * Init {@link #hashes}.
 	 */
 	private void initHashes() {
-		hashes = new ArraySet<>(1);
+		hashes = new ArraySet<String>(1);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public boolean containsHash(String hash) {
 		if (null == hashes) {
 			return false;
@@ -178,7 +174,6 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public boolean isInitialized() {
 		return initialized;
 	}
@@ -186,7 +181,6 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public void addAnnotation(AnnotationType annotationType) {
 		addAnnotationNoBidirectionalUpdate(annotationType);
 		annotationType.addAnnotatedType(this);
@@ -195,7 +189,6 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<? extends ImmutableAnnotationType> getImmutableAnnotations() {
 		return getAnnotations();
 	}
@@ -203,7 +196,6 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public void addAnnotationNoBidirectionalUpdate(AnnotationType annotationType) {
 		if (null == annotations) {
 			initAnnotations();
@@ -215,13 +207,12 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 	 * Init {@link #annotations}.
 	 */
 	private void initAnnotations() {
-		annotations = new TypeSet<>();
+		annotations = new TypeSet<AnnotationType>();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public Set<AnnotationType> getAnnotations() {
 		if (null == annotations) {
 			return Collections.emptySet();
@@ -232,7 +223,6 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public boolean isAnnotation() {
 		return AnnotationType.class.isAssignableFrom(this.getClass());
 	}
@@ -240,7 +230,6 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public boolean isInterface() {
 		return InterfaceType.class.isAssignableFrom(this.getClass());
 	}
@@ -248,7 +237,6 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public boolean isClass() {
 		return ClassType.class.isAssignableFrom(this.getClass());
 	}
@@ -256,7 +244,6 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public ImmutableClassType castToClass() {
 		return (ImmutableClassType) this;
 	}
@@ -264,7 +251,6 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public ImmutableAnnotationType castToAnnotation() {
 		return (ImmutableAnnotationType) this;
 	}
@@ -272,7 +258,6 @@ public abstract class Type implements ImmutableType, TypeWithAnnotations {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public ImmutableInterfaceType castToInterface() {
 		return (ImmutableInterfaceType) this;
 	}

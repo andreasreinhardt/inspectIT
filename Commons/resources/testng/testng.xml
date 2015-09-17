@@ -32,4 +32,13 @@
 			<class name="info.novatec.inspectit.pattern.WildcardMatchPatternTest" />
 		</classes>
 	</test>
+		<test name="ClassCache">
+		<classes>
+			<class name="info.novatec.inspectit.classcache.AnnotationTypeTest" />
+			<class name="info.novatec.inspectit.classcache.ClassTypeTest" />
+			<class name="info.novatec.inspectit.classcache.InterfaceTypeTest" />
+			<class name="info.novatec.inspectit.classcache.MethodTypeTest" />
+			<class name="info.novatec.inspectit.classcache.ModifiersTest" />
+		</classes>
+	</test>
 </suite>

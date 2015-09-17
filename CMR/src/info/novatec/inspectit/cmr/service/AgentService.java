@@ -9,7 +9,7 @@ import info.novatec.inspectit.ci.assignment.impl.MethodSensorAssignment;
 import info.novatec.inspectit.classcache.ClassType;
 import info.novatec.inspectit.classcache.ImmutableClassType;
 import info.novatec.inspectit.classcache.ImmutableType;
-import info.novatec.inspectit.cmr.asm.ClassAnalyzer;
+import info.novatec.inspectit.classcache.Type;
 import info.novatec.inspectit.cmr.ci.IConfigurationInterfaceChangeListener;
 import info.novatec.inspectit.cmr.classcache.ClassCache;
 import info.novatec.inspectit.cmr.classcache.ClassCacheModificationException;
@@ -33,7 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.objectweb.asm.ClassReader;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -169,7 +168,7 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	 */
 	@Override
 	@MethodLog
-	public InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, final byte[] bytecode) throws BusinessException {
+	public InstrumentationResult analyzeAndInstrument(long platformIdent, String hash, Type sentType) throws BusinessException {
 		AgentCacheEntry agentCacheEntry = agentCacheMap.get(Long.valueOf(platformIdent));
 		if (null == agentCacheEntry) {
 			throw new BusinessException("Instrumenting class with hash '" + hash + "' for the agent with id=" + platformIdent, AgentManagementErrorCodeEnum.AGENT_DOES_NOT_EXIST);
@@ -179,24 +178,17 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 		ImmutableType type = classCache.getLookupService().findByHash(hash);
 		// if does not exists, parse, merge & configure instrumentation points
 		if (null == type) {
-			// parse first
-			ClassReader classReader = new ClassReader(bytecode);
-			ClassAnalyzer classAnalyzer = new ClassAnalyzer(hash, null, true);
-			classReader.accept(classAnalyzer, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-
-			// then merge
-			type = classAnalyzer.getType();
 			try {
 				// TODO how to use Events
-				classCache.getModificationService().merge(type);
+				classCache.getModificationService().merge(sentType);
+
+				// get real object after merging
+				type = classCache.getLookupService().findByHash(hash);
 			} catch (ClassCacheModificationException e) {
 				log.error("Byte code can not be analyzed due to the exception during merging.", e);
 				return null;
 			}
 		}
-
-		// get real object
-		type = classCache.getLookupService().findByHash(hash);
 
 		// no need to do anything with types that are not classes
 		// just return
