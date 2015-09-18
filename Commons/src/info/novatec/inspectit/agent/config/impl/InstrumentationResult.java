@@ -23,6 +23,11 @@ public class InstrumentationResult {
 	private Collection<RegisteredSensorConfig> registeredSensorConfigs = Collections.emptyList();
 
 	/**
+	 * If class should be instrumented with the class loading delegation.
+	 */
+	private boolean classLoadingDelegation;
+
+	/**
 	 * No arg-constructor.
 	 */
 	public InstrumentationResult() {
@@ -62,6 +67,25 @@ public class InstrumentationResult {
 	 */
 	public void setRegisteredSensorConfigs(Collection<RegisteredSensorConfig> registeredSensorConfigs) {
 		this.registeredSensorConfigs = registeredSensorConfigs;
+	}
+
+	/**
+	 * Gets {@link #classLoadingDelegation}.
+	 * 
+	 * @return {@link #classLoadingDelegation}
+	 */
+	public boolean isClassLoadingDelegation() {
+		return classLoadingDelegation;
+	}
+
+	/**
+	 * Sets {@link #classLoadingDelegation}.
+	 * 
+	 * @param classLoadingDelegation
+	 *            New value for {@link #classLoadingDelegation}
+	 */
+	public void setClassLoadingDelegation(boolean classLoadingDelegation) {
+		this.classLoadingDelegation = classLoadingDelegation;
 	}
 
 }

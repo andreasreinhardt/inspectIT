@@ -164,6 +164,7 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	}
 
 	/**
+	 * 
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -197,6 +198,7 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 		}
 
 		final ImmutableClassType classType = type.castToClass();
+		final Environment environment = agentCacheEntry.getEnvironment();
 
 		// then run configuration if it's a class and does no have instrumentation points
 		// this is a contract with the agent, agent will not send classes that should not have
@@ -205,7 +207,7 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 		// kick in new analysis
 		if (!classType.hasInstrumentationPoints()) {
 			// kick in configuration
-			final Environment environment = agentCacheEntry.getEnvironment();
+
 			final AgentConfiguration agentConfiguration = agentCacheEntry.getAgentConfiguration();
 
 			// we need write lock for this
@@ -231,15 +233,20 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 		// we need read lock for this
 		try {
 			InstrumentationResult instrumentationResult = classCache.executeWithReadLock(new Callable<InstrumentationResult>() {
+
 				@Override
 				public InstrumentationResult call() throws Exception {
+					// TODO class it self, environment check for the thing
+					boolean classLoadingDelegation = instrumentationCreator.analyzeForClassLoadingDelegation(classType, environment);
+
 					// if there are no instrumentation points return null
-					if (!classType.hasInstrumentationPoints()) {
+					if (!classType.hasInstrumentationPoints() && !classLoadingDelegation) {
 						return null;
 					}
 
 					InstrumentationResult instrumentationResult = new InstrumentationResult(classType.getFQN());
 					instrumentationResult.setRegisteredSensorConfigs(classType.getInstrumentationPoints());
+					instrumentationResult.setClassLoadingDelegation(classLoadingDelegation);
 					return instrumentationResult;
 				}
 			});

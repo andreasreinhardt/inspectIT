@@ -390,7 +390,7 @@ public class InstrumentationCreatorTest {
 		when(classType.hasInstrumentationPoints()).thenReturn(true);
 		when(classType.isException()).thenReturn(true);
 		when(classType.getMethods()).thenReturn(Collections.singleton(methodType));
-		
+
 		assertThat(creator.removeInstrumentationPoints(classType, null, null), is(false));
 
 		// matches
@@ -408,5 +408,42 @@ public class InstrumentationCreatorTest {
 		assertThat(creator.removeInstrumentationPoints(classType, null, Collections.singleton(exceptionSensorAssignment)), is(false));
 
 		verify(methodType, times(1)).setRegisteredSensorConfig(Mockito.<RegisteredSensorConfig> any());
+	}
+
+	@Test
+	public void classLoadingDelegationDirect() {
+		when(environment.isClassLoadingDelegation()).thenReturn(false);
+		when(classType.getFQN()).thenReturn("someClass");
+
+		assertThat(creator.analyzeForClassLoadingDelegation(classType, environment), is(false));
+
+		when(environment.isClassLoadingDelegation()).thenReturn(true);
+		when(classType.getFQN()).thenReturn("someClass");
+
+		assertThat(creator.analyzeForClassLoadingDelegation(classType, environment), is(false));
+
+		when(environment.isClassLoadingDelegation()).thenReturn(false);
+		when(classType.getFQN()).thenReturn("java.lang.ClassLoader");
+
+		assertThat(creator.analyzeForClassLoadingDelegation(classType, environment), is(false));
+
+		when(environment.isClassLoadingDelegation()).thenReturn(true);
+		when(classType.getFQN()).thenReturn("java.lang.ClassLoader");
+
+		assertThat(creator.analyzeForClassLoadingDelegation(classType, environment), is(true));
+	}
+
+	@Test
+	public void classLoadingDelegationSubClass() {
+		when(classType.getFQN()).thenReturn("someClass");
+		when(environment.isClassLoadingDelegation()).thenReturn(true);
+
+		when(classType.isSubClassOf(anyString())).thenReturn(false);
+
+		assertThat(creator.analyzeForClassLoadingDelegation(classType, environment), is(false));
+
+		when(classType.isSubClassOf(anyString())).thenReturn(true);
+
+		assertThat(creator.analyzeForClassLoadingDelegation(classType, environment), is(true));
 	}
 }

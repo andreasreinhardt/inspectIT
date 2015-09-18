@@ -12,6 +12,7 @@ import info.novatec.inspectit.ci.context.AbstractContextCapture;
 import info.novatec.inspectit.ci.sensor.method.IMethodSensorConfig;
 import info.novatec.inspectit.ci.sensor.method.impl.InvocationSequenceSensorConfig;
 import info.novatec.inspectit.classcache.ClassType;
+import info.novatec.inspectit.classcache.ImmutableClassType;
 import info.novatec.inspectit.classcache.MethodType;
 import info.novatec.inspectit.classcache.MethodType.Character;
 import info.novatec.inspectit.cmr.classcache.config.filter.ClassSensorAssignmentFilter;
@@ -37,6 +38,11 @@ import org.springframework.stereotype.Component;
 public class InstrumentationCreator {
 
 	/**
+	 * FQn of the java class loader classes needed for the class loading delegation.
+	 */
+	private static final String JAVA_CLASS_LAODER_FQN = "java.lang.ClassLoader";
+
+	/**
 	 * {@link MethodSensorAssignmentFilter}.
 	 */
 	MethodSensorAssignmentFilter methodFilter = new MethodSensorAssignmentFilter();
@@ -57,6 +63,27 @@ public class InstrumentationCreator {
 	 */
 	@Autowired
 	ConfigurationResolver configurationResolver;
+
+	/**
+	 * Defines if the given {@link ImmutableClassType} should be used for the class loading
+	 * delegation instrumentation.
+	 * <p>
+	 * This occurs only if the {@link Environment#isClassLoadingDelegation()} is set to true and
+	 * class is itself {@value #JAVA_CLASS_LAODER_FQN} or it's sub-class.
+	 * 
+	 * @param classType
+	 *            Type to process
+	 * @param environment
+	 *            {@link Environment} holding configuration.
+	 * @return <code>true</code> if class loading delegation should be applied
+	 */
+	public boolean analyzeForClassLoadingDelegation(ImmutableClassType classType, Environment environment) {
+		if (!environment.isClassLoadingDelegation()) {
+			return false;
+		}
+
+		return JAVA_CLASS_LAODER_FQN.equals(classType.getFQN()) || classType.isSubClassOf(JAVA_CLASS_LAODER_FQN);
+	}
 
 	/**
 	 * Runs the complete configuration against collection of the {@link ClassType} to check for the
@@ -367,4 +394,5 @@ public class InstrumentationCreator {
 		IMethodSensorConfig methodSensorConfig = environment.getMethodSensorTypeConfig(assignment.getSensorConfigClass());
 		return agentConfiguration.getMethodSensorTypeConfig(methodSensorConfig.getClassName());
 	}
+
 }

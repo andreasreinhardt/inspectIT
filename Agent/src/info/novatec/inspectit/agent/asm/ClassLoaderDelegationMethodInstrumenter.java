@@ -31,13 +31,18 @@ public class ClassLoaderDelegationMethodInstrumenter extends AdviceAdapter {
 	/**
 	 * Method descriptor of the load class method in the IAgent class.
 	 */
-	private static final String LOAD_CLASS_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.getType(Class.class), Type.getType(Object[].class));
+	private static final String IAGENT_LOAD_CLASS_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.getType(Class.class), Type.getType(Object[].class));
+
+	/**
+	 * Method descriptor of the load class method in the class loader:
+	 * {@link java.lang.ClassLoader#loadClass(String)}.
+	 */
+	private static final String CLASS_LOADER_LOAD_CLASS_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.getType(Class.class), Type.getType(String.class));;
 
 	/**
 	 * Parameters of the method.
 	 */
 	private Type[] argumentTypes;
-
 
 	/**
 	 * @param mv
@@ -55,6 +60,21 @@ public class ClassLoaderDelegationMethodInstrumenter extends AdviceAdapter {
 	}
 
 	/**
+	 * Returns if the method name and descriptor are fitting the
+	 * {@link java.lang.ClassLoader#loadClass(String)} method. This method should be used to
+	 * determine if the method should be instrumented with class loading delegation.
+	 * 
+	 * @param name
+	 *            name of the method
+	 * @param desc
+	 *            method type descriptor
+	 * @return <code>true</code> if method is fitting for the class loader delegation.
+	 */
+	public static boolean isLoadClassMethod(String name, String desc) {
+		return "loadClass".equals(name) && CLASS_LOADER_LOAD_CLASS_METHOD_DESCRIPTOR.equals(desc);
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -65,7 +85,7 @@ public class ClassLoaderDelegationMethodInstrumenter extends AdviceAdapter {
 		pushParameters();
 
 		// now invoke loadClass(Object[] params) method (no parameters here)
-		mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IAGENT_INTERNAL_NAME, "loadClass", LOAD_CLASS_METHOD_DESCRIPTOR, true);
+		mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IAGENT_INTERNAL_NAME, "loadClass", IAGENT_LOAD_CLASS_METHOD_DESCRIPTOR, true);
 
 		dup();
 

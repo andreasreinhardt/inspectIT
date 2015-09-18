@@ -30,6 +30,11 @@ public class ClassInstrumenter extends ClassVisitor {
 	private boolean enhancedExceptionSensor;
 
 	/**
+	 * If class should be checked and instrumented for the class loading delegation.
+	 */
+	boolean classLoadingDelegation;
+
+	/**
 	 * All register sensor configs that should be added as instrumentation points.
 	 */
 	Collection<RegisteredSensorConfig> registeredSensorConfigs;
@@ -53,10 +58,13 @@ public class ClassInstrumenter extends ClassVisitor {
 	 *            Instrumentation points.
 	 * @param enhancedExceptionSensor
 	 *            If enhanced exception sensor is ON.
+	 * @param classLoadingDelegation
+	 *            If class loading delegation should be checked for this class.
 	 */
-	public ClassInstrumenter(ClassVisitor classVisitor, Collection<RegisteredSensorConfig> registeredSensorConfigs, boolean enhancedExceptionSensor) {
+	public ClassInstrumenter(ClassVisitor classVisitor, Collection<RegisteredSensorConfig> registeredSensorConfigs, boolean enhancedExceptionSensor, boolean classLoadingDelegation) {
 		super(Opcodes.ASM5, classVisitor);
 		this.enhancedExceptionSensor = enhancedExceptionSensor;
+		this.classLoadingDelegation = classLoadingDelegation;
 		this.registeredSensorConfigs = new ArrayList<RegisteredSensorConfig>(registeredSensorConfigs);
 	}
 
@@ -66,11 +74,11 @@ public class ClassInstrumenter extends ClassVisitor {
 	@Override
 	public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
 		// calling super to ensure the visitor pattern
-		MethodVisitor superMethodVisitor = super.visitMethod(access, name, desc, signature, exceptions);
+		MethodVisitor methodVisitor = super.visitMethod(access, name, desc, signature, exceptions);
 
 		// using JSR inliner adapter in order to remove JSR/RET instructions
 		// see http://mail-archive.ow2.org/asm/2008-11/msg00008.html
-		JSRInlinerAdapter jsrInlinerAdapter = new JSRInlinerAdapter(superMethodVisitor, access, name, desc, signature, exceptions);
+		methodVisitor = new JSRInlinerAdapter(methodVisitor, access, name, desc, signature, exceptions);
 
 		RegisteredSensorConfig rsc = shouldInstrument(name, desc);
 		if (null != rsc) {
@@ -78,15 +86,18 @@ public class ClassInstrumenter extends ClassVisitor {
 			boolean constructor = "<init>".equals(name);
 
 			if (constructor) {
-				return getConstructorInstrumenter(jsrInlinerAdapter, access, name, desc, id, isEnhancedExceptionSensor());
+				methodVisitor = getConstructorInstrumenter(methodVisitor, access, name, desc, id, isEnhancedExceptionSensor());
 			} else {
-				return getMethodInstrumenter(jsrInlinerAdapter, access, name, desc, id, isEnhancedExceptionSensor());
+				methodVisitor = getMethodInstrumenter(methodVisitor, access, name, desc, id, isEnhancedExceptionSensor());
 			}
 
-		} else {
-			// if nothing to instrument just return super method visitor
-			return jsrInlinerAdapter;
 		}
+
+		if (isClassLoadingDelegationMethod(name, desc)) {
+			methodVisitor = getClassLoaderDelegationMethodInstrumenter(methodVisitor, access, name, desc);
+		}
+
+		return methodVisitor;
 	}
 
 	/**
@@ -158,6 +169,20 @@ public class ClassInstrumenter extends ClassVisitor {
 	}
 
 	/**
+	 * Checks if method is class loading delegation one.
+	 * 
+	 * @param name
+	 *            name of the method
+	 * @param desc
+	 *            description.
+	 * @return <code>true</code> if {@link ClassLoaderDelegationMethodInstrumenter} should be
+	 *         applied on the method
+	 */
+	boolean isClassLoadingDelegationMethod(String name, String desc) {
+		return classLoadingDelegation && ClassLoaderDelegationMethodInstrumenter.isLoadClassMethod(name, desc);
+	}
+
+	/**
 	 * Is exception sensor active.
 	 * 
 	 * @return Is exception sensor active.
@@ -210,6 +235,25 @@ public class ClassInstrumenter extends ClassVisitor {
 	 */
 	ConstructorInstrumenter getConstructorInstrumenter(MethodVisitor superMethodVisitor, int access, String name, String desc, long constructorId, boolean enhancedExceptionSensor) {
 		return new ConstructorInstrumenter(superMethodVisitor, access, name, desc, constructorId, enhancedExceptionSensor);
+	}
+
+	/**
+	 * Returns proper {@link ClassLoaderDelegationMethodInstrumenter}.
+	 * <p>
+	 * Tests can override this method for easier testing.
+	 * 
+	 * @param superMethodVisitor
+	 *            Super method visitor.
+	 * @param access
+	 *            Method access code.
+	 * @param name
+	 *            Method name.
+	 * @param desc
+	 *            Method description.
+	 * @return Returns proper {@link ClassLoaderDelegationMethodInstrumenter}.
+	 */
+	ClassLoaderDelegationMethodInstrumenter getClassLoaderDelegationMethodInstrumenter(MethodVisitor superMethodVisitor, int access, String name, String desc) {
+		return new ClassLoaderDelegationMethodInstrumenter(superMethodVisitor, access, name, desc);
 	}
 
 }

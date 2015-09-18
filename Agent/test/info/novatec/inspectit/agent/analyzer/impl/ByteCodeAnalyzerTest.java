@@ -13,6 +13,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import info.novatec.inspectit.agent.AbstractLogSupport;
 import info.novatec.inspectit.agent.analyzer.classes.TestClass;
+import info.novatec.inspectit.agent.config.IConfigurationStorage;
 import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
 import info.novatec.inspectit.agent.config.impl.RegisteredSensorConfig;
 import info.novatec.inspectit.agent.connection.IConnection;
@@ -20,6 +21,7 @@ import info.novatec.inspectit.agent.connection.ServerUnavailableException;
 import info.novatec.inspectit.agent.core.IIdManager;
 import info.novatec.inspectit.agent.core.IdNotAvailableException;
 import info.novatec.inspectit.agent.hooking.IHookDispatcherMapper;
+import info.novatec.inspectit.classcache.ClassType;
 import info.novatec.inspectit.exception.BusinessException;
 
 import java.io.IOException;
@@ -56,6 +58,9 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 	@Mock
 	private RegisteredSensorConfig registeredSensorConfig;
 
+	@Mock
+	private IConfigurationStorage configurationStorage;
+
 	private final Long platformId = 10L;
 
 	@BeforeMethod(dependsOnMethods = { "initMocks" })
@@ -65,6 +70,7 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 		byteCodeAnalyzer.connection = connection;
 		byteCodeAnalyzer.hookDispatcherMapper = hookDispatcherMapper;
 		byteCodeAnalyzer.sendingClassHashCache = sendingClassCache;
+		byteCodeAnalyzer.configurationStorage = configurationStorage;
 		byteCodeAnalyzer.log = LoggerFactory.getLogger(ByteCodeAnalyzer.class);
 
 		when(idManager.getPlatformId()).thenReturn(platformId);
@@ -79,6 +85,11 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 	}
 
 	@Test
+	public void nullByteCode() {
+		assertThat(byteCodeAnalyzer.analyzeAndInstrument(null, "Class", getClass().getClassLoader()), is(nullValue()));
+	}
+
+	@Test
 	public void notToBeSent() throws IOException {
 		String className = TestClass.class.getName();
 		ClassLoader classLoader = TestClass.class.getClassLoader();
@@ -89,7 +100,7 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 
 		byte[] instrumentedByteCode = byteCodeAnalyzer.analyzeAndInstrument(byteCode, className, classLoader);
 
-		// as no instrumentation happened, we did not send the class
+		// we did not send the class type
 		assertThat(instrumentedByteCode, is(nullValue()));
 		verify(sendingClassCache, times(1)).isSending(hashCaptor.getValue());
 		verifyZeroInteractions(idManager, connection, hookDispatcherMapper);
@@ -103,15 +114,16 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 		byte[] byteCode = getByteCode(className);
 
 		ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
+		ArgumentCaptor<ClassType> classCaptor = ArgumentCaptor.forClass(ClassType.class);
 		when(sendingClassCache.isSending(hashCaptor.capture())).thenReturn(true);
-		when(connection.analyzeAndInstrument(eq(platformId.longValue()), anyString(), null)).thenReturn(null);
+		when(connection.analyzeAndInstrument(eq(platformId.longValue()), anyString(), classCaptor.capture())).thenReturn(null);
 
 		byte[] instrumentedByteCode = byteCodeAnalyzer.analyzeAndInstrument(byteCode, className, classLoader);
 
 		// as no instrumentation happened, we get a null object
 		assertThat(instrumentedByteCode, is(nullValue()));
 
-		verify(connection, times(1)).analyzeAndInstrument(platformId.longValue(), hashCaptor.getValue(), null);
+		verify(connection, times(1)).analyzeAndInstrument(platformId.longValue(), hashCaptor.getValue(), classCaptor.getValue());
 		verify(sendingClassCache, times(1)).isSending(hashCaptor.getValue());
 		verify(sendingClassCache, times(1)).markSending(hashCaptor.getValue(), false);
 		verifyZeroInteractions(hookDispatcherMapper);
@@ -125,9 +137,11 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 		byte[] byteCode = getByteCode(className);
 
 		ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
+		ArgumentCaptor<ClassType> classCaptor = ArgumentCaptor.forClass(ClassType.class);
 		when(sendingClassCache.isSending(hashCaptor.capture())).thenReturn(true);
-		when(connection.analyzeAndInstrument(eq(platformId.longValue()), anyString(), null)).thenReturn(instrumentationResult);
+		when(connection.analyzeAndInstrument(eq(platformId.longValue()), anyString(), classCaptor.capture())).thenReturn(instrumentationResult);
 		when(instrumentationResult.getRegisteredSensorConfigs()).thenReturn(Collections.singleton(registeredSensorConfig));
+		when(instrumentationResult.isClassLoadingDelegation()).thenReturn(false);
 		long rscId = 13L;
 		when(registeredSensorConfig.getId()).thenReturn(rscId);
 
@@ -136,10 +150,35 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 		// as no instrumentation happened, we get a null object
 		assertThat(instrumentedByteCode, is(not(nullValue())));
 
-		verify(connection, times(1)).analyzeAndInstrument(platformId.longValue(), hashCaptor.getValue(), null);
+		verify(connection, times(1)).analyzeAndInstrument(platformId.longValue(), hashCaptor.getValue(), classCaptor.getValue());
 		verify(sendingClassCache, times(1)).isSending(hashCaptor.getValue());
 		verify(sendingClassCache, times(1)).markSending(hashCaptor.getValue(), true);
 		verify(hookDispatcherMapper, times(1)).addMapping(rscId, registeredSensorConfig);
 		verifyNoMoreInteractions(hookDispatcherMapper, connection, sendingClassCache);
+	}
+
+	@Test
+	public void classLoadingDelegation() throws ServerUnavailableException, BusinessException, IOException {
+		String className = TestClass.class.getName();
+		ClassLoader classLoader = TestClass.class.getClassLoader();
+		byte[] byteCode = getByteCode(className);
+
+		ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
+		ArgumentCaptor<ClassType> classCaptor = ArgumentCaptor.forClass(ClassType.class);
+		when(sendingClassCache.isSending(hashCaptor.capture())).thenReturn(true);
+		when(connection.analyzeAndInstrument(eq(platformId.longValue()), anyString(), classCaptor.capture())).thenReturn(instrumentationResult);
+		when(instrumentationResult.getRegisteredSensorConfigs()).thenReturn(Collections.<RegisteredSensorConfig> emptyList());
+		when(instrumentationResult.isClassLoadingDelegation()).thenReturn(true);
+
+		byte[] instrumentedByteCode = byteCodeAnalyzer.analyzeAndInstrument(byteCode, className, classLoader);
+
+		// as no instrumentation happened, we get a null object
+		assertThat(instrumentedByteCode, is(not(nullValue())));
+
+		verify(connection, times(1)).analyzeAndInstrument(platformId.longValue(), hashCaptor.getValue(), classCaptor.getValue());
+		verify(sendingClassCache, times(1)).isSending(hashCaptor.getValue());
+		verify(sendingClassCache, times(1)).markSending(hashCaptor.getValue(), true);
+		verifyNoMoreInteractions(connection, sendingClassCache);
+		verifyZeroInteractions(hookDispatcherMapper);
 	}
 }

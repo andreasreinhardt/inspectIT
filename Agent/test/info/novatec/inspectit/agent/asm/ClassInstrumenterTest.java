@@ -7,9 +7,13 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
+import info.novatec.inspectit.agent.IAgent;
 import info.novatec.inspectit.agent.config.impl.RegisteredSensorConfig;
 import info.novatec.inspectit.agent.hooking.IHookDispatcher;
 
@@ -39,10 +43,17 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 
 	private static final String EXCEPTION_TEST_CLASS_FQN = "info.novatec.inspectit.agent.asm.InstrumentationExceptionTestClass";
 
+	private static final String TEST_CLASS_LOADER_FQN = "info.novatec.inspectit.agent.asm.MyTestClassLoader";
+
 	public static IHookDispatcher dispatcher;
 
 	@Mock
 	private IHookDispatcher hookDispatcher;
+
+	public static IAgent a;
+
+	@Mock
+	private IAgent agent;
 
 	@Mock
 	private RegisteredSensorConfig rsc;
@@ -59,6 +70,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		MockitoAnnotations.initMocks(this);
 
 		dispatcher = hookDispatcher;
+		a = agent;
 	}
 
 	// should instrument
@@ -83,7 +95,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		rscList.add(rsc);
 		rscList.add(rsc2);
 
-		classInstrumenter = new ClassInstrumenter(null, rscList, false);
+		classInstrumenter = new ClassInstrumenter(null, rscList, false, false);
 
 		assertThat(classInstrumenter.shouldInstrument("methodName", "(Ljava/lang/Object;I[J)V"), is(rsc));
 		assertThat(classInstrumenter.shouldInstrument("methodName2", "()D"), is(rsc2));
@@ -94,7 +106,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		rsc = new RegisteredSensorConfig();
 		rsc.setTargetMethodName("methodName");
 
-		classInstrumenter = new ClassInstrumenter(null, Collections.singletonList(rsc), false);
+		classInstrumenter = new ClassInstrumenter(null, Collections.singletonList(rsc), false, false);
 
 		assertThat(classInstrumenter.shouldInstrument("someName", "(Ljava/lang/Object;I)V"), is(nullValue()));
 	}
@@ -105,7 +117,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		rsc.setTargetMethodName("methodName");
 		rsc.setReturnType("double");
 
-		classInstrumenter = new ClassInstrumenter(null, Collections.singletonList(rsc), false);
+		classInstrumenter = new ClassInstrumenter(null, Collections.singletonList(rsc), false, false);
 
 		assertThat(classInstrumenter.shouldInstrument("methodName", "()I"), is(nullValue()));
 		assertThat(classInstrumenter.shouldInstrument("methodName", "()V"), is(nullValue()));
@@ -121,7 +133,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		parameters.add("long");
 		rsc.setParameterTypes(parameters);
 
-		classInstrumenter = new ClassInstrumenter(null, Collections.singletonList(rsc), false);
+		classInstrumenter = new ClassInstrumenter(null, Collections.singletonList(rsc), false, false);
 
 		// size does not match
 		assertThat(classInstrumenter.shouldInstrument("methodName", "()D"), is(nullValue()));
@@ -756,7 +768,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		try {
 			constructor.newInstance(parameters);
 		} catch (Throwable t) {
-			
+
 		}
 
 		verify(hookDispatcher).dispatchConstructorBeforeBody(methodId, parameters);
@@ -792,9 +804,9 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		verify(hookDispatcher).dispatchConstructorBeforeBody(methodId, parameters);
 		ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
 		verify(hookDispatcher).dispatchConstructorAfterBody(eq(methodId), captor.capture(), eq(parameters));
-		
+
 		assertThat(captor.getValue().getClass().getName(), is(TEST_CLASS_FQN));
-		
+
 		verifyNoMoreInteractions(hookDispatcher);
 	}
 
@@ -917,7 +929,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
 		verify(hookDispatcher).dispatchOnThrowInBody(eq(innerMethodId), eq(testClass), (Object[]) anyObject(), captor.capture());
 		assertThat(captor.getValue().getClass().getName(), is(equalTo(MyTestException.class.getName())));
-		
+
 		verify(hookDispatcher).dispatchBeforeCatch(eq(methodId), captor.capture());
 		assertThat(captor.getValue().getClass().getName(), is(equalTo(MyTestException.class.getName())));
 		verifyNoMoreInteractions(hookDispatcher);
@@ -1058,6 +1070,108 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		verifyNoMoreInteractions(hookDispatcher);
 	}
 
+	// class loader delegation
+
+	@Test
+	public void classLoadingDelegationActiveLoadClass() throws Exception {
+		Class<?> clazz = getClass();
+		Object[] parameters = { "java.lang.String" };
+		String methodName = "loadClass";
+
+		doReturn(clazz).when(agent).loadClass(parameters);
+
+		ClassReader cr = new ClassReader(TEST_CLASS_LOADER_FQN);
+		prepareWriter(cr, null);
+
+		classInstrumenter.classLoadingDelegation = true;
+
+		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		byte b[] = classWriter.toByteArray();
+
+		// now call this method
+		Object testClass = this.createInstance(TEST_CLASS_LOADER_FQN, b);
+		// call this method via reflection as we would get a class cast
+		// exception by casting to the concrete class.
+		Class<?> result = (Class<?>) this.callMethod(testClass, methodName, parameters);
+
+		assertThat((Object) result, is(equalTo((Object) clazz)));
+
+		verify(agent, times(1)).loadClass(parameters);
+		verifyNoMoreInteractions(agent);
+	}
+
+	@Test
+	public void classLoadingDelegationActiveDoesNotLoadClass() throws Exception {
+		Object[] parameters = { "java.lang.String" };
+		String methodName = "loadClass";
+
+		doReturn(null).when(agent).loadClass(parameters);
+
+		ClassReader cr = new ClassReader(TEST_CLASS_LOADER_FQN);
+		prepareWriter(cr, null);
+
+		classInstrumenter.classLoadingDelegation = true;
+
+		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		byte b[] = classWriter.toByteArray();
+
+		// now call this method
+		Object testClass = this.createInstance(TEST_CLASS_LOADER_FQN, b);
+		// call this method via reflection as we would get a class cast
+		// exception by casting to the concrete class.
+		Class<?> result = (Class<?>) this.callMethod(testClass, methodName, parameters);
+
+		// it's delegated to super class loader so we should get the String class back
+		assertThat((Object) result, is(equalTo((Object) String.class)));
+
+		verify(agent, times(1)).loadClass(parameters);
+		verifyNoMoreInteractions(agent);
+	}
+
+	@Test
+	public void classLoadingDelegationActiveWrongMethod() throws Exception {
+		Object[] parameters = { "java.lang.String" };
+		String methodName = "getResource";
+
+		ClassReader cr = new ClassReader(TEST_CLASS_LOADER_FQN);
+		prepareWriter(cr, null);
+
+		classInstrumenter.classLoadingDelegation = true;
+
+		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		byte b[] = classWriter.toByteArray();
+
+		// now call this method
+		Object testClass = this.createInstance(TEST_CLASS_LOADER_FQN, b);
+		// call this method via reflection as we would get a class cast
+		// exception by casting to the concrete class.
+		this.callMethod(testClass, methodName, parameters);
+
+		verifyZeroInteractions(agent);
+	}
+
+	@Test
+	public void classLoadingDelegationNotActive() throws Exception {
+		Object[] parameters = { "java.lang.String" };
+		String methodName = "loadClass";
+
+		ClassReader cr = new ClassReader(TEST_CLASS_LOADER_FQN);
+		prepareWriter(cr, null);
+
+		classInstrumenter.classLoadingDelegation = false;
+
+		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		byte b[] = classWriter.toByteArray();
+
+		// now call this method
+		Object testClass = this.createInstance(TEST_CLASS_LOADER_FQN, b);
+		// call this method via reflection as we would get a class cast
+		// exception by casting to the concrete class.
+		this.callMethod(testClass, methodName, parameters);
+
+		verifyZeroInteractions(agent);
+	}
+
 	private void prepareWriter(ClassReader cr, ClassLoader classLoader) {
 		classWriter = new LoaderAwareClassWriter(cr, ClassWriter.COMPUTE_FRAMES, classLoader);
 		classInstrumenter = new ClassInstrumenter(classWriter);
@@ -1075,6 +1189,13 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 				return getConstructorInstrumenter((MethodVisitor) arguments[0], (Integer) arguments[1], (String) arguments[2], (String) arguments[3], (Long) arguments[4], (Boolean) arguments[5]);
 			}
 		}).when(classInstrumenter).getConstructorInstrumenter(Mockito.<MethodVisitor> any(), Mockito.anyInt(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean());
+		doAnswer(new Answer<MethodVisitor>() {
+			public ClassLoaderDelegationMethodInstrumenter answer(InvocationOnMock invocation) throws Throwable {
+				Object[] arguments = invocation.getArguments();
+				return getClassLoaderDelegationMethodInstrumenter((MethodVisitor) arguments[0], (Integer) arguments[1], (String) arguments[2], (String) arguments[3]);
+			}
+		}).when(classInstrumenter).getClassLoaderDelegationMethodInstrumenter(Mockito.<MethodVisitor> any(), Mockito.anyInt(), Mockito.anyString(), Mockito.anyString());
+
 	}
 
 	private MethodInstrumenter getMethodInstrumenter(MethodVisitor superMethodVisitor, int access, String name, String desc, long id, boolean enhancedExceptionSensor) {
@@ -1091,6 +1212,15 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 			@Override
 			void loadHookDispatcher() {
 				mv.visitFieldInsn(Opcodes.GETSTATIC, Type.getInternalName(ClassInstrumenterTest.class), "dispatcher", Type.getDescriptor(IHookDispatcher.class));
+			}
+		};
+	}
+
+	private ClassLoaderDelegationMethodInstrumenter getClassLoaderDelegationMethodInstrumenter(MethodVisitor superMethodVisitor, int access, String name, String desc) {
+		return new ClassLoaderDelegationMethodInstrumenter(superMethodVisitor, access, name, desc) {
+			@Override
+			void loadAgent() {
+				mv.visitFieldInsn(Opcodes.GETSTATIC, Type.getInternalName(ClassInstrumenterTest.class), "a", Type.getDescriptor(IAgent.class));
 			}
 		};
 	}

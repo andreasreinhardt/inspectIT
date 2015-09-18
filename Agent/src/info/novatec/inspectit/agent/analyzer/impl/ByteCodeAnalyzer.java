@@ -4,6 +4,8 @@ import info.novatec.inspectit.agent.analyzer.IByteCodeAnalyzer;
 import info.novatec.inspectit.agent.asm.ClassAnalyzer;
 import info.novatec.inspectit.agent.asm.ClassInstrumenter;
 import info.novatec.inspectit.agent.asm.LoaderAwareClassWriter;
+import info.novatec.inspectit.agent.config.IConfigurationStorage;
+import info.novatec.inspectit.agent.config.StorageException;
 import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
 import info.novatec.inspectit.agent.config.impl.RegisteredSensorConfig;
 import info.novatec.inspectit.agent.connection.IConnection;
@@ -15,13 +17,13 @@ import info.novatec.inspectit.classcache.Type;
 import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.spring.logger.Log;
 
+import java.util.Collection;
+
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.collections.CollectionUtils;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -53,12 +55,6 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 	IConnection connection;
 
 	/**
-	 * If class loader delegation should be active.
-	 */
-	@Value("${instrumentation.classLoaderDelegation}")
-	boolean classLoaderDelegation; // TODO
-
-	/**
 	 * {@link IHookDispatcherMapper}.
 	 */
 	@Autowired
@@ -70,6 +66,12 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 	 */
 	@Autowired
 	SendingClassHashCache sendingClassHashCache;
+
+	/**
+	 * Configuration storage.
+	 */
+	@Autowired
+	IConfigurationStorage configurationStorage;
 
 	/**
 	 * {@inheritDoc}
@@ -88,6 +90,8 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 			String hash = DigestUtils.sha256Hex(byteCode);
 
 			// in asynch we should move to check for instrumentation points
+			// TODO what if we need it for class loading delegation? for now marking as sending as
+			// well
 			if (!sendingClassHashCache.isSending(hash)) {
 				return null;
 			}
@@ -101,18 +105,28 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 			// try connecting to server
 			InstrumentationResult instrumentationResult = connection.analyzeAndInstrument(idManager.getPlatformId(), hash, type);
 
-			if (null == instrumentationResult || CollectionUtils.isEmpty(instrumentationResult.getRegisteredSensorConfigs())) {
+			// if we get nothing the just mark as not sending
+			if (null == instrumentationResult) {
+				// faking the mark sending if the delegation is true as well
 				sendingClassHashCache.markSending(hash, false);
 				return null;
+			}
+
+			Collection<RegisteredSensorConfig> instrumentationPoints = instrumentationResult.getRegisteredSensorConfigs();
+			boolean classLoadingDelegation = instrumentationResult.isClassLoadingDelegation();
+
+			if (classLoadingDelegation) {
+				log.info("Class loading active for class " + type);
 			}
 
 			// here do the instrumentation
 			classReader = new ClassReader(byteCode);
 			ClassWriter classWriter = new LoaderAwareClassWriter(ClassWriter.COMPUTE_FRAMES, classLoader);
-			ClassInstrumenter classInstrumenter = new ClassInstrumenter(classWriter, instrumentationResult.getRegisteredSensorConfigs(), false);
+			ClassInstrumenter classInstrumenter = new ClassInstrumenter(classWriter, instrumentationPoints, configurationStorage.isEnhancedExceptionSensorActivated(), classLoadingDelegation);
 			classReader.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
 
-			for (RegisteredSensorConfig registeredSensorConfig : instrumentationResult.getRegisteredSensorConfigs()) {
+			// map the instrumentation points if we have them
+			for (RegisteredSensorConfig registeredSensorConfig : instrumentationPoints) {
 				hookDispatcherMapper.addMapping(registeredSensorConfig.getId(), registeredSensorConfig);
 			}
 
@@ -128,7 +142,9 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 		} catch (BusinessException businessException) {
 			log.error("Error occurred instrumenting the byte code of class " + className, businessException);
 			return null;
+		} catch (StorageException storageException) {
+			log.error("Error occurred instrumenting the byte code of class " + className, storageException);
+			return null;
 		}
 	}
-
 }
