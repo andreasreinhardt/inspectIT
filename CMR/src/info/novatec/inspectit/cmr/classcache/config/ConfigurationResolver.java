@@ -132,14 +132,17 @@ public class ConfigurationResolver {
 
 		for (Iterator<AgentMapping> it = mappings.iterator(); it.hasNext();) {
 			AgentMapping agentMapping = it.next();
-			if (!matches(agentMapping, definedIPs, agentName)) {
+			if (!agentMapping.isActive() || !matches(agentMapping, definedIPs, agentName)) {
 				it.remove();
 			}
 		}
 
-		if (CollectionUtils.isEmpty(mappings) || mappings.size() > 1) {
+		if (CollectionUtils.isEmpty(mappings)) {
 			throw new BusinessException("Determing an environment to use for the agent with name '" + agentName + "' and IP adress(es): " + definedIPs,
 					ConfigurationInterfaceErrorCodeEnum.ENVIRONMENT_FOR_AGENT_NOT_FOUND);
+		} else if (mappings.size() > 1) {
+			throw new BusinessException("Determing an environment to use for the agent with name '" + agentName + "' and IP adress(es): " + definedIPs,
+					ConfigurationInterfaceErrorCodeEnum.MORE_THAN_ONE_ENVIRONMENT_FOR_AGENT_FOUND);
 		} else {
 			String environmentId = mappings.get(0).getEnvironmentId();
 			return configurationInterfaceManager.getEnvironment(environmentId);
