@@ -2,6 +2,7 @@ package info.novatec.inspectit.cmr.classcache.config;
 
 import info.novatec.inspectit.agent.config.impl.AgentConfiguration;
 import info.novatec.inspectit.agent.config.impl.ExceptionSensorTypeConfig;
+import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
 import info.novatec.inspectit.agent.config.impl.MethodSensorTypeConfig;
 import info.novatec.inspectit.agent.config.impl.RegisteredSensorConfig;
 import info.novatec.inspectit.ci.Environment;
@@ -63,6 +64,32 @@ public class InstrumentationCreator {
 	 */
 	@Autowired
 	ConfigurationResolver configurationResolver;
+
+	/**
+	 * Creates {@link InstrumentationResult} for the given {@link ClassType} and Environment. This
+	 * result is used to inform the agent.
+	 * 
+	 * @param classType
+	 *            Type to process
+	 * @param environment
+	 *            {@link Environment} holding configuration.
+	 * @return {@link InstrumentationResult} or <code>null</code> if one does not exists for the
+	 *         given class type.
+	 */
+	public InstrumentationResult createInstrumentationResult(ImmutableClassType classType, Environment environment) {
+		// TODO class it self, environment check for the thing
+		boolean classLoadingDelegation = analyzeForClassLoadingDelegation(classType, environment);
+
+		// if there are no instrumentation points return null
+		if (!classType.hasInstrumentationPoints() && !classLoadingDelegation) {
+			return null;
+		}
+
+		InstrumentationResult instrumentationResult = new InstrumentationResult(classType.getFQN());
+		instrumentationResult.setRegisteredSensorConfigs(classType.getInstrumentationPoints());
+		instrumentationResult.setClassLoadingDelegation(classLoadingDelegation);
+		return instrumentationResult;
+	}
 
 	/**
 	 * Defines if the given {@link ImmutableClassType} should be used for the class loading

@@ -47,6 +47,7 @@ public class StrategyAndSensorConfiguration implements InitializingBean {
 		springConfiguration.registerComponents(configurationStorage);
 
 		hookSupplier.initialize(configurationStorage.getMethodSensorTypes());
-	}
 
+		// TODO move directly to the configuration storage
+	}
 }

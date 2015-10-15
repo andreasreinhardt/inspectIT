@@ -3,7 +3,6 @@ package info.novatec.inspectit.cmr.classcache.config.job;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -123,7 +122,6 @@ public class EnvironmentUpdateJobTest {
 
 		verify(agentCacheEntry, times(1)).setEnvironment(updateEnvironment);
 		verify(agentCacheEntry, times(1)).setAgentConfiguration(updateConfiguration);
-		verify(agentConfiguration, times(0)).setInstrumentationLastModified(anyLong());
 		verify(configurationCreator, times(1)).environmentToConfiguration(updateEnvironment, PLATFORM_ID);
 
 		verifyZeroInteractions(classCache, environment, classCacheSearchNarrower, instrumentationCreator);
@@ -141,7 +139,6 @@ public class EnvironmentUpdateJobTest {
 
 		verify(agentCacheEntry, times(1)).setEnvironment(updateEnvironment);
 		verify(agentCacheEntry, times(1)).setAgentConfiguration(updateConfiguration);
-		verify(agentConfiguration, times(1)).setInstrumentationLastModified(anyLong());
 		verify(configurationCreator, times(1)).environmentToConfiguration(updateEnvironment, PLATFORM_ID);
 
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
@@ -167,7 +164,6 @@ public class EnvironmentUpdateJobTest {
 
 		verify(agentCacheEntry, times(1)).setEnvironment(updateEnvironment);
 		verify(agentCacheEntry, times(1)).setAgentConfiguration(updateConfiguration);
-		verify(agentConfiguration, times(1)).setInstrumentationLastModified(anyLong());
 		verify(configurationCreator, times(1)).environmentToConfiguration(updateEnvironment, PLATFORM_ID);
 
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
@@ -192,7 +188,6 @@ public class EnvironmentUpdateJobTest {
 
 		verify(agentCacheEntry, times(1)).setEnvironment(updateEnvironment);
 		verify(agentCacheEntry, times(1)).setAgentConfiguration(updateConfiguration);
-		verify(agentConfiguration, times(1)).setInstrumentationLastModified(anyLong());
 		verify(configurationCreator, times(1)).environmentToConfiguration(updateEnvironment, PLATFORM_ID);
 
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
@@ -221,7 +216,6 @@ public class EnvironmentUpdateJobTest {
 
 		verify(agentCacheEntry, times(1)).setEnvironment(updateEnvironment);
 		verify(agentCacheEntry, times(1)).setAgentConfiguration(updateConfiguration);
-		verify(agentConfiguration, times(1)).setInstrumentationLastModified(anyLong());
 		verify(configurationCreator, times(1)).environmentToConfiguration(updateEnvironment, PLATFORM_ID);
 
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);

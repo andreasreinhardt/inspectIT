@@ -3,6 +3,7 @@ package info.novatec.inspectit.agent.config.impl;
 import info.novatec.inspectit.pattern.IMatchPattern;
 
 import java.util.Collection;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -20,10 +21,11 @@ public class AgentConfiguration {
 	private long platformId;
 
 	/**
-	 * This is the time-stamp of the last time the instrumentation points where modified in the
-	 * configuration.
+	 * Denotes if the class cache for the agent exist on the CMR. If this is set to
+	 * <code>true</code> agent can use its internal sending classes cache, otherwise agent should
+	 * send all the loaded classes to the CMR ignoring the sending cache state.
 	 */
-	private long instrumentationLastModified;
+	private boolean classCacheExistsOnCmr;
 
 	/**
 	 * Collection of the platform sensor types that should be active.
@@ -56,6 +58,13 @@ public class AgentConfiguration {
 	private Collection<IMatchPattern> excludeClassesPatterns;
 
 	/**
+	 * Set of known {@link InstrumentationResult} for the agent that can be used by the Agent right
+	 * away. Each {@link InstrumentationResult} is mapped to the collection of the class hashes it
+	 * relates to.
+	 */
+	private Map<Collection<String>, InstrumentationResult> initialInstrumentationResults;
+
+	/**
 	 * Gets {@link #platformId}.
 	 * 
 	 * @return {@link #platformId}
@@ -75,22 +84,22 @@ public class AgentConfiguration {
 	}
 
 	/**
-	 * Gets {@link #instrumentationLastModified}.
+	 * Gets {@link #classCacheExistsOnCmr}.
 	 * 
-	 * @return {@link #instrumentationLastModified}
+	 * @return {@link #classCacheExistsOnCmr}
 	 */
-	public long getInstrumentationLastModified() {
-		return instrumentationLastModified;
+	public boolean isClassCacheExistsOnCmr() {
+		return classCacheExistsOnCmr;
 	}
 
 	/**
-	 * Sets {@link #instrumentationLastModified}.
+	 * Sets {@link #classCacheExistsOnCmr}.
 	 * 
-	 * @param instrumentationLastModified
-	 *            New value for {@link #instrumentationLastModified}
+	 * @param classCacheExistsOnCmr
+	 *            New value for {@link #classCacheExistsOnCmr}
 	 */
-	public void setInstrumentationLastModified(long instrumentationLastModified) {
-		this.instrumentationLastModified = instrumentationLastModified;
+	public void setClassCacheExistsOnCmr(boolean classCacheExistsOnCmr) {
+		this.classCacheExistsOnCmr = classCacheExistsOnCmr;
 	}
 
 	/**
@@ -228,6 +237,25 @@ public class AgentConfiguration {
 	}
 
 	/**
+	 * Gets {@link #initialInstrumentationResults}.
+	 * 
+	 * @return {@link #initialInstrumentationResults}
+	 */
+	public Map<Collection<String>, InstrumentationResult> getInitialInstrumentationResults() {
+		return initialInstrumentationResults;
+	}
+
+	/**
+	 * Sets {@link #initialInstrumentationResults}.
+	 * 
+	 * @param initialInstrumentationResults
+	 *            New value for {@link #initialInstrumentationResults}
+	 */
+	public void setInitialInstrumentationResults(Map<Collection<String>, InstrumentationResult> initialInstrumentationResults) {
+		this.initialInstrumentationResults = initialInstrumentationResults;
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -235,8 +263,10 @@ public class AgentConfiguration {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((bufferStrategyConfig == null) ? 0 : bufferStrategyConfig.hashCode());
+		result = prime * result + (classCacheExistsOnCmr ? 1231 : 1237);
 		result = prime * result + ((exceptionSensorTypeConfig == null) ? 0 : exceptionSensorTypeConfig.hashCode());
 		result = prime * result + ((excludeClassesPatterns == null) ? 0 : excludeClassesPatterns.hashCode());
+		result = prime * result + ((initialInstrumentationResults == null) ? 0 : initialInstrumentationResults.hashCode());
 		result = prime * result + ((methodSensorTypeConfigs == null) ? 0 : methodSensorTypeConfigs.hashCode());
 		result = prime * result + (int) (platformId ^ (platformId >>> 32));
 		result = prime * result + ((platformSensorTypeConfigs == null) ? 0 : platformSensorTypeConfigs.hashCode());
@@ -266,6 +296,9 @@ public class AgentConfiguration {
 		} else if (!bufferStrategyConfig.equals(other.bufferStrategyConfig)) {
 			return false;
 		}
+		if (classCacheExistsOnCmr != other.classCacheExistsOnCmr) {
+			return false;
+		}
 		if (exceptionSensorTypeConfig == null) {
 			if (other.exceptionSensorTypeConfig != null) {
 				return false;
@@ -278,6 +311,13 @@ public class AgentConfiguration {
 				return false;
 			}
 		} else if (!excludeClassesPatterns.equals(other.excludeClassesPatterns)) {
+			return false;
+		}
+		if (initialInstrumentationResults == null) {
+			if (other.initialInstrumentationResults != null) {
+				return false;
+			}
+		} else if (!initialInstrumentationResults.equals(other.initialInstrumentationResults)) {
 			return false;
 		}
 		if (methodSensorTypeConfigs == null) {

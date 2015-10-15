@@ -26,7 +26,11 @@ import info.novatec.inspectit.exception.enumeration.AgentManagementErrorCodeEnum
 import info.novatec.inspectit.spring.logger.Log;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -121,7 +125,7 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	@MethodLog
 	public AgentConfiguration register(List<String> definedIPs, String agentName, String version) throws BusinessException {
 		// load environment for the agent
-		Environment environment = configurationResolver.getEnvironmentForAgent(definedIPs, agentName);
+		final Environment environment = configurationResolver.getEnvironmentForAgent(definedIPs, agentName);
 
 		// if environment load is success register agent
 		long id = registrationService.registerPlatformIdent(definedIPs, agentName, version);
@@ -131,26 +135,37 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 
 		// check if this agent was already registered and we have environment
 		Environment cachedEnvironment = agentCacheEntry.getEnvironment();
+		ClassCache classCache = agentCacheEntry.getClassCache();
 
 		// if we have same environment, just return cached configuration
 		if (Objects.equals(environment, cachedEnvironment)) {
 			AgentConfiguration agentConfiguration = agentCacheEntry.getAgentConfiguration();
 
 			if (null != agentConfiguration) {
+				agentConfiguration.setInitialInstrumentationResults(collectInstrumentationResults(classCache, environment));
+				agentConfiguration.setClassCacheExistsOnCmr(true);
 				return agentConfiguration;
 			}
 		} else if (null != cachedEnvironment) {
 			// otherwise if we have different environment cached, then clear all points
-			removeAllInstrumentationPoints(agentCacheEntry.getClassCache());
+			removeAllInstrumentationPoints(classCache);
 		}
 
 		// else kick the configuration creator
 		AgentConfiguration agentConfiguration = configurationCreator.environmentToConfiguration(environment, id);
+		boolean cacheExists = null != cachedEnvironment;
+		agentConfiguration.setClassCacheExistsOnCmr(cacheExists);
+
+		// collect instrumentation points
+		Collection<ClassType> instrumentedTypes = addAllInstrumentationPoints(classCache, agentConfiguration, environment);
+		Map<Collection<String>, InstrumentationResult> initialInstrumentationResults = collectInstrumentationResults(instrumentedTypes, classCache, environment);
+		agentConfiguration.setInitialInstrumentationResults(initialInstrumentationResults);
 
 		// save results to cache entry
 		agentCacheEntry.setEnvironment(environment);
 		agentCacheEntry.setAgentConfiguration(agentConfiguration);
 
+		// return configuration
 		return agentConfiguration;
 	}
 
@@ -186,7 +201,7 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 				// get real object after merging
 				type = classCache.getLookupService().findByHash(hash);
 			} catch (ClassCacheModificationException e) {
-				log.error("Byte code can not be analyzed due to the exception during merging.", e);
+				log.error("Type can not be analyzed due to the exception during merging.", e);
 				return null;
 			}
 		}
@@ -233,27 +248,15 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 		// we need read lock for this
 		try {
 			InstrumentationResult instrumentationResult = classCache.executeWithReadLock(new Callable<InstrumentationResult>() {
-
 				@Override
 				public InstrumentationResult call() throws Exception {
-					// TODO class it self, environment check for the thing
-					boolean classLoadingDelegation = instrumentationCreator.analyzeForClassLoadingDelegation(classType, environment);
-
-					// if there are no instrumentation points return null
-					if (!classType.hasInstrumentationPoints() && !classLoadingDelegation) {
-						return null;
-					}
-
-					InstrumentationResult instrumentationResult = new InstrumentationResult(classType.getFQN());
-					instrumentationResult.setRegisteredSensorConfigs(classType.getInstrumentationPoints());
-					instrumentationResult.setClassLoadingDelegation(classLoadingDelegation);
-					return instrumentationResult;
+					return instrumentationCreator.createInstrumentationResult(classType, environment);
 				}
 			});
 
 			return instrumentationResult;
 		} catch (Exception e) {
-			log.error("Byte code can not be instrumented due to the exception during instrumentation.", e);
+			log.error("Instrumentation result can not be created.", e);
 			return null;
 		}
 	}
@@ -347,23 +350,133 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	 */
 	private void removeAllInstrumentationPoints(final ClassCache classCache) {
 		final Collection<? extends ImmutableType> types = classCache.getLookupService().findAll();
-		if (CollectionUtils.isNotEmpty(types)) {
-			try {
-				classCache.executeWithWriteLock(new Callable<Void>() {
-					@Override
-					public Void call() throws Exception {
-						for (ImmutableType type : types) {
-							if (type instanceof ClassType) {
-								instrumentationCreator.removeInstrumentationPoints((ClassType) type);
-							}
+
+		if (CollectionUtils.isEmpty(types)) {
+			return;
+		}
+
+		try {
+			classCache.executeWithWriteLock(new Callable<Void>() {
+				@Override
+				public Void call() throws Exception {
+					for (ImmutableType type : types) {
+						if (type instanceof ClassType) {
+							instrumentationCreator.removeInstrumentationPoints((ClassType) type);
 						}
-						return null;
 					}
-				});
-			} catch (Exception e) {
-				log.error("Error occurred while trying to remove all instrumentation points from the class cache.", e);
-			}
+					return null;
+				}
+			});
+		} catch (Exception e) {
+			log.error("Error occurred while trying to remove all instrumentation points from the class cache.", e);
 		}
 	}
 
+	/**
+	 * Add all instrumentation point in the given {@link ClassCache}.
+	 * 
+	 * @param classCache
+	 *            {@link ClassCache}.
+	 * @param agentConfiguration
+	 *            configuration to use
+	 * @param environment
+	 *            environment
+	 * @return Returns collection of class types to which the instrumentation points have been
+	 *         added.
+	 */
+	private Collection<ClassType> addAllInstrumentationPoints(final ClassCache classCache, final AgentConfiguration agentConfiguration, final Environment environment) {
+		final Collection<? extends ImmutableType> types = classCache.getLookupService().findAll();
+
+		if (CollectionUtils.isEmpty(types)) {
+			return Collections.emptyList();
+		}
+
+		try {
+			return classCache.executeWithWriteLock(new Callable<Collection<ClassType>>() {
+				@SuppressWarnings("unchecked")
+				@Override
+				public Collection<ClassType> call() throws Exception {
+					// first clear all types that are not initialized or are not class
+					for (Iterator<? extends ImmutableType> it = types.iterator(); it.hasNext();) {
+						ImmutableType immutableType = it.next();
+						if (!immutableType.isInitialized() || !immutableType.isClass()) {
+							it.remove();
+						}
+					}
+
+					// can cast here as we cleared the list in above loop
+					return instrumentationCreator.addInstrumentationPoints(agentConfiguration, environment, (Collection<ClassType>) types);
+				}
+			});
+		} catch (Exception e) {
+			log.error("Error occurred while trying to remove all instrumentation points from the class cache.", e);
+			return Collections.emptyList();
+		}
+	}
+
+	/**
+	 * Collects instrumentation points for all the initialized class types in the given class cache.
+	 * The return map will contain a key-value pairs where key is set of hashes that correspond to
+	 * the instrumentation result (value).
+	 * <p>
+	 * This method is thread-safe, as it will use the class cache read lock.
+	 * 
+	 * @param classCache
+	 *            Class cache to search in.
+	 * @param environment
+	 *            Environment that is used.
+	 * @return Map holding key-value pairs that connect set of hashes to the
+	 *         {@link InstrumentationResult}.
+	 */
+	private Map<Collection<String>, InstrumentationResult> collectInstrumentationResults(final ClassCache classCache, final Environment environment) {
+		final Collection<? extends ImmutableType> types = classCache.getLookupService().findAll();
+		return collectInstrumentationResults(types, classCache, environment);
+	}
+
+	/**
+	 * Collects instrumentation points for given types in the given class cache. Only initialized
+	 * class types will be checked.The return map will contain a key-value pairs where key is set of
+	 * hashes that correspond to the instrumentation result (value).
+	 * <p>
+	 * This method is thread-safe, as it will use the class cache read lock.
+	 * <p>
+	 * <b>IMPORTANT:</b> It's responsibility of the caller to ensure the given types do belong to
+	 * the given class cache.
+	 * 
+	 * @param types
+	 *            to collect results for
+	 * @param classCache
+	 *            Class cache to search in.
+	 * @param environment
+	 *            Environment that is used.
+	 * @return Map holding key-value pairs that connect set of hashes to the
+	 *         {@link InstrumentationResult}.
+	 */
+	private Map<Collection<String>, InstrumentationResult> collectInstrumentationResults(final Collection<? extends ImmutableType> types, final ClassCache classCache, final Environment environment) {
+		if (CollectionUtils.isEmpty(types)) {
+			return Collections.emptyMap();
+		}
+
+		try {
+			return classCache.executeWithReadLock(new Callable<Map<Collection<String>, InstrumentationResult>>() {
+				@Override
+				public Map<Collection<String>, InstrumentationResult> call() throws Exception {
+					Map<Collection<String>, InstrumentationResult> map = new HashMap<>();
+					for (ImmutableType type : types) {
+						if (type.isInitialized() && type.isClass()) {
+							ImmutableClassType immutableClassType = type.castToClass();
+							InstrumentationResult instrumentationResult = instrumentationCreator.createInstrumentationResult(immutableClassType, environment);
+							if (null != instrumentationResult) {
+								map.put(immutableClassType.getHashes(), instrumentationResult);
+							}
+						}
+					}
+					return map;
+				}
+			});
+		} catch (Exception e) {
+			log.error("Error occurred while trying to collect instrumentation results from the class cache.", e);
+			return Collections.emptyMap();
+		}
+	}
 }

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -127,6 +128,9 @@ public class ConfigurationStorage implements IConfigurationStorage, Initializing
 		if (null == this.agentConfiguration) {
 			this.agentConfiguration = agentConfiguration;
 		}
+
+		// TODO can we here call all dependent on the configuration?
+		// this would mean exclude the strange StrategyAndSensorConfiguration class
 
 		if (log.isInfoEnabled()) {
 			log.info("Agent configuration added.");
@@ -266,9 +270,20 @@ public class ConfigurationStorage implements IConfigurationStorage, Initializing
 	/**
 	 * {@inheritDoc}
 	 */
-	public long getInstrumentationLastModified() throws StorageException {
+	public boolean isClassCacheExistsOnCmr() throws StorageException {
 		if (null != agentConfiguration) {
-			return agentConfiguration.getInstrumentationLastModified();
+			return agentConfiguration.isClassCacheExistsOnCmr();
+		}
+
+		throw new StorageException("Agent configuration is not set in the Configuration storage");
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public Map<Collection<String>, InstrumentationResult> getInitialInstrumentationResults() throws StorageException {
+		if (null != agentConfiguration) {
+			return agentConfiguration.getInitialInstrumentationResults();
 		}
 
 		throw new StorageException("Agent configuration is not set in the Configuration storage");

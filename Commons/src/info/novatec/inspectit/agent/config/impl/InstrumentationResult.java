@@ -3,6 +3,8 @@ package info.novatec.inspectit.agent.config.impl;
 import java.util.Collection;
 import java.util.Collections;
 
+import org.apache.commons.collections.CollectionUtils;
+
 /**
  * This simple data class is returned as the result from a server side instrumentation of a single
  * class.
@@ -15,6 +17,7 @@ public class InstrumentationResult {
 	/**
 	 * Fully qualified class name that instrumentation results applies to.
 	 */
+	// TODO needed?
 	private String className;
 
 	/**
@@ -86,6 +89,16 @@ public class InstrumentationResult {
 	 */
 	public void setClassLoadingDelegation(boolean classLoadingDelegation) {
 		this.classLoadingDelegation = classLoadingDelegation;
+	}
+
+	/**
+	 * Defines if instrumentation result is empty in terms that no instrumentation have to be
+	 * performed with this instrumentation result.
+	 * 
+	 * @return If no instrumentation is needed with this result
+	 */
+	public boolean isEmpty() {
+		return CollectionUtils.isEmpty(registeredSensorConfigs) && !classLoadingDelegation;
 	}
 
 }

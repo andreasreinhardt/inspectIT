@@ -48,8 +48,6 @@ public class EnvironmentUpdateJob extends AbstractConfigurationChangeJob {
 		// first create new configuration based on new Environment
 		updateConfiguration(environment);
 
-		boolean instrumentationUpdated = false;
-
 		// then first process all removed profiles
 		if (CollectionUtils.isNotEmpty(removedProfiles)) {
 			Collection<MethodSensorAssignment> removedMethodSensorAssignments = new ArrayList<>();
@@ -64,7 +62,7 @@ public class EnvironmentUpdateJob extends AbstractConfigurationChangeJob {
 				}
 			}
 
-			instrumentationUpdated |= super.processRemovedAssignments(removedMethodSensorAssignments, removedExceptionSensorAssignments);
+			super.processRemovedAssignments(removedMethodSensorAssignments, removedExceptionSensorAssignments);
 		}
 
 		// then process all added profiles
@@ -81,15 +79,9 @@ public class EnvironmentUpdateJob extends AbstractConfigurationChangeJob {
 				}
 			}
 
-			instrumentationUpdated |= super.processAddedAssignments(addedMethodSensorAssignments, addedExceptionSensorAssignments);
+			super.processAddedAssignments(addedMethodSensorAssignments, addedExceptionSensorAssignments);
 		}
 
-
-		// if there are instrumentation changes, update time-stamp
-		if (instrumentationUpdated) {
-			long instrumentationLastModified = System.currentTimeMillis();
-			getAgentConfiguration().setInstrumentationLastModified(instrumentationLastModified);
-		}
 	}
 
 	/**

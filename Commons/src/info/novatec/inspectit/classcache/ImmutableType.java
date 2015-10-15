@@ -1,5 +1,7 @@
 package info.novatec.inspectit.classcache;
 
+import java.util.Set;
+
 /**
  * A class cache model element of the generic type that only provides immutable access. This
  * interface is meaningful to use if it does not matter what kind of element of the class cache is
@@ -91,4 +93,11 @@ public interface ImmutableType extends ImmutableTypeWithAnnotations {
 	 * @return if this type has this hash code.
 	 */
 	boolean containsHash(String hash);
+
+	/**
+	 * Returns all registered hashes for the given type.
+	 * 
+	 * @return Returns all registered hashes for the given type.
+	 */
+	Set<String> getHashes();
 }

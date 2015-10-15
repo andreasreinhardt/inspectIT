@@ -4,8 +4,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -58,7 +56,7 @@ public class ConfigurationCreatorTest {
 		creator = new ConfigurationCreator();
 		creator.registrationService = registrationService;
 		creator.configurationResolver = configurationResolver;
-		
+
 		// mock strategies
 		when(environment.getSendingStrategyConfig()).thenReturn(mock(IStrategyConfig.class));
 		when(environment.getBufferStrategyConfig()).thenReturn(mock(IStrategyConfig.class));
@@ -70,8 +68,6 @@ public class ConfigurationCreatorTest {
 
 		AgentConfiguration agentConfiguration = creator.environmentToConfiguration(environment, agentId);
 		assertThat(agentConfiguration.getPlatformId(), is(agentId));
-		assertThat(agentConfiguration.getInstrumentationLastModified(), is(not(0L)));
-		assertThat(agentConfiguration.getInstrumentationLastModified(), is(lessThanOrEqualTo(System.currentTimeMillis())));
 
 		verifyNoMoreInteractions(registrationService);
 	}
@@ -80,7 +76,7 @@ public class ConfigurationCreatorTest {
 	public void configurePlatformSensor() throws Exception {
 		long agentId = 13L;
 		long sensorId = 17L;
-		
+
 		String className = "className";
 		Map<String, Object> parameters = Collections.<String, Object> singletonMap("key", "value");
 
@@ -189,9 +185,9 @@ public class ConfigurationCreatorTest {
 		IStrategyConfig config = mock(IStrategyConfig.class);
 		when(config.getClassName()).thenReturn(className);
 		when(config.getSettings()).thenReturn(settings);
-		
+
 		when(environment.getSendingStrategyConfig()).thenReturn(config);
-		
+
 		AgentConfiguration agentConfiguration = creator.environmentToConfiguration(environment, 0);
 
 		StrategyConfig strategyConfig = agentConfiguration.getSendingStrategyConfig();

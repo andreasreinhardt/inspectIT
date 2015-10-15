@@ -57,7 +57,6 @@ public class ConfigurationCreator {
 	public AgentConfiguration environmentToConfiguration(Environment environment, long platformId) {
 		AgentConfiguration agentConfiguration = new AgentConfiguration();
 		agentConfiguration.setPlatformId(platformId);
-		agentConfiguration.setInstrumentationLastModified(System.currentTimeMillis());
 
 		// then all platform sensors
 		if (CollectionUtils.isNotEmpty(environment.getPlatformSensorConfigs())) {

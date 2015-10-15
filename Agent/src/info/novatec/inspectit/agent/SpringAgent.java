@@ -63,9 +63,10 @@ public class SpringAgent implements IAgent {
 	private IByteCodeAnalyzer byteCodeAnalyzer;
 
 	/**
-	 * Set to <code>true</code> if something happened while trying to initialize the pico container.
+	 * Set to <code>true</code> if something happened and we need to disable further
+	 * instrumentation.
 	 */
-	private boolean initializationError = false;
+	private boolean disableInstrumentation = false;
 
 	/**
 	 * Created bean factory.
@@ -111,6 +112,14 @@ public class SpringAgent implements IAgent {
 			LOG.info("Initializing Spring on inspectIT Agent...");
 		}
 
+		// first add shutdown hook so we are informed when shutdown is initialized to stop
+		// instrumenting classes on the shutdown
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			public void run() {
+				disableInstrumentation = true;
+			};
+		});
+
 		// set inspectIT class loader to be the context class loader
 		// so that bean factory can use correct class loader for finding the classes
 		ClassLoader inspectITClassLoader = this.getClass().getClassLoader();
@@ -147,7 +156,7 @@ public class SpringAgent implements IAgent {
 			ignoreClassesPatterns = configurationStorage.getIgnoreClassesPatterns();
 
 		} catch (Throwable throwable) { // NOPMD
-			initializationError = true;
+			disableInstrumentation = true;
 			LOG.error("inspectIT agent initialization failed. Agent will not be active.", throwable);
 		}
 
@@ -161,7 +170,7 @@ public class SpringAgent implements IAgent {
 	public byte[] inspectByteCode(byte[] byteCode, String className, ClassLoader classLoader) {
 		// if an error in the init method was caught, we'll do nothing here.
 		// This prevents further errors.
-		if (initializationError) {
+		if (disableInstrumentation) {
 			return byteCode;
 		}
 

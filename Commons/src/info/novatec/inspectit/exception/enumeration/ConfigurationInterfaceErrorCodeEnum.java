@@ -46,7 +46,13 @@ public enum ConfigurationInterfaceErrorCodeEnum implements IErrorCode {
 	/**
 	 * Environment not found when registering the agent.
 	 */
-	ENVIRONMENT_FOR_AGENT_NOT_FOUND("Locating an environment for the agent to use failed.", "Erither no or more than one matching environment found for the specified agent name and IP address(es).",
+	ENVIRONMENT_FOR_AGENT_NOT_FOUND("Locating an environment for the agent to use failed.", "No  matching environment found for the specified agent name and IP address(es).",
+			"Check the agent mapping settings in the Configuration Interface."),
+
+	/**
+	 * More than one environment found.
+	 */
+	MORE_THAN_ONE_ENVIRONMENT_FOR_AGENT_FOUND("Locating an environment for the agent to use failed.", "More than one environment found for the specified agent name and IP address(es).",
 			"Check the agent mapping settings in the Configuration Interface.");
 
 	/**

@@ -48,19 +48,11 @@ public class ProfileUpdateJob extends AbstractConfigurationChangeJob {
 	 */
 	@Override
 	public void run() {
-		boolean instrumentationUpdated = false;
-
 		// first process all removed assignments
-		instrumentationUpdated |= super.processRemovedAssignments(removedMethodSensorAssignments, removedExceptionSensorAssignments);
+		super.processRemovedAssignments(removedMethodSensorAssignments, removedExceptionSensorAssignments);
 
 		// then process all added assignments
-		instrumentationUpdated |= super.processAddedAssignments(addedMethodSensorAssignments, addedExceptionSensorAssignments);
-
-		// if there are changes, update time-stamp
-		if (instrumentationUpdated) {
-			long instrumentationLastModified = System.currentTimeMillis();
-			getAgentConfiguration().setInstrumentationLastModified(instrumentationLastModified);
-		}
+		super.processAddedAssignments(addedMethodSensorAssignments, addedExceptionSensorAssignments);
 	}
 
 	/**

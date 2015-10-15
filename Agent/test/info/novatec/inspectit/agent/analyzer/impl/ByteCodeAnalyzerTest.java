@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import info.novatec.inspectit.agent.AbstractLogSupport;
+import info.novatec.inspectit.agent.analyzer.IClassHashHelper;
 import info.novatec.inspectit.agent.analyzer.classes.TestClass;
 import info.novatec.inspectit.agent.config.IConfigurationStorage;
 import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
@@ -50,9 +51,6 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 	private IHookDispatcherMapper hookDispatcherMapper;
 
 	@Mock
-	private SendingClassHashCache sendingClassCache;
-
-	@Mock
 	private InstrumentationResult instrumentationResult;
 
 	@Mock
@@ -60,6 +58,9 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 
 	@Mock
 	private IConfigurationStorage configurationStorage;
+
+	@Mock
+	private IClassHashHelper classHashHelper;
 
 	private final Long platformId = 10L;
 
@@ -69,7 +70,7 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 		byteCodeAnalyzer.idManager = idManager;
 		byteCodeAnalyzer.connection = connection;
 		byteCodeAnalyzer.hookDispatcherMapper = hookDispatcherMapper;
-		byteCodeAnalyzer.sendingClassHashCache = sendingClassCache;
+		byteCodeAnalyzer.classHashHelper = classHashHelper;
 		byteCodeAnalyzer.configurationStorage = configurationStorage;
 		byteCodeAnalyzer.log = LoggerFactory.getLogger(ByteCodeAnalyzer.class);
 
@@ -90,21 +91,52 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 	}
 
 	@Test
-	public void notToBeSent() throws IOException {
+	public void notToBeSentNoInstrumentation() throws IOException {
 		String className = TestClass.class.getName();
 		ClassLoader classLoader = TestClass.class.getClassLoader();
 		byte[] byteCode = getByteCode(className);
 
 		ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
-		when(sendingClassCache.isSending(hashCaptor.capture())).thenReturn(false);
+		when(classHashHelper.isSent(hashCaptor.capture())).thenReturn(true);
+		when(classHashHelper.getInstrumentationResult(hashCaptor.capture())).thenReturn(null);
 
 		byte[] instrumentedByteCode = byteCodeAnalyzer.analyzeAndInstrument(byteCode, className, classLoader);
 
 		// we did not send the class type
 		assertThat(instrumentedByteCode, is(nullValue()));
-		verify(sendingClassCache, times(1)).isSending(hashCaptor.getValue());
+		verify(classHashHelper, times(1)).isSent(hashCaptor.getValue());
 		verifyZeroInteractions(idManager, connection, hookDispatcherMapper);
-		verifyNoMoreInteractions(sendingClassCache);
+
+		// but we asked for the instrumentation result
+		verify(classHashHelper, times(1)).getInstrumentationResult(hashCaptor.getValue());
+		verifyZeroInteractions(hookDispatcherMapper);
+		verifyNoMoreInteractions(classHashHelper);
+	}
+
+	@Test
+	public void notToBeSentCachedInstrumentation() throws IOException {
+		String className = TestClass.class.getName();
+		ClassLoader classLoader = TestClass.class.getClassLoader();
+		byte[] byteCode = getByteCode(className);
+
+		ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
+		when(classHashHelper.isSent(hashCaptor.capture())).thenReturn(true);
+		when(classHashHelper.getInstrumentationResult(hashCaptor.capture())).thenReturn(instrumentationResult);
+
+		when(instrumentationResult.getRegisteredSensorConfigs()).thenReturn(Collections.singleton(registeredSensorConfig));
+		when(instrumentationResult.isClassLoadingDelegation()).thenReturn(false);
+		long rscId = 13L;
+		when(registeredSensorConfig.getId()).thenReturn(rscId);
+
+		byte[] instrumentedByteCode = byteCodeAnalyzer.analyzeAndInstrument(byteCode, className, classLoader);
+
+		// we did not send the class type
+		assertThat(instrumentedByteCode, is(not(nullValue())));
+		verify(classHashHelper, times(1)).isSent(hashCaptor.getValue());
+		// but we asked for the instrumentation result and instrumented
+		verify(classHashHelper, times(1)).getInstrumentationResult(hashCaptor.getValue());
+		verify(hookDispatcherMapper, times(1)).addMapping(rscId, registeredSensorConfig);
+		verifyNoMoreInteractions(hookDispatcherMapper, connection, classHashHelper, idManager);
 	}
 
 	@Test
@@ -115,7 +147,7 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 
 		ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
 		ArgumentCaptor<ClassType> classCaptor = ArgumentCaptor.forClass(ClassType.class);
-		when(sendingClassCache.isSending(hashCaptor.capture())).thenReturn(true);
+		when(classHashHelper.isSent(hashCaptor.capture())).thenReturn(false);
 		when(connection.analyzeAndInstrument(eq(platformId.longValue()), anyString(), classCaptor.capture())).thenReturn(null);
 
 		byte[] instrumentedByteCode = byteCodeAnalyzer.analyzeAndInstrument(byteCode, className, classLoader);
@@ -124,10 +156,10 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 		assertThat(instrumentedByteCode, is(nullValue()));
 
 		verify(connection, times(1)).analyzeAndInstrument(platformId.longValue(), hashCaptor.getValue(), classCaptor.getValue());
-		verify(sendingClassCache, times(1)).isSending(hashCaptor.getValue());
-		verify(sendingClassCache, times(1)).markSending(hashCaptor.getValue(), false);
+		verify(classHashHelper, times(1)).isSent(hashCaptor.getValue());
+		verify(classHashHelper, times(1)).registerSent(hashCaptor.getValue(), null);
 		verifyZeroInteractions(hookDispatcherMapper);
-		verifyNoMoreInteractions(connection, sendingClassCache);
+		verifyNoMoreInteractions(connection, classHashHelper);
 	}
 
 	@Test
@@ -138,7 +170,7 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 
 		ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
 		ArgumentCaptor<ClassType> classCaptor = ArgumentCaptor.forClass(ClassType.class);
-		when(sendingClassCache.isSending(hashCaptor.capture())).thenReturn(true);
+		when(classHashHelper.isSent(hashCaptor.capture())).thenReturn(false);
 		when(connection.analyzeAndInstrument(eq(platformId.longValue()), anyString(), classCaptor.capture())).thenReturn(instrumentationResult);
 		when(instrumentationResult.getRegisteredSensorConfigs()).thenReturn(Collections.singleton(registeredSensorConfig));
 		when(instrumentationResult.isClassLoadingDelegation()).thenReturn(false);
@@ -151,10 +183,10 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 		assertThat(instrumentedByteCode, is(not(nullValue())));
 
 		verify(connection, times(1)).analyzeAndInstrument(platformId.longValue(), hashCaptor.getValue(), classCaptor.getValue());
-		verify(sendingClassCache, times(1)).isSending(hashCaptor.getValue());
-		verify(sendingClassCache, times(1)).markSending(hashCaptor.getValue(), true);
+		verify(classHashHelper, times(1)).isSent(hashCaptor.getValue());
+		verify(classHashHelper, times(1)).registerSent(hashCaptor.getValue(), instrumentationResult);
 		verify(hookDispatcherMapper, times(1)).addMapping(rscId, registeredSensorConfig);
-		verifyNoMoreInteractions(hookDispatcherMapper, connection, sendingClassCache);
+		verifyNoMoreInteractions(hookDispatcherMapper, connection, classHashHelper);
 	}
 
 	@Test
@@ -165,7 +197,7 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 
 		ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
 		ArgumentCaptor<ClassType> classCaptor = ArgumentCaptor.forClass(ClassType.class);
-		when(sendingClassCache.isSending(hashCaptor.capture())).thenReturn(true);
+		when(classHashHelper.isSent(hashCaptor.capture())).thenReturn(false);
 		when(connection.analyzeAndInstrument(eq(platformId.longValue()), anyString(), classCaptor.capture())).thenReturn(instrumentationResult);
 		when(instrumentationResult.getRegisteredSensorConfigs()).thenReturn(Collections.<RegisteredSensorConfig> emptyList());
 		when(instrumentationResult.isClassLoadingDelegation()).thenReturn(true);
@@ -176,9 +208,9 @@ public class ByteCodeAnalyzerTest extends AbstractLogSupport {
 		assertThat(instrumentedByteCode, is(not(nullValue())));
 
 		verify(connection, times(1)).analyzeAndInstrument(platformId.longValue(), hashCaptor.getValue(), classCaptor.getValue());
-		verify(sendingClassCache, times(1)).isSending(hashCaptor.getValue());
-		verify(sendingClassCache, times(1)).markSending(hashCaptor.getValue(), true);
-		verifyNoMoreInteractions(connection, sendingClassCache);
+		verify(classHashHelper, times(1)).isSent(hashCaptor.getValue());
+		verify(classHashHelper, times(1)).registerSent(hashCaptor.getValue(), instrumentationResult);
+		verifyNoMoreInteractions(connection, classHashHelper);
 		verifyZeroInteractions(hookDispatcherMapper);
 	}
 }

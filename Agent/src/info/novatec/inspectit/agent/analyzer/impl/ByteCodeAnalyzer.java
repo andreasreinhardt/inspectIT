@@ -1,6 +1,7 @@
 package info.novatec.inspectit.agent.analyzer.impl;
 
 import info.novatec.inspectit.agent.analyzer.IByteCodeAnalyzer;
+import info.novatec.inspectit.agent.analyzer.IClassHashHelper;
 import info.novatec.inspectit.agent.asm.ClassAnalyzer;
 import info.novatec.inspectit.agent.asm.ClassInstrumenter;
 import info.novatec.inspectit.agent.asm.LoaderAwareClassWriter;
@@ -61,11 +62,10 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 	IHookDispatcherMapper hookDispatcherMapper;
 
 	/**
-	 * {@link SendingClassHashCache} that will serve in deciding if class should be sent to the
-	 * sever or not.
+	 * {@link IClassHashHelper}.
 	 */
 	@Autowired
-	SendingClassHashCache sendingClassHashCache;
+	IClassHashHelper classHashHelper;
 
 	/**
 	 * Configuration storage.
@@ -89,50 +89,30 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 			// create the hash
 			String hash = DigestUtils.sha256Hex(byteCode);
 
-			// in asynch we should move to check for instrumentation points
-			// TODO what if we need it for class loading delegation? for now marking as sending as
-			// well
-			if (!sendingClassHashCache.isSending(hash)) {
-				return null;
+			// TODO when asynch add registerLoaded to class cache helper
+
+			// if not sent we go for the sending
+			if (!classHashHelper.isSent(hash)) {
+				// TODO when asynch call service in asynch mode
+
+				// parse first
+				ClassReader classReader = new ClassReader(byteCode);
+				ClassAnalyzer classAnalyzer = new ClassAnalyzer(hash, null, true);
+				classReader.accept(classAnalyzer, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+				Type type = (Type) classAnalyzer.getType();
+
+				// try connecting to server
+				InstrumentationResult instrumentationResult = connection.analyzeAndInstrument(idManager.getPlatformId(), hash, type);
+
+				classHashHelper.registerSent(hash, instrumentationResult);
+
+				return performInstrumentation(byteCode, classLoader, instrumentationResult);
+			} else {
+				// load instrumentation result from the class hash helper
+				InstrumentationResult instrumentationResult = classHashHelper.getInstrumentationResult(hash);
+
+				return performInstrumentation(byteCode, classLoader, instrumentationResult);
 			}
-
-			// parse first
-			ClassReader classReader = new ClassReader(byteCode);
-			ClassAnalyzer classAnalyzer = new ClassAnalyzer(hash, null, true);
-			classReader.accept(classAnalyzer, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-			Type type = (Type) classAnalyzer.getType();
-
-			// try connecting to server
-			InstrumentationResult instrumentationResult = connection.analyzeAndInstrument(idManager.getPlatformId(), hash, type);
-
-			// if we get nothing the just mark as not sending
-			if (null == instrumentationResult) {
-				// faking the mark sending if the delegation is true as well
-				sendingClassHashCache.markSending(hash, false);
-				return null;
-			}
-
-			Collection<RegisteredSensorConfig> instrumentationPoints = instrumentationResult.getRegisteredSensorConfigs();
-			boolean classLoadingDelegation = instrumentationResult.isClassLoadingDelegation();
-
-			if (classLoadingDelegation) {
-				log.info("Class loading active for class " + type);
-			}
-
-			// here do the instrumentation
-			classReader = new ClassReader(byteCode);
-			ClassWriter classWriter = new LoaderAwareClassWriter(ClassWriter.COMPUTE_FRAMES, classLoader);
-			ClassInstrumenter classInstrumenter = new ClassInstrumenter(classWriter, instrumentationPoints, configurationStorage.isEnhancedExceptionSensorActivated(), classLoadingDelegation);
-			classReader.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
-
-			// map the instrumentation points if we have them
-			for (RegisteredSensorConfig registeredSensorConfig : instrumentationPoints) {
-				hookDispatcherMapper.addMapping(registeredSensorConfig.getId(), registeredSensorConfig);
-			}
-
-			sendingClassHashCache.markSending(hash, true);
-
-			return classWriter.toByteArray();
 		} catch (IdNotAvailableException idNotAvailableException) {
 			log.error("Error occurred instrumenting the byte code of class " + className, idNotAvailableException);
 			return null;
@@ -147,4 +127,42 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 			return null;
 		}
 	}
+
+	/**
+	 * Performs the instrumentation.
+	 * 
+	 * @param byteCode
+	 *            original byte code
+	 * @param classLoader
+	 *            class loader loading the class
+	 * @param instrumentationResult
+	 *            {@link InstrumentationResult} holding instrumentation properties.
+	 * @return instrumented byte code or <code>null</code> if instrumentation result is
+	 *         <code>null</code> or contains no instrumentation points
+	 * @throws StorageException
+	 *             If storage exception occurs when reading if enhanced exception sensor is active
+	 */
+	private byte[] performInstrumentation(byte[] byteCode, ClassLoader classLoader, InstrumentationResult instrumentationResult) throws StorageException {
+		// if no instrumentation result return null
+		if (null == instrumentationResult || instrumentationResult.isEmpty()) {
+			return null;
+		}
+
+		Collection<RegisteredSensorConfig> instrumentationPoints = instrumentationResult.getRegisteredSensorConfigs();
+		boolean classLoadingDelegation = instrumentationResult.isClassLoadingDelegation();
+
+		// here do the instrumentation
+		ClassReader classReader = new ClassReader(byteCode);
+		ClassWriter classWriter = new LoaderAwareClassWriter(ClassWriter.COMPUTE_FRAMES, classLoader);
+		ClassInstrumenter classInstrumenter = new ClassInstrumenter(classWriter, instrumentationPoints, configurationStorage.isEnhancedExceptionSensorActivated(), classLoadingDelegation);
+		classReader.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+
+		// map the instrumentation points if we have them
+		for (RegisteredSensorConfig registeredSensorConfig : instrumentationPoints) {
+			hookDispatcherMapper.addMapping(registeredSensorConfig.getId(), registeredSensorConfig);
+		}
+
+		return classWriter.toByteArray();
+	}
+
 }

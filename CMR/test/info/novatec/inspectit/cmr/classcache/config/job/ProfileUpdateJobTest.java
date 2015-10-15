@@ -3,7 +3,6 @@ package info.novatec.inspectit.cmr.classcache.config.job;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -104,7 +103,6 @@ public class ProfileUpdateJobTest {
 		job.run();
 
 		verifyZeroInteractions(classCache, environment, classCacheSearchNarrower, configurationCreator, instrumentationCreator);
-		verify(agentConfiguration, times(0)).setInstrumentationLastModified(anyLong());
 	}
 
 	@Test
@@ -116,7 +114,6 @@ public class ProfileUpdateJobTest {
 		job.setAddedMethodSensorAssignments(Collections.singleton(methodSensorAssignment));
 		job.run();
 
-		verify(agentConfiguration, times(1)).setInstrumentationLastModified(anyLong());
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
 		verify(instrumentationCreator, times(1)).addInstrumentationPoints(eq(agentConfiguration), eq(environment), eq(classType), captor.capture(),
 				Mockito.<Collection<ExceptionSensorAssignment>> any());
@@ -137,7 +134,6 @@ public class ProfileUpdateJobTest {
 		job.setRemovedMethodSensorAssignments(Collections.singleton(methodSensorAssignment));
 		job.run();
 
-		verify(agentConfiguration, times(1)).setInstrumentationLastModified(anyLong());
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
 		verify(instrumentationCreator, times(1)).removeInstrumentationPoints(eq(classType), captor.capture(), Mockito.<Collection<ExceptionSensorAssignment>> any());
 
@@ -161,7 +157,6 @@ public class ProfileUpdateJobTest {
 		job.setRemovedMethodSensorAssignments(Collections.singleton(methodSensorAssignment));
 		job.run();
 
-		verify(agentConfiguration, times(0)).setInstrumentationLastModified(anyLong());
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
 		verify(instrumentationCreator, times(1)).removeInstrumentationPoints(eq(classType), captor.capture(), Mockito.<Collection<ExceptionSensorAssignment>> any());
 
@@ -181,10 +176,8 @@ public class ProfileUpdateJobTest {
 		job.setAddedExceptionSensorAssignments(Collections.singleton(exceptionSensorAssignment));
 		job.run();
 
-		verify(agentConfiguration, times(1)).setInstrumentationLastModified(anyLong());
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
-		verify(instrumentationCreator, times(1)).addInstrumentationPoints(eq(agentConfiguration), eq(environment), eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(),
-				captor.capture());
+		verify(instrumentationCreator, times(1)).addInstrumentationPoints(eq(agentConfiguration), eq(environment), eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(), captor.capture());
 
 		assertThat((Collection<ExceptionSensorAssignment>) captor.getValue(), hasSize(1));
 		assertThat(((Collection<ExceptionSensorAssignment>) captor.getValue()).iterator().next(), is(exceptionSensorAssignment));
@@ -202,7 +195,6 @@ public class ProfileUpdateJobTest {
 		job.setRemovedExceptionSensorAssignments(Collections.singleton(exceptionSensorAssignment));
 		job.run();
 
-		verify(agentConfiguration, times(1)).setInstrumentationLastModified(anyLong());
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
 		verify(instrumentationCreator, times(1)).removeInstrumentationPoints(eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(), captor.capture());
 
@@ -226,7 +218,6 @@ public class ProfileUpdateJobTest {
 		job.setRemovedExceptionSensorAssignments(Collections.singleton(exceptionSensorAssignment));
 		job.run();
 
-		verify(agentConfiguration, times(0)).setInstrumentationLastModified(anyLong());
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
 		verify(instrumentationCreator, times(1)).removeInstrumentationPoints(eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(), captor.capture());
 
