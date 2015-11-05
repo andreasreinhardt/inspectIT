@@ -212,6 +212,9 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		Object[] parameters = new Object[0];
 		Object result = mock(Object.class);
 
+		// no test of skipping/removal
+		when(rsc.getSensorIds()).thenReturn(new long[] {});
+
 		when(idManager.getPlatformId()).thenReturn(platformId);
 		when(idManager.getRegisteredSensorTypeId(sensorTypeId)).thenReturn(registeredSensorTypeId);
 		when(idManager.getRegisteredMethodId(methodId1)).thenReturn(registeredMethodId1);
@@ -299,8 +302,6 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		verify(coreService, times(1)).addMethodSensorData(eq(sensorTypeId), eq(methodId), Mockito.<String> anyObject(), Mockito.<InvocationSequenceData> anyObject());
 	}
 
-	// TODO tests for skip, check for saving, removal
-
 	/**
 	 * Tests that when Id is not available (sensor) on start of invocation no data will be captured.
 	 */
@@ -313,6 +314,9 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		Object object = mock(Object.class);
 		Object[] parameters = new Object[0];
 		Object result = mock(Object.class);
+
+		// no test of skipping/removal
+		when(rsc.getSensorIds()).thenReturn(new long[] {});
 
 		when(idManager.getPlatformId()).thenReturn(platformId);
 		when(idManager.getRegisteredMethodId(methodId)).thenReturn(registeredMethodId);
@@ -336,6 +340,9 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		Object object = mock(Object.class);
 		Object[] parameters = new Object[0];
 		Object result = mock(Object.class);
+
+		// no test of skipping/removal
+		when(rsc.getSensorIds()).thenReturn(new long[] {});
 
 		when(idManager.getPlatformId()).thenThrow(new IdNotAvailableException("test"));
 
@@ -361,6 +368,9 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		Object object = mock(Object.class);
 		Object[] parameters = new Object[0];
 		Object result = mock(Object.class);
+
+		// no test of skipping/removal
+		when(rsc.getSensorIds()).thenReturn(new long[] {});
 
 		when(idManager.getPlatformId()).thenReturn(platformId);
 		when(idManager.getRegisteredSensorTypeId(sensorTypeId)).thenReturn(registeredSensorTypeId);
@@ -407,6 +417,9 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		Object object = mock(Object.class);
 		Object[] parameters = new Object[0];
 		Object result = mock(Object.class);
+
+		// no test of skipping/removal
+		when(rsc.getSensorIds()).thenReturn(new long[] {});
 
 		when(idManager.getPlatformId()).thenReturn(platformId);
 		when(idManager.getRegisteredSensorTypeId(sensorTypeId)).thenReturn(registeredSensorTypeId);
@@ -471,7 +484,10 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		RegisteredSensorConfig removingRsc = mock(RegisteredSensorConfig.class);
 		MethodSensorTypeConfig exceptionSensorConfig = mock(MethodSensorTypeConfig.class);
 		when(exceptionSensorConfig.getClassName()).thenReturn(ExceptionSensor.class.getCanonicalName());
-		when(removingRsc.getSensorTypeConfigs()).thenReturn(Collections.singletonList(exceptionSensorConfig));
+
+		when(rsc.getSensorIds()).thenReturn(new long[] {});
+		when(removingRsc.getSensorIds()).thenReturn(new long[] { sensorTypeId });
+		when(hookSupplier.getMethodSensorTypeConfig(sensorTypeId)).thenReturn(exceptionSensorConfig);
 
 		invocationSequenceHook.beforeBody(methodId1, sensorTypeId, object, parameters, rsc);
 		invocationSequenceHook.beforeBody(methodId2, sensorTypeId, object, parameters, removingRsc);
@@ -533,7 +549,10 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		RegisteredSensorConfig removingRsc = mock(RegisteredSensorConfig.class);
 		MethodSensorTypeConfig exceptionSensorConfig = mock(MethodSensorTypeConfig.class);
 		when(exceptionSensorConfig.getClassName()).thenReturn(ExceptionSensor.class.getCanonicalName());
-		when(removingRsc.getSensorTypeConfigs()).thenReturn(Collections.singletonList(exceptionSensorConfig));
+
+		when(rsc.getSensorIds()).thenReturn(new long[] {});
+		when(removingRsc.getSensorIds()).thenReturn(new long[] { sensorTypeId });
+		when(hookSupplier.getMethodSensorTypeConfig(sensorTypeId)).thenReturn(exceptionSensorConfig);
 
 		invocationSequenceHook.beforeBody(methodId1, sensorTypeId, object, parameters, rsc);
 		invocationSequenceHook.beforeBody(methodId2, sensorTypeId, object, parameters, removingRsc);
@@ -585,7 +604,10 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		RegisteredSensorConfig removingRsc = mock(RegisteredSensorConfig.class);
 		MethodSensorTypeConfig exceptionSensorConfig = mock(MethodSensorTypeConfig.class);
 		when(exceptionSensorConfig.getClassName()).thenReturn(ExceptionSensor.class.getCanonicalName());
-		when(removingRsc.getSensorTypeConfigs()).thenReturn(Collections.singletonList(exceptionSensorConfig));
+
+		when(rsc.getSensorIds()).thenReturn(new long[] {});
+		when(removingRsc.getSensorIds()).thenReturn(new long[] { sensorTypeId });
+		when(hookSupplier.getMethodSensorTypeConfig(sensorTypeId)).thenReturn(exceptionSensorConfig);
 
 		invocationSequenceHook.beforeBody(methodId1, sensorTypeId, object, parameters, rsc);
 		invocationSequenceHook.beforeBody(methodId2, sensorTypeId, object, parameters, removingRsc);
@@ -649,7 +671,10 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		RegisteredSensorConfig removingRsc = mock(RegisteredSensorConfig.class);
 		MethodSensorTypeConfig exceptionSensorConfig = mock(MethodSensorTypeConfig.class);
 		when(exceptionSensorConfig.getClassName()).thenReturn(PreparedStatementSensor.class.getCanonicalName());
-		when(removingRsc.getSensorTypeConfigs()).thenReturn(Collections.singletonList(exceptionSensorConfig));
+
+		when(rsc.getSensorIds()).thenReturn(new long[] {});
+		when(removingRsc.getSensorIds()).thenReturn(new long[] { sensorTypeId });
+		when(hookSupplier.getMethodSensorTypeConfig(sensorTypeId)).thenReturn(exceptionSensorConfig);
 
 		invocationSequenceHook.beforeBody(methodId1, sensorTypeId, object, parameters, rsc);
 		invocationSequenceHook.beforeBody(methodId2, sensorTypeId, object, parameters, removingRsc);
@@ -701,7 +726,10 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		RegisteredSensorConfig removingRsc = mock(RegisteredSensorConfig.class);
 		MethodSensorTypeConfig exceptionSensorConfig = mock(MethodSensorTypeConfig.class);
 		when(exceptionSensorConfig.getClassName()).thenReturn(PreparedStatementSensor.class.getCanonicalName());
-		when(removingRsc.getSensorTypeConfigs()).thenReturn(Collections.singletonList(exceptionSensorConfig));
+
+		when(rsc.getSensorIds()).thenReturn(new long[] {});
+		when(removingRsc.getSensorIds()).thenReturn(new long[] { sensorTypeId });
+		when(hookSupplier.getMethodSensorTypeConfig(sensorTypeId)).thenReturn(exceptionSensorConfig);
 
 		invocationSequenceHook.beforeBody(methodId1, sensorTypeId, object, parameters, rsc);
 		invocationSequenceHook.beforeBody(methodId2, sensorTypeId, object, parameters, removingRsc);
@@ -753,7 +781,9 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 
 		MethodSensorTypeConfig sensorConfig = mock(MethodSensorTypeConfig.class);
 		when(sensorConfig.getClassName()).thenReturn(sensorClass.getCanonicalName());
-		when(rsc.getSensorTypeConfigs()).thenReturn(Collections.singletonList(sensorConfig));
+		// TODO check
+		when(rsc.getSensorIds()).thenReturn(new long[] { sensorTypeId });
+		when(hookSupplier.getMethodSensorTypeConfig(sensorTypeId)).thenReturn(sensorConfig);
 
 		invocationSequenceHook.beforeBody(methodId, sensorTypeId, object, parameters, rsc);
 		invocationSequenceHook.firstAfterBody(methodId, sensorTypeId, object, parameters, result, rsc);
@@ -770,10 +800,11 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 	 */
 	@Test(dataProvider = "skippingSensors")
 	public void skipSensorWithEnchancedExceptionSensor(Class<? extends ISensor> sensorClass) throws IdNotAvailableException {
-		invocationSequenceHook = new InvocationSequenceHook(timer, idManager, propertyAccessor, Collections.<String, Object> emptyMap(), true);
+		invocationSequenceHook = new InvocationSequenceHook(timer, idManager, propertyAccessor, hookSupplier, Collections.<String, Object> emptyMap(), true);
 
 		long methodId = 3L;
 		long sensorTypeId = 11L;
+		long sensorTypeIdAdditional = 13L;
 		Object object = mock(Object.class);
 		Object[] parameters = new Object[0];
 		Object result = mock(Object.class);
@@ -786,7 +817,9 @@ public class InvocationSequenceHookTest extends AbstractLogSupport {
 		List<MethodSensorTypeConfig> configs = new ArrayList<MethodSensorTypeConfig>();
 		configs.add(exceptionSensorConfig);
 		configs.add(sensorConfig);
-		when(rsc.getSensorTypeConfigs()).thenReturn(configs);
+		when(rsc.getSensorIds()).thenReturn(new long[] { sensorTypeId, sensorTypeIdAdditional });
+		when(hookSupplier.getMethodSensorTypeConfig(sensorTypeId)).thenReturn(exceptionSensorConfig);
+		when(hookSupplier.getMethodSensorTypeConfig(sensorTypeIdAdditional)).thenReturn(sensorConfig);
 
 		invocationSequenceHook.beforeBody(methodId, sensorTypeId, object, parameters, rsc);
 		invocationSequenceHook.firstAfterBody(methodId, sensorTypeId, object, parameters, result, rsc);

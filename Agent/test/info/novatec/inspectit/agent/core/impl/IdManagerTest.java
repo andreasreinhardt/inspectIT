@@ -19,6 +19,7 @@ import info.novatec.inspectit.agent.connection.RegistrationException;
 import info.novatec.inspectit.agent.connection.ServerUnavailableException;
 import info.novatec.inspectit.agent.core.IdNotAvailableException;
 import info.novatec.inspectit.version.VersionService;
+
 import java.net.ConnectException;
 
 import org.mockito.Mock;
@@ -48,7 +49,7 @@ public class IdManagerTest extends AbstractLogSupport {
 		idManager = new IdManager();
 		idManager.configurationStorage = configurationStorage;
 		idManager.connection = connection;
-		idManager.versioningService = versionService;
+		idManager.versionService = versionService;
 		idManager.log = LoggerFactory.getLogger(IdManager.class);
 	}
 

@@ -44,7 +44,7 @@ public class IdManager implements IIdManager, InitializingBean {
 	 * The versioning service.
 	 */
 	@Autowired
-	private final VersionService versionService;
+	VersionService versionService;
 
 	/**
 	 * The connection to the Central Measurement Repository.
@@ -115,7 +115,6 @@ public class IdManager implements IIdManager, InitializingBean {
 		return sensorTypeId;
 	}
 
-		@Override
 	/**
 	 * Execute the registration if needed.
 	 */
@@ -181,7 +180,7 @@ public class IdManager implements IIdManager, InitializingBean {
 	 *             This exception is thrown when a problem with the registration process appears.
 	 */
 	private void register() throws ServerUnavailableException, RegistrationException {
-		AgentConfiguration agentConfiguration = connection.register(configurationStorage.getAgentName(), getVersion());
+		AgentConfiguration agentConfiguration = connection.register(configurationStorage.getAgentName(), versionService.getVersionAsString());
 		configurationStorage.setAgentConfiguration(agentConfiguration);
 		platformId = agentConfiguration.getPlatformId();
 
