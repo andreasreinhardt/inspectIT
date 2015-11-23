@@ -39,7 +39,6 @@ import info.novatec.inspectit.cmr.classcache.config.filter.MethodSensorAssignmen
 import info.novatec.inspectit.cmr.service.IRegistrationService;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -74,9 +73,6 @@ public class InstrumentationCreatorTest {
 	@Mock
 	private ClassSensorAssignmentFilter classFilter;
 
-	@Mock
-	private ConfigurationResolver configurationResolver;
-
 	@BeforeMethod
 	public void init() {
 		MockitoAnnotations.initMocks(this);
@@ -84,7 +80,6 @@ public class InstrumentationCreatorTest {
 		creator.registrationService = registrationService;
 		creator.methodFilter = methodFilter;
 		creator.classFilter = classFilter;
-		creator.configurationResolver = configurationResolver;
 
 		// mock strategies
 		when(environment.getSendingStrategyConfig()).thenReturn(mock(IStrategyConfig.class));
@@ -117,7 +112,6 @@ public class InstrumentationCreatorTest {
 		Map<String, Object> settings = Collections.<String, Object> singletonMap("key", "value");
 		MethodSensorAssignment methodSensorAssignment = mock(MethodSensorAssignment.class);
 		when(methodSensorAssignment.getSettings()).thenReturn(settings);
-		when(configurationResolver.getAllMethodSensorAssignments(environment)).thenReturn(Collections.singletonList(methodSensorAssignment));
 
 		IMethodSensorConfig methodSensorConfig = mock(IMethodSensorConfig.class);
 		when(methodSensorConfig.getClassName()).thenReturn(sensorClassName);
@@ -138,22 +132,19 @@ public class InstrumentationCreatorTest {
 
 		// test direct and via collection
 		// we expect two calls to everything
-		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType);
-		Collection<ClassType> instrumentationCollection = creator.addInstrumentationPoints(agentConfiguration, environment, Collections.singletonList(classType));
+		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType, Collections.singletonList(methodSensorAssignment), null);
 
 		// verify results
 		assertThat(changed, is(true));
-		assertThat(instrumentationCollection, hasSize(1));
-		assertThat(instrumentationCollection, hasItem(classType));
 
 		// verify registration service
-		verify(registrationService, times(2)).registerMethodIdent(agentId, packageName, className, methodName, parameters, returnType, mod);
-		verify(registrationService, times(2)).addSensorTypeToMethod(sensorId, methodId);
+		verify(registrationService, times(1)).registerMethodIdent(agentId, packageName, className, methodName, parameters, returnType, mod);
+		verify(registrationService, times(1)).addSensorTypeToMethod(sensorId, methodId);
 		verifyNoMoreInteractions(registrationService);
 
 		// check RSC
 		ArgumentCaptor<RegisteredSensorConfig> captor = ArgumentCaptor.forClass(RegisteredSensorConfig.class);
-		verify(methodType, times(2)).setRegisteredSensorConfig(captor.capture());
+		verify(methodType, times(1)).setRegisteredSensorConfig(captor.capture());
 
 		RegisteredSensorConfig rsc = captor.getValue();
 		assertThat(rsc.getId(), is(methodId));
@@ -195,7 +186,6 @@ public class InstrumentationCreatorTest {
 		PropertyPathStart propertyPathStart = mock(PropertyPathStart.class);
 		when(contextCapture.getPropertyPathStart()).thenReturn(propertyPathStart);
 		when(methodSensorAssignment.getContextCaptures()).thenReturn(Collections.singletonList(contextCapture));
-		when(configurationResolver.getAllMethodSensorAssignments(environment)).thenReturn(Collections.<MethodSensorAssignment> singletonList(methodSensorAssignment));
 
 		IMethodSensorConfig methodSensorConfig = mock(IMethodSensorConfig.class);
 		when(methodSensorConfig.getClassName()).thenReturn(sensorClassName);
@@ -220,23 +210,20 @@ public class InstrumentationCreatorTest {
 
 		// test direct and via collection
 		// we expect two calls to everything
-		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType);
-		Collection<ClassType> instrumentationCollection = creator.addInstrumentationPoints(agentConfiguration, environment, Collections.singletonList(classType));
+		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType, Collections.<MethodSensorAssignment> singletonList(methodSensorAssignment), null);
 
 		// verify results
 		assertThat(changed, is(true));
-		assertThat(instrumentationCollection, hasSize(1));
-		assertThat(instrumentationCollection, hasItem(classType));
 
 		// verify registration service
-		verify(registrationService, times(2)).registerMethodIdent(agentId, packageName, className, methodName, parameters, returnType, mod);
-		verify(registrationService, times(2)).addSensorTypeToMethod(sensorId, methodId);
-		verify(registrationService, times(2)).addSensorTypeToMethod(invocationSensorId, methodId);
+		verify(registrationService, times(1)).registerMethodIdent(agentId, packageName, className, methodName, parameters, returnType, mod);
+		verify(registrationService, times(1)).addSensorTypeToMethod(sensorId, methodId);
+		verify(registrationService, times(1)).addSensorTypeToMethod(invocationSensorId, methodId);
 		verifyNoMoreInteractions(registrationService);
 
 		// check RSC
 		ArgumentCaptor<RegisteredSensorConfig> captor = ArgumentCaptor.forClass(RegisteredSensorConfig.class);
-		verify(methodType, times(2)).setRegisteredSensorConfig(captor.capture());
+		verify(methodType, times(1)).setRegisteredSensorConfig(captor.capture());
 
 		// just check related to the timer sensor stuff
 		RegisteredSensorConfig rsc = captor.getValue();
@@ -268,7 +255,6 @@ public class InstrumentationCreatorTest {
 		Map<String, Object> settings = Collections.<String, Object> singletonMap("key", "value");
 		ExceptionSensorAssignment exceptionSensorAssignment = mock(ExceptionSensorAssignment.class);
 		when(exceptionSensorAssignment.getSettings()).thenReturn(settings);
-		when(configurationResolver.getAllExceptionSensorAssignments(environment)).thenReturn(Collections.singletonList(exceptionSensorAssignment));
 
 		String packageName = "my.favorite.package";
 		String className = "ClassName";
@@ -286,23 +272,20 @@ public class InstrumentationCreatorTest {
 
 		// test direct and via collection
 		// we expect two calls to everything
-		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType);
-		Collection<ClassType> instrumentationCollection = creator.addInstrumentationPoints(agentConfiguration, environment, Collections.singletonList(classType));
+		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType, null, Collections.singletonList(exceptionSensorAssignment));
 
 		// verify results
 		assertThat(changed, is(true));
-		assertThat(instrumentationCollection, hasSize(1));
-		assertThat(instrumentationCollection, hasItem(classType));
 
 		// verify registration service
 		// for constructors the registered method name is class name
-		verify(registrationService, times(2)).registerMethodIdent(agentId, packageName, className, className, parameters, returnType, mod);
-		verify(registrationService, times(2)).addSensorTypeToMethod(sensorId, methodId);
+		verify(registrationService, times(1)).registerMethodIdent(agentId, packageName, className, className, parameters, returnType, mod);
+		verify(registrationService, times(1)).addSensorTypeToMethod(sensorId, methodId);
 		verifyNoMoreInteractions(registrationService);
 
 		// check RSC
 		ArgumentCaptor<RegisteredSensorConfig> captor = ArgumentCaptor.forClass(RegisteredSensorConfig.class);
-		verify(methodType, times(2)).setRegisteredSensorConfig(captor.capture());
+		verify(methodType, times(1)).setRegisteredSensorConfig(captor.capture());
 
 		RegisteredSensorConfig rsc = captor.getValue();
 		assertThat(rsc.getId(), is(methodId));
@@ -332,7 +315,6 @@ public class InstrumentationCreatorTest {
 		Map<String, Object> settings = Collections.<String, Object> singletonMap("key", "value");
 		MethodSensorAssignment methodSensorAssignment = mock(MethodSensorAssignment.class);
 		when(methodSensorAssignment.getSettings()).thenReturn(settings);
-		when(configurationResolver.getAllMethodSensorAssignments(environment)).thenReturn(Collections.singletonList(methodSensorAssignment));
 
 		IMethodSensorConfig methodSensorConfig = mock(IMethodSensorConfig.class);
 		when(methodSensorConfig.getClassName()).thenReturn(sensorClassName);
@@ -344,13 +326,10 @@ public class InstrumentationCreatorTest {
 
 		// test direct and via collection
 		// we expect two calls to everything
-		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType);
-		Collection<ClassType> instrumentationCollection = creator.addInstrumentationPoints(agentConfiguration, environment, Collections.singletonList(classType));
+		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType, Collections.singletonList(methodSensorAssignment), null);
 
 		// verify results
 		assertThat(changed, is(true));
-		assertThat(instrumentationCollection, hasSize(1));
-		assertThat(instrumentationCollection, hasItem(classType));
 
 		// verify no interaction
 		verifyNoMoreInteractions(registrationService);
@@ -360,19 +339,16 @@ public class InstrumentationCreatorTest {
 	@Test
 	public void assignmentDoesNotMatchClassFilter() throws Exception {
 		MethodSensorAssignment methodSensorAssignment = mock(MethodSensorAssignment.class);
-		when(configurationResolver.getAllMethodSensorAssignments(environment)).thenReturn(Collections.singletonList(methodSensorAssignment));
 
 		AgentConfiguration agentConfiguration = mock(AgentConfiguration.class);
 		when(classFilter.matches(methodSensorAssignment, classType)).thenReturn(false);
 
 		// test direct and via collection
 		// we expect two calls to everything
-		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType);
-		Collection<ClassType> instrumentationCollection = creator.addInstrumentationPoints(agentConfiguration, environment, Collections.singletonList(classType));
+		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType, Collections.singletonList(methodSensorAssignment), null);
 
 		// verify results
 		assertThat(changed, is(false));
-		assertThat(instrumentationCollection, hasSize(0));
 
 		verifyZeroInteractions(registrationService, methodType);
 	}
@@ -380,19 +356,16 @@ public class InstrumentationCreatorTest {
 	@Test
 	public void assignmentDoesNotMatchMethodFilter() throws Exception {
 		MethodSensorAssignment methodSensorAssignment = mock(MethodSensorAssignment.class);
-		when(configurationResolver.getAllMethodSensorAssignments(environment)).thenReturn(Collections.singletonList(methodSensorAssignment));
 
 		AgentConfiguration agentConfiguration = mock(AgentConfiguration.class);
 		when(methodFilter.matches(methodSensorAssignment, methodType)).thenReturn(false);
 
 		// test direct and via collection
 		// we expect two calls to everything
-		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType);
-		Collection<ClassType> instrumentationCollection = creator.addInstrumentationPoints(agentConfiguration, environment, Collections.singletonList(classType));
+		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType, Collections.singletonList(methodSensorAssignment), null);
 
 		// verify results
 		assertThat(changed, is(false));
-		assertThat(instrumentationCollection, hasSize(0));
 
 		verifyZeroInteractions(registrationService, methodType);
 	}

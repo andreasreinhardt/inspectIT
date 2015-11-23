@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 /**
- * For for an environment update.
+ * Job for an environment update.
  * 
  * @author Ivan Senic
  * 
@@ -48,6 +48,8 @@ public class EnvironmentUpdateJob extends AbstractConfigurationChangeJob {
 		// first create new configuration based on new Environment
 		updateConfiguration(environment);
 
+		boolean changed = false;
+
 		// then first process all removed profiles
 		if (CollectionUtils.isNotEmpty(removedProfiles)) {
 			Collection<MethodSensorAssignment> removedMethodSensorAssignments = new ArrayList<>();
@@ -62,7 +64,7 @@ public class EnvironmentUpdateJob extends AbstractConfigurationChangeJob {
 				}
 			}
 
-			super.processRemovedAssignments(removedMethodSensorAssignments, removedExceptionSensorAssignments);
+			changed |= super.processRemovedAssignments(removedMethodSensorAssignments, removedExceptionSensorAssignments);
 		}
 
 		// then process all added profiles
@@ -79,9 +81,12 @@ public class EnvironmentUpdateJob extends AbstractConfigurationChangeJob {
 				}
 			}
 
-			super.processAddedAssignments(addedMethodSensorAssignments, addedExceptionSensorAssignments);
+			changed |= super.processAddedAssignments(addedMethodSensorAssignments, addedExceptionSensorAssignments);
 		}
 
+		if (changed) {
+			updateInstrumentationPointsInConfiguration();
+		}
 	}
 
 	/**

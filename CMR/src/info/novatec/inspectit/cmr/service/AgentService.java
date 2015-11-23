@@ -6,7 +6,6 @@ import info.novatec.inspectit.ci.Environment;
 import info.novatec.inspectit.ci.Profile;
 import info.novatec.inspectit.ci.assignment.impl.ExceptionSensorAssignment;
 import info.novatec.inspectit.ci.assignment.impl.MethodSensorAssignment;
-import info.novatec.inspectit.classcache.ClassType;
 import info.novatec.inspectit.classcache.ImmutableClassType;
 import info.novatec.inspectit.classcache.ImmutableType;
 import info.novatec.inspectit.classcache.Type;
@@ -18,8 +17,10 @@ import info.novatec.inspectit.cmr.classcache.config.ConfigurationCreator;
 import info.novatec.inspectit.cmr.classcache.config.ConfigurationResolver;
 import info.novatec.inspectit.cmr.classcache.config.InstrumentationPointsUtil;
 import info.novatec.inspectit.cmr.classcache.config.job.EnvironmentUpdateJob;
+import info.novatec.inspectit.cmr.classcache.config.job.MappingUpdateJob;
 import info.novatec.inspectit.cmr.classcache.config.job.ProfileUpdateJob;
-import info.novatec.inspectit.cmr.classcache.config.job.RefreshInstrumentationTimestampsJob;
+import info.novatec.inspectit.cmr.dao.PlatformIdentDao;
+import info.novatec.inspectit.cmr.model.PlatformIdent;
 import info.novatec.inspectit.cmr.spring.aop.MethodLog;
 import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.exception.enumeration.AgentManagementErrorCodeEnum;
@@ -28,12 +29,12 @@ import info.novatec.inspectit.spring.logger.Log;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.ObjectUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,10 +75,10 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	private ObjectFactory<EnvironmentUpdateJob> environmentUpdateJobFactory;
 
 	/**
-	 * Factory for creating new {@link EnvironmentUpdateJob}.
+	 * Factory for creating new {@link MappingUpdateJob}.
 	 */
 	@Autowired
-	private ObjectFactory<RefreshInstrumentationTimestampsJob> refreshInstrumentationTimestampsJobFactory;
+	private ObjectFactory<MappingUpdateJob> mappingUpdateJobFactory;
 
 	/**
 	 * Registration service.
@@ -102,6 +103,12 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 	 */
 	@Autowired
 	private InstrumentationPointsUtil instrumentationPointsUtil;
+
+	/**
+	 * Platform ident dao for resolving agents by ids.
+	 */
+	@Autowired
+	private PlatformIdentDao platformIdentDao;
 
 	/**
 	 * Executor for dealing with configuration updates.
@@ -132,37 +139,15 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 
 		// check if this agent was already registered and we have environment
 		Environment cachedEnvironment = agentCacheEntry.getEnvironment();
-		ClassCache classCache = agentCacheEntry.getClassCache();
+		AgentConfiguration agentConfiguration = agentCacheEntry.getAgentConfiguration();
 
-		// if we have same environment, just return cached configuration
-		if (Objects.equals(environment, cachedEnvironment)) {
-			AgentConfiguration agentConfiguration = agentCacheEntry.getAgentConfiguration();
-
-			// recollect the points
-			// TODO skip this if the changes in the CI already set new points in the agent
-			// configuration :)
-			if (null != agentConfiguration) {
-				Map<Collection<String>, InstrumentationResult> initInstrumentationResults = instrumentationPointsUtil.collectInstrumentationResultsWithHashes(classCache, environment);
-				agentConfiguration.setInitialInstrumentationResults(initInstrumentationResults);
-				agentConfiguration.setClassCacheExistsOnCmr(true);
-				return agentConfiguration;
-			}
-		} else if (null != cachedEnvironment) {
-			// otherwise if we have different environment cached, then clear all points
-			// TODO same skip this if the changes in the CI already set new points in the agent
-			// configuration :)
-			instrumentationPointsUtil.removeAllInstrumentationPoints(classCache);
+		// if we have same environment and configuration return configuration
+		if (Objects.equals(environment, cachedEnvironment) && null != agentConfiguration) {
+			return agentConfiguration;
 		}
 
 		// else kick the configuration creator
-		AgentConfiguration agentConfiguration = configurationCreator.environmentToConfiguration(environment, id);
-		boolean cacheExists = null != cachedEnvironment;
-		agentConfiguration.setClassCacheExistsOnCmr(cacheExists);
-
-		// collect instrumentation points
-		Collection<ClassType> instrumentedTypes = instrumentationPointsUtil.addAllInstrumentationPoints(classCache, agentConfiguration, environment);
-		Map<Collection<String>, InstrumentationResult> initialInstrumentationResults = instrumentationPointsUtil.collectInstrumentationResultsWithHashes(instrumentedTypes, classCache, environment);
-		agentConfiguration.setInitialInstrumentationResults(initialInstrumentationResults);
+		agentConfiguration = configurationCreator.environmentToConfiguration(environment, id);
 
 		// save results to cache entry
 		agentCacheEntry.setEnvironment(environment);
@@ -215,29 +200,16 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 			return null;
 		}
 
+		// then run configuration
 		final ImmutableClassType classType = type.castToClass();
 		final Environment environment = agentCacheEntry.getEnvironment();
+		final AgentConfiguration agentConfiguration = agentCacheEntry.getAgentConfiguration();
 
-		// then run configuration if it's a class and does no have instrumentation points
-		// this is a contract with the agent, agent will not send classes that should not have
-		// instrumentation points
-		// and for us is to overcome situation when all points are removed from class cache, and to
-		// kick in new analysis
-		// TODO by current contract we should never get the same class twice, so always run the
-		// instrumentation and collect, easy :)
-		if (!classType.hasInstrumentationPoints()) {
-			// kick in configuration
-			final AgentConfiguration agentConfiguration = agentCacheEntry.getAgentConfiguration();
-			instrumentationPointsUtil.addAllInstrumentationPoints(Collections.singleton(classType), classCache, agentConfiguration, environment);
-		} else {
-			// refresh the time-stamps of the instrumentation points in the DB
-			RefreshInstrumentationTimestampsJob job = refreshInstrumentationTimestampsJobFactory.getObject();
-			job.setClassType(classType);
-			executor.execute(job);
-		}
+		Collection<? extends ImmutableClassType> instrumented = instrumentationPointsUtil.addAllInstrumentationPoints(Collections.singleton(classType), classCache, agentConfiguration, environment);
+		Collection<InstrumentationResult> instrumentationResults = instrumentationPointsUtil.collectInstrumentationResults(instrumented, classCache, environment);
 
-		Collection<InstrumentationResult> instrumentationResults = instrumentationPointsUtil.collectInstrumentationResults(Collections.singleton(classType), classCache, environment);
 		if (CollectionUtils.isNotEmpty(instrumentationResults)) {
+			// as we have only one class, we expect only one instrumentation result
 			return instrumentationResults.iterator().next();
 		} else {
 			return null;
@@ -302,6 +274,35 @@ public class AgentService implements IAgentService, IConfigurationInterfaceChang
 			environmentUpdateJob.setAgentCacheEntry(agentCacheEntry);
 
 			executor.execute(environmentUpdateJob);
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public void agentMappingsUpdated() {
+		for (AgentCacheEntry agentCacheEntry : agentCacheMap.values()) {
+			Environment cachedEnvironment = agentCacheEntry.getEnvironment();
+			PlatformIdent platformIdent = platformIdentDao.load(agentCacheEntry.getId());
+			try {
+				Environment environment = configurationResolver.getEnvironmentForAgent(platformIdent.getDefinedIPs(), platformIdent.getAgentName());
+
+				// if we have new environment fire job
+				if (!ObjectUtils.equals(cachedEnvironment, environment)) {
+					MappingUpdateJob mappingUpdateJob = mappingUpdateJobFactory.getObject();
+					mappingUpdateJob.setEnvironment(environment);
+					mappingUpdateJob.setAgentCacheEntry(agentCacheEntry);
+
+					executor.execute(mappingUpdateJob);
+				}
+			} catch (BusinessException e) {
+				// if we have exception by resolving new environment run job with no new
+				// environment
+				MappingUpdateJob mappingUpdateJob = mappingUpdateJobFactory.getObject();
+				mappingUpdateJob.setAgentCacheEntry(agentCacheEntry);
+
+				executor.execute(mappingUpdateJob);
+			}
 		}
 	}
 

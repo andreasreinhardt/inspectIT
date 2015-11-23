@@ -364,6 +364,9 @@ public class ConfigurationInterfaceManager {
 
 		agentMappings.setRevision(agentMappings.getRevision() + 1);
 		saveAgentMapping(agentMappings);
+
+		notifyListenersMappingsUpdate();
+
 		return agentMappings;
 	}
 
@@ -461,7 +464,15 @@ public class ConfigurationInterfaceManager {
 		for (IConfigurationInterfaceChangeListener listener : listeners) {
 			listener.environmentUpdated(updated, removedProfiles, addedProfiles);
 		}
+	}
 
+	/**
+	 * Notifies listeners about mappings update.
+	 */
+	private void notifyListenersMappingsUpdate() {
+		for (IConfigurationInterfaceChangeListener listener : listeners) {
+			listener.agentMappingsUpdated();
+		}
 	}
 
 	/**

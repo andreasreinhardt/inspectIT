@@ -22,7 +22,6 @@ import info.novatec.inspectit.cmr.service.IRegistrationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,12 +58,6 @@ public class InstrumentationCreator {
 	 */
 	@Autowired
 	IRegistrationService registrationService;
-
-	/**
-	 * {@link ConfigurationResolver}.
-	 */
-	@Autowired
-	ConfigurationResolver configurationResolver;
 
 	/**
 	 * Creates {@link InstrumentationResult} for the given {@link ClassType} and Environment. This
@@ -111,60 +104,6 @@ public class InstrumentationCreator {
 		}
 
 		return JAVA_CLASS_LAODER_FQN.equals(classType.getFQN()) || classType.isSubClassOf(JAVA_CLASS_LAODER_FQN);
-	}
-
-	/**
-	 * Runs the complete configuration against collection of the {@link ClassType} to check for the
-	 * possible instrumentation points to add. Note that all {@link MethodSensorAssignment}s and
-	 * {@link ExceptionSensorAssignment}s that are contained in the {@link Environment} will be
-	 * processed.
-	 * 
-	 * @param agentConfiguration
-	 *            Agent configuration currently used
-	 * @param environment
-	 *            {@link Environment} holding configuration.
-	 * @param classTypes
-	 *            {@link ClassType}s to process.
-	 * @return Returns collection of the {@link ClassType}s that have at least one instrumentation
-	 *         added as a result of this method.
-	 */
-	public Collection<ClassType> addInstrumentationPoints(AgentConfiguration agentConfiguration, Environment environment, Collection<ClassType> classTypes) {
-		if (CollectionUtils.isEmpty(classTypes)) {
-			return Collections.emptyList();
-		}
-		Collection<ClassType> changedClassTypes = new ArrayList<>();
-		Collection<MethodSensorAssignment> methodSensorAssignments = configurationResolver.getAllMethodSensorAssignments(environment);
-		Collection<ExceptionSensorAssignment> exceptionSensorAssignments = configurationResolver.getAllExceptionSensorAssignments(environment);
-
-		for (ClassType classType : classTypes) {
-			if (addInstrumentationPoints(agentConfiguration, environment, classType, methodSensorAssignments, exceptionSensorAssignments)) {
-				changedClassTypes.add(classType);
-			}
-		}
-
-		return changedClassTypes;
-	}
-
-	/**
-	 * Runs the complete configuration against the {@link ClassType} to check for the possible
-	 * instrumentation points to add. Note that all {@link MethodSensorAssignment}s and
-	 * {@link ExceptionSensorAssignment}s that are contained in the {@link Environment} will be
-	 * processed.
-	 * 
-	 * @param agentConfiguration
-	 *            Agent configuration currently used
-	 * @param environment
-	 *            {@link Environment} holding configuration.
-	 * @param classType
-	 *            {@link ClassType} to process.
-	 * @return <code>true</code> if at least one instrumentation point was added, <code>false</code>
-	 *         otherwise
-	 */
-	public boolean addInstrumentationPoints(AgentConfiguration agentConfiguration, Environment environment, ClassType classType) {
-		Collection<MethodSensorAssignment> methodSensorAssignments = configurationResolver.getAllMethodSensorAssignments(environment);
-		Collection<ExceptionSensorAssignment> exceptionSensorAssignments = configurationResolver.getAllExceptionSensorAssignments(environment);
-
-		return addInstrumentationPoints(agentConfiguration, environment, classType, methodSensorAssignments, exceptionSensorAssignments);
 	}
 
 	/**
@@ -246,7 +185,8 @@ public class InstrumentationCreator {
 	 * exception sensor assignment from a {@link ClassType}.
 	 * 
 	 * @param classType
-	 *            {@link ClassType} to remove instrumentation from. * @param methodSensorAssignments
+	 *            {@link ClassType} to remove instrumentation from.
+	 * @param methodSensorAssignments
 	 *            {@link MethodSensorAssignment}s to process.
 	 * @param exceptionSensorAssignments
 	 *            {@link ExceptionSensorAssignment}s to process.

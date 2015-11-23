@@ -15,8 +15,11 @@ import static org.mockito.Mockito.when;
 import info.novatec.inspectit.agent.config.impl.AgentConfiguration;
 import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
 import info.novatec.inspectit.ci.Environment;
+import info.novatec.inspectit.ci.assignment.impl.ExceptionSensorAssignment;
+import info.novatec.inspectit.ci.assignment.impl.MethodSensorAssignment;
 import info.novatec.inspectit.classcache.AnnotationType;
 import info.novatec.inspectit.classcache.ClassType;
+import info.novatec.inspectit.classcache.ImmutableClassType;
 import info.novatec.inspectit.classcache.InterfaceType;
 import info.novatec.inspectit.classcache.Type;
 import info.novatec.inspectit.cmr.classcache.ClassCache;
@@ -53,6 +56,9 @@ public class InstrumentationPointsUtilsTest {
 	protected InstrumentationCreator instrumentationCreator;
 
 	@Mock
+	protected ConfigurationResolver configurationResolver;
+
+	@Mock
 	protected ClassCache classCache;
 
 	@Mock
@@ -66,6 +72,12 @@ public class InstrumentationPointsUtilsTest {
 
 	@Mock
 	protected ClassType classType;
+
+	@Mock
+	protected Collection<MethodSensorAssignment> methodSensorAssignments;
+
+	@Mock
+	protected Collection<ExceptionSensorAssignment> exceptionSensorAssignments;
 
 	@BeforeMethod
 	public void init() throws Exception {
@@ -85,12 +97,16 @@ public class InstrumentationPointsUtilsTest {
 
 		when(classType.isClass()).thenReturn(true);
 		when(classType.castToClass()).thenReturn(classType);
+
+		when(configurationResolver.getAllMethodSensorAssignments(environment)).thenReturn(methodSensorAssignments);
+		when(configurationResolver.getAllExceptionSensorAssignments(environment)).thenReturn(exceptionSensorAssignments);
 	}
 
 	public static class RemoveInstrumentationPoints extends InstrumentationPointsUtilsTest {
 
 		@Test
 		public void removeAll() throws Exception {
+			when(classType.isInitialized()).thenReturn(true);
 			doReturn(Collections.singleton(classType)).when(lookup).findAll();
 
 			instrumentationPointsUtil.removeAllInstrumentationPoints(classCache);
@@ -132,15 +148,31 @@ public class InstrumentationPointsUtilsTest {
 		public void add() throws Exception {
 			when(classType.isInitialized()).thenReturn(true);
 			doReturn(Collections.singleton(classType)).when(lookup).findAll();
-			doReturn(Collections.singleton(classType)).when(instrumentationCreator).addInstrumentationPoints(agentConfiguration, environment, Collections.singleton(classType));
-			Collection<ClassType> result = instrumentationPointsUtil.addAllInstrumentationPoints(classCache, agentConfiguration, environment);
+			doReturn(true).when(instrumentationCreator).addInstrumentationPoints(agentConfiguration, environment, classType, methodSensorAssignments, exceptionSensorAssignments);
+			Collection<? extends ImmutableClassType> result = instrumentationPointsUtil.addAllInstrumentationPoints(classCache, agentConfiguration, environment);
 
 			// assert result
-			assertThat(result, hasItem(classType));
+			assertThat((Collection<ClassType>) result, hasItem(classType));
 
 			// must be write lock
 			verify(classCache, times(1)).executeWithWriteLock(Mockito.<Callable<?>> any());
-			verify(instrumentationCreator, times(1)).addInstrumentationPoints(agentConfiguration, environment, Collections.singleton(classType));
+			verify(instrumentationCreator, times(1)).addInstrumentationPoints(agentConfiguration, environment, classType, methodSensorAssignments, exceptionSensorAssignments);
+			verifyZeroInteractions(log);
+		}
+
+		@Test
+		public void addNothingWhenInstrumenterDoesNotAdd() throws Exception {
+			when(classType.isInitialized()).thenReturn(true);
+			doReturn(Collections.singleton(classType)).when(lookup).findAll();
+			doReturn(false).when(instrumentationCreator).addInstrumentationPoints(agentConfiguration, environment, classType, methodSensorAssignments, exceptionSensorAssignments);
+			Collection<? extends ImmutableClassType> result = instrumentationPointsUtil.addAllInstrumentationPoints(classCache, agentConfiguration, environment);
+
+			// assert result
+			assertThat((Collection<ClassType>) result, is(empty()));
+
+			// must be write lock
+			verify(classCache, times(1)).executeWithWriteLock(Mockito.<Callable<?>> any());
+			verify(instrumentationCreator, times(1)).addInstrumentationPoints(agentConfiguration, environment, classType, methodSensorAssignments, exceptionSensorAssignments);
 			verifyZeroInteractions(log);
 		}
 
@@ -150,22 +182,21 @@ public class InstrumentationPointsUtilsTest {
 			List<Type> types = new ArrayList<Type>();
 			types.add(classType);
 			doReturn(types).when(lookup).findAll();
-			Collection<ClassType> result = instrumentationPointsUtil.addAllInstrumentationPoints(classCache, agentConfiguration, environment);
+			Collection<? extends ImmutableClassType> result = instrumentationPointsUtil.addAllInstrumentationPoints(classCache, agentConfiguration, environment);
 
 			// assert result
 			assertThat(result, is(empty()));
 
 			// must be write lock
 			verify(classCache, times(1)).executeWithWriteLock(Mockito.<Callable<?>> any());
-			verify(instrumentationCreator, times(1)).addInstrumentationPoints(agentConfiguration, environment, Collections.<ClassType> emptyList());
-			verifyZeroInteractions(log);
+			verifyZeroInteractions(instrumentationCreator, log);
 
 		}
 
 		@Test
 		public void addNothingWhenEmpty() throws Exception {
 			doReturn(Collections.emptyList()).when(lookup).findAll();
-			Collection<ClassType> result = instrumentationPointsUtil.addAllInstrumentationPoints(classCache, agentConfiguration, environment);
+			Collection<? extends ImmutableClassType> result = instrumentationPointsUtil.addAllInstrumentationPoints(classCache, agentConfiguration, environment);
 
 			// assert result
 			assertThat(result, is(empty()));
@@ -184,15 +215,14 @@ public class InstrumentationPointsUtilsTest {
 			types.add(interfaceType);
 
 			doReturn(types).when(lookup).findAll();
-			Collection<ClassType> result = instrumentationPointsUtil.addAllInstrumentationPoints(classCache, agentConfiguration, environment);
+			Collection<? extends ImmutableClassType> result = instrumentationPointsUtil.addAllInstrumentationPoints(classCache, agentConfiguration, environment);
 
 			// assert result
 			assertThat(result, is(empty()));
 
 			// must be write lock
 			verify(classCache, times(1)).executeWithWriteLock(Mockito.<Callable<?>> any());
-			verify(instrumentationCreator, times(1)).addInstrumentationPoints(agentConfiguration, environment, Collections.<ClassType> emptyList());
-			verifyZeroInteractions(log);
+			verifyZeroInteractions(log, instrumentationCreator);
 		}
 	}
 

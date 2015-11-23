@@ -4,7 +4,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -21,20 +20,17 @@ import info.novatec.inspectit.cmr.classcache.ClassCache;
 import info.novatec.inspectit.cmr.classcache.config.AgentCacheEntry;
 import info.novatec.inspectit.cmr.classcache.config.ClassCacheSearchNarrower;
 import info.novatec.inspectit.cmr.classcache.config.ConfigurationCreator;
-import info.novatec.inspectit.cmr.classcache.config.InstrumentationCreator;
+import info.novatec.inspectit.cmr.classcache.config.InstrumentationPointsUtil;
 import info.novatec.inspectit.exception.BusinessException;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.Callable;
 
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -50,7 +46,7 @@ public class EnvironmentUpdateJobTest {
 	private ClassCacheSearchNarrower classCacheSearchNarrower;
 
 	@Mock
-	private InstrumentationCreator instrumentationCreator;
+	private InstrumentationPointsUtil instrumentationPointsUtil;
 
 	@Mock
 	private ConfigurationCreator configurationCreator;
@@ -91,25 +87,15 @@ public class EnvironmentUpdateJobTest {
 
 		job = new EnvironmentUpdateJob();
 		job.classCacheSearchNarrower = classCacheSearchNarrower;
-		job.instrumentationCreator = instrumentationCreator;
+		job.instrumentationPointsUtil = instrumentationPointsUtil;
 		job.configurationCreator = configurationCreator;
-		job.log = LoggerFactory.getLogger(ProfileUpdateJob.class);
+		job.log = LoggerFactory.getLogger(EnvironmentUpdateJob.class);
 		job.setAgentCacheEntry(agentCacheEntry);
 
 		when(agentCacheEntry.getAgentConfiguration()).thenReturn(agentConfiguration);
 		when(agentCacheEntry.getEnvironment()).thenReturn(environment);
 		when(agentCacheEntry.getClassCache()).thenReturn(classCache);
 		when(agentCacheEntry.getId()).thenReturn(PLATFORM_ID);
-
-		Answer<Object> callableAnswer = new Answer<Object>() {
-			@Override
-			public Object answer(InvocationOnMock invocation) throws Throwable {
-				Callable<?> callable = (Callable<?>) invocation.getArguments()[0];
-				return callable.call();
-			}
-		};
-		doAnswer(callableAnswer).when(classCache).executeWithReadLock(Mockito.<Callable<?>> anyObject());
-		doAnswer(callableAnswer).when(classCache).executeWithWriteLock(Mockito.<Callable<?>> anyObject());
 
 		when(configurationCreator.environmentToConfiguration(updateEnvironment, PLATFORM_ID)).thenReturn(updateConfiguration);
 
@@ -124,14 +110,19 @@ public class EnvironmentUpdateJobTest {
 		verify(agentCacheEntry, times(1)).setAgentConfiguration(updateConfiguration);
 		verify(configurationCreator, times(1)).environmentToConfiguration(updateEnvironment, PLATFORM_ID);
 
-		verifyZeroInteractions(classCache, environment, classCacheSearchNarrower, instrumentationCreator);
+		verify(agentConfiguration, times(0)).setInitialInstrumentationResults(Mockito.anyMap());
+		verify(agentConfiguration, times(0)).setClassCacheExistsOnCmr(Mockito.anyBoolean());
+
+		verifyZeroInteractions(classCache, environment, classCacheSearchNarrower, instrumentationPointsUtil);
 	}
 
 	@Test
 	public void profileAddedWithMethodSensor() throws RemoteException, BusinessException {
-		doReturn(Collections.singleton(classType)).when(classCacheSearchNarrower).narrowByMethodSensorAssignment(classCache, methodSensorAssignment);
-		doReturn(true).when(instrumentationCreator).addInstrumentationPoints(eq(agentConfiguration), eq(environment), eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(),
-				Mockito.<Collection<ExceptionSensorAssignment>> any());
+		Collection<ClassType> types = Collections.singleton(classType);
+
+		doReturn(types).when(classCacheSearchNarrower).narrowByMethodSensorAssignment(classCache, methodSensorAssignment);
+		doReturn(types).when(instrumentationPointsUtil).addInstrumentationPoints(eq(types), eq(classCache), eq(agentConfiguration), eq(environment),
+				Mockito.<Collection<MethodSensorAssignment>> any(), Mockito.<Collection<ExceptionSensorAssignment>> any());
 		when(profile.getMethodSensorAssignments()).thenReturn(Collections.singletonList(methodSensorAssignment));
 
 		job.setAddedProfiles(Collections.singleton(profile));
@@ -142,21 +133,26 @@ public class EnvironmentUpdateJobTest {
 		verify(configurationCreator, times(1)).environmentToConfiguration(updateEnvironment, PLATFORM_ID);
 
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
-		verify(instrumentationCreator, times(1)).addInstrumentationPoints(eq(agentConfiguration), eq(environment), eq(classType), captor.capture(),
+		verify(instrumentationPointsUtil, times(1)).addInstrumentationPoints(eq(types), eq(classCache), eq(agentConfiguration), eq(environment), captor.capture(),
 				Mockito.<Collection<ExceptionSensorAssignment>> any());
 
 		assertThat((Collection<MethodSensorAssignment>) captor.getValue(), hasSize(1));
 		assertThat(((Collection<MethodSensorAssignment>) captor.getValue()).iterator().next(), is(methodSensorAssignment));
 
-		verifyNoMoreInteractions(instrumentationCreator);
+		verify(instrumentationPointsUtil, times(1)).collectInstrumentationResultsWithHashes(classCache, environment);
+		verifyNoMoreInteractions(instrumentationPointsUtil);
+		verify(agentConfiguration, times(1)).setInitialInstrumentationResults(Mockito.anyMap());
+		verify(agentConfiguration, times(1)).setClassCacheExistsOnCmr(true);
 		verifyZeroInteractions(environment, configurationCreator);
 	}
 
 	@Test
 	public void profileAddedWithExceptionSensor() throws RemoteException, BusinessException {
-		doReturn(Collections.singleton(classType)).when(classCacheSearchNarrower).narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment);
-		doReturn(true).when(instrumentationCreator).addInstrumentationPoints(eq(agentConfiguration), eq(environment), eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(),
-				Mockito.<Collection<ExceptionSensorAssignment>> any());
+		Collection<ClassType> types = Collections.singleton(classType);
+
+		doReturn(types).when(classCacheSearchNarrower).narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment);
+		doReturn(types).when(instrumentationPointsUtil).addInstrumentationPoints(eq(types), eq(classCache), eq(agentConfiguration), eq(environment),
+				Mockito.<Collection<MethodSensorAssignment>> any(), Mockito.<Collection<ExceptionSensorAssignment>> any());
 		when(profile.getExceptionSensorAssignments()).thenReturn(Collections.singletonList(exceptionSensorAssignment));
 
 		job.setAddedProfiles(Collections.singleton(profile));
@@ -167,19 +163,25 @@ public class EnvironmentUpdateJobTest {
 		verify(configurationCreator, times(1)).environmentToConfiguration(updateEnvironment, PLATFORM_ID);
 
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
-		verify(instrumentationCreator, times(1)).addInstrumentationPoints(eq(agentConfiguration), eq(environment), eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(), captor.capture());
+		verify(instrumentationPointsUtil, times(1)).addInstrumentationPoints(eq(types), eq(classCache), eq(agentConfiguration), eq(environment), Mockito.<Collection<MethodSensorAssignment>> any(),
+				captor.capture());
 
 		assertThat((Collection<ExceptionSensorAssignment>) captor.getValue(), hasSize(1));
 		assertThat(((Collection<ExceptionSensorAssignment>) captor.getValue()).iterator().next(), is(exceptionSensorAssignment));
 
-		verifyNoMoreInteractions(instrumentationCreator);
+		verify(instrumentationPointsUtil, times(1)).collectInstrumentationResultsWithHashes(classCache, environment);
+		verifyNoMoreInteractions(instrumentationPointsUtil);
+		verify(agentConfiguration, times(1)).setInitialInstrumentationResults(Mockito.anyMap());
+		verify(agentConfiguration, times(1)).setClassCacheExistsOnCmr(true);
 		verifyZeroInteractions(environment, configurationCreator);
 	}
 
 	@Test
 	public void profileRemovedWithMethodSensor() throws RemoteException, BusinessException {
-		doReturn(Collections.singleton(classType)).when(classCacheSearchNarrower).narrowByMethodSensorAssignment(classCache, methodSensorAssignment);
-		doReturn(true).when(instrumentationCreator).removeInstrumentationPoints(eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(),
+		Collection<ClassType> types = Collections.singleton(classType);
+
+		doReturn(types).when(classCacheSearchNarrower).narrowByMethodSensorAssignment(classCache, methodSensorAssignment);
+		doReturn(types).when(instrumentationPointsUtil).removeInstrumentationPoints(eq(types), eq(classCache), Mockito.<Collection<MethodSensorAssignment>> any(),
 				Mockito.<Collection<ExceptionSensorAssignment>> any());
 		when(profile.getMethodSensorAssignments()).thenReturn(Collections.singletonList(methodSensorAssignment));
 
@@ -191,23 +193,28 @@ public class EnvironmentUpdateJobTest {
 		verify(configurationCreator, times(1)).environmentToConfiguration(updateEnvironment, PLATFORM_ID);
 
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
-		verify(instrumentationCreator, times(1)).removeInstrumentationPoints(eq(classType), captor.capture(), Mockito.<Collection<ExceptionSensorAssignment>> any());
+		verify(instrumentationPointsUtil, times(1)).removeInstrumentationPoints(eq(types), eq(classCache), captor.capture(), Mockito.<Collection<ExceptionSensorAssignment>> any());
 
 		assertThat((Collection<MethodSensorAssignment>) captor.getValue(), hasSize(1));
 		assertThat(((Collection<MethodSensorAssignment>) captor.getValue()).iterator().next(), is(methodSensorAssignment));
 
-		verify(instrumentationCreator, times(1)).addInstrumentationPoints(eq(agentConfiguration), eq(environment), captor.capture());
+		verify(instrumentationPointsUtil, times(1)).addAllInstrumentationPoints(captor.capture(), eq(classCache), eq(agentConfiguration), eq(environment));
 		assertThat((Collection<ClassType>) captor.getValue(), hasSize(1));
 		assertThat(((Collection<ClassType>) captor.getValue()).iterator().next(), is(classType));
 
-		verifyNoMoreInteractions(instrumentationCreator);
+		verify(instrumentationPointsUtil, times(1)).collectInstrumentationResultsWithHashes(classCache, environment);
+		verifyNoMoreInteractions(instrumentationPointsUtil);
+		verify(agentConfiguration, times(1)).setInitialInstrumentationResults(Mockito.anyMap());
+		verify(agentConfiguration, times(1)).setClassCacheExistsOnCmr(true);
 		verifyZeroInteractions(environment, configurationCreator);
 	}
 
 	@Test
 	public void profileRemovedWithExceptionSensor() throws RemoteException, BusinessException {
-		doReturn(Collections.singleton(classType)).when(classCacheSearchNarrower).narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment);
-		doReturn(true).when(instrumentationCreator).removeInstrumentationPoints(eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(),
+		Collection<ClassType> types = Collections.singleton(classType);
+
+		doReturn(types).when(classCacheSearchNarrower).narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment);
+		doReturn(types).when(instrumentationPointsUtil).removeInstrumentationPoints(eq(types), eq(classCache), Mockito.<Collection<MethodSensorAssignment>> any(),
 				Mockito.<Collection<ExceptionSensorAssignment>> any());
 		when(profile.getExceptionSensorAssignments()).thenReturn(Collections.singletonList(exceptionSensorAssignment));
 
@@ -219,16 +226,19 @@ public class EnvironmentUpdateJobTest {
 		verify(configurationCreator, times(1)).environmentToConfiguration(updateEnvironment, PLATFORM_ID);
 
 		ArgumentCaptor<Collection> captor = ArgumentCaptor.forClass(Collection.class);
-		verify(instrumentationCreator, times(1)).removeInstrumentationPoints(eq(classType), Mockito.<Collection<MethodSensorAssignment>> any(), captor.capture());
+		verify(instrumentationPointsUtil, times(1)).removeInstrumentationPoints(eq(types), eq(classCache), Mockito.<Collection<MethodSensorAssignment>> any(), captor.capture());
 
 		assertThat((Collection<ExceptionSensorAssignment>) captor.getValue(), hasSize(1));
 		assertThat(((Collection<ExceptionSensorAssignment>) captor.getValue()).iterator().next(), is(exceptionSensorAssignment));
 
-		verify(instrumentationCreator, times(1)).addInstrumentationPoints(eq(agentConfiguration), eq(environment), captor.capture());
+		verify(instrumentationPointsUtil, times(1)).addAllInstrumentationPoints(captor.capture(), eq(classCache), eq(agentConfiguration), eq(environment));
 		assertThat((Collection<ClassType>) captor.getValue(), hasSize(1));
 		assertThat(((Collection<ClassType>) captor.getValue()).iterator().next(), is(classType));
 
-		verifyNoMoreInteractions(instrumentationCreator);
+		verify(instrumentationPointsUtil, times(1)).collectInstrumentationResultsWithHashes(classCache, environment);
+		verifyNoMoreInteractions(instrumentationPointsUtil);
+		verify(agentConfiguration, times(1)).setInitialInstrumentationResults(Mockito.anyMap());
+		verify(agentConfiguration, times(1)).setClassCacheExistsOnCmr(true);
 		verifyZeroInteractions(environment, configurationCreator);
 	}
 

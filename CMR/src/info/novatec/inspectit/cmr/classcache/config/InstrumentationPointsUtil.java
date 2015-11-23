@@ -3,6 +3,8 @@ package info.novatec.inspectit.cmr.classcache.config;
 import info.novatec.inspectit.agent.config.impl.AgentConfiguration;
 import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
 import info.novatec.inspectit.ci.Environment;
+import info.novatec.inspectit.ci.assignment.impl.ExceptionSensorAssignment;
+import info.novatec.inspectit.ci.assignment.impl.MethodSensorAssignment;
 import info.novatec.inspectit.classcache.ClassType;
 import info.novatec.inspectit.classcache.ImmutableClassType;
 import info.novatec.inspectit.classcache.ImmutableType;
@@ -13,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -54,14 +55,21 @@ public class InstrumentationPointsUtil {
 	private InstrumentationCreator instrumentationCreator;
 
 	/**
+	 * Configuration resolver.
+	 */
+	@Autowired
+	private ConfigurationResolver configurationResolver;
+
+	/**
 	 * Removes all instrumentation point from the {@link ClassCache}.
 	 * 
 	 * @param classCache
 	 *            {@link ClassCache}.
+	 * @return types from which instrumentation points have been removed
 	 */
-	public void removeAllInstrumentationPoints(final ClassCache classCache) {
+	public Collection<? extends ImmutableClassType> removeAllInstrumentationPoints(final ClassCache classCache) {
 		final Collection<? extends ImmutableType> types = classCache.getLookupService().findAll();
-		removeAllInstrumentationPoints(types, classCache);
+		return removeAllInstrumentationPoints(types, classCache);
 	}
 
 	/**
@@ -75,26 +83,95 @@ public class InstrumentationPointsUtil {
 	 *            to remove instrumentation points
 	 * @param classCache
 	 *            {@link ClassCache}.
+	 * @return types from which instrumentation points have been removed
 	 */
-	public void removeAllInstrumentationPoints(final Collection<? extends ImmutableType> types, final ClassCache classCache) {
+	public Collection<? extends ImmutableClassType> removeAllInstrumentationPoints(final Collection<? extends ImmutableType> types, final ClassCache classCache) {
 		if (CollectionUtils.isEmpty(types)) {
-			return;
+			return Collections.emptyList();
 		}
 
 		try {
-			classCache.executeWithWriteLock(new Callable<Void>() {
+			return classCache.executeWithWriteLock(new Callable<Collection<? extends ImmutableClassType>>() {
 				@Override
-				public Void call() throws Exception {
+				public Collection<? extends ImmutableClassType> call() throws Exception {
+					Collection<ImmutableClassType> results = new ArrayList<>();
 					for (ImmutableType type : types) {
-						if (type.isClass()) {
-							instrumentationCreator.removeInstrumentationPoints((ClassType) type.castToClass());
+						// only initialized class types can have instrumentation points
+						if (type.isClass() && type.isInitialized()) {
+							if (instrumentationCreator.removeInstrumentationPoints((ClassType) type.castToClass())) {
+								results.add(type.castToClass());
+							}
 						}
 					}
-					return null;
+					return results;
 				}
 			});
 		} catch (Exception e) {
 			log.error("Error occurred while trying to remove all instrumentation points from the class cache.", e);
+			return Collections.emptyList();
+		}
+	}
+
+	/**
+	 * Removes all instrumentation point from the {@link ClassCache} that might be created as result
+	 * of given method and exception sensor assignment .
+	 * 
+	 * @param classCache
+	 *            {@link ClassCache}.
+	 * @param methodSensorAssignments
+	 *            {@link MethodSensorAssignment}s to process.
+	 * @param exceptionSensorAssignments
+	 *            {@link ExceptionSensorAssignment}s to process.
+	 * @return types from which instrumentation points have been removed
+	 */
+	public Collection<? extends ImmutableClassType> removeInstrumentationPoints(final ClassCache classCache, Collection<MethodSensorAssignment> methodSensorAssignments,
+			Collection<ExceptionSensorAssignment> exceptionSensorAssignments) {
+		final Collection<? extends ImmutableType> types = classCache.getLookupService().findAll();
+		return removeInstrumentationPoints(types, classCache, methodSensorAssignments, exceptionSensorAssignments);
+	}
+
+	/**
+	 * Removes all instrumentation point from the given types that belong to the specified class
+	 * cache and that might be created as result of given method and exception sensor assignment.
+	 * <p>
+	 * <b>IMPORTANT:</b> It's responsibility of the caller to ensure the given types do belong to
+	 * the given class cache.
+	 * 
+	 * @param types
+	 *            to remove instrumentation points
+	 * @param classCache
+	 *            {@link ClassCache}.
+	 * @param methodSensorAssignments
+	 *            {@link MethodSensorAssignment}s to process.
+	 * @param exceptionSensorAssignments
+	 *            {@link ExceptionSensorAssignment}s to process.
+	 * @return types from which instrumentation points have been removed
+	 */
+	public Collection<? extends ImmutableClassType> removeInstrumentationPoints(final Collection<? extends ImmutableType> types, final ClassCache classCache,
+			final Collection<MethodSensorAssignment> methodSensorAssignments, final Collection<ExceptionSensorAssignment> exceptionSensorAssignments) {
+		if (CollectionUtils.isEmpty(types)) {
+			return Collections.emptyList();
+		}
+
+		try {
+			return classCache.executeWithWriteLock(new Callable<Collection<? extends ImmutableClassType>>() {
+				@Override
+				public Collection<? extends ImmutableClassType> call() throws Exception {
+					Collection<ImmutableClassType> results = new ArrayList<>();
+					for (ImmutableType type : types) {
+						// only initialized class types can have instrumentation points
+						if (type.isClass() && type.isInitialized()) {
+							if (instrumentationCreator.removeInstrumentationPoints((ClassType) type.castToClass(), methodSensorAssignments, exceptionSensorAssignments)) {
+								results.add(type.castToClass());
+							}
+						}
+					}
+					return results;
+				}
+			});
+		} catch (Exception e) {
+			log.error("Error occurred while trying to remove specific instrumentation points from the class cache.", e);
+			return Collections.emptyList();
 		}
 	}
 
@@ -110,7 +187,7 @@ public class InstrumentationPointsUtil {
 	 * @return Returns collection of class types to which the instrumentation points have been
 	 *         added.
 	 */
-	public Collection<ClassType> addAllInstrumentationPoints(final ClassCache classCache, final AgentConfiguration agentConfiguration, final Environment environment) {
+	public Collection<? extends ImmutableClassType> addAllInstrumentationPoints(final ClassCache classCache, final AgentConfiguration agentConfiguration, final Environment environment) {
 		final Collection<? extends ImmutableType> types = classCache.getLookupService().findAll();
 		return addAllInstrumentationPoints(types, classCache, agentConfiguration, environment);
 	}
@@ -132,31 +209,61 @@ public class InstrumentationPointsUtil {
 	 * @return Returns collection of class types to which the instrumentation points have been
 	 *         added.
 	 */
-	public Collection<ClassType> addAllInstrumentationPoints(final Collection<? extends ImmutableType> types, final ClassCache classCache, final AgentConfiguration agentConfiguration,
-			final Environment environment) {
+	public Collection<? extends ImmutableClassType> addAllInstrumentationPoints(final Collection<? extends ImmutableType> types, final ClassCache classCache,
+			final AgentConfiguration agentConfiguration, final Environment environment) {
+		Collection<MethodSensorAssignment> methodSensorAssignments = configurationResolver.getAllMethodSensorAssignments(environment);
+		Collection<ExceptionSensorAssignment> exceptionSensorAssignments = configurationResolver.getAllExceptionSensorAssignments(environment);
+
+		return addInstrumentationPoints(types, classCache, agentConfiguration, environment, methodSensorAssignments, exceptionSensorAssignments);
+	}
+
+	/**
+	 * Adds instrumentation points to the set of types belonging to the class cache. Instrumentation
+	 * points added will be created only if the types satisfies the given method and exception
+	 * assignment.
+	 * <p>
+	 * <b>IMPORTANT:</b> It's responsibility of the caller to ensure the given types do belong to
+	 * the given class cache.
+	 * 
+	 * @param types
+	 *            to add instrumentation points based on given configuration and environment.
+	 * @param classCache
+	 *            {@link ClassCache} types belong to.
+	 * @param agentConfiguration
+	 *            configuration to use
+	 * @param environment
+	 *            environment
+	 * @param methodSensorAssignments
+	 *            {@link MethodSensorAssignment}s to process.
+	 * @param exceptionSensorAssignments
+	 *            {@link ExceptionSensorAssignment}s to process.
+	 * @return Returns collection of class types to which the instrumentation points have been
+	 *         added.
+	 */
+	public Collection<? extends ImmutableClassType> addInstrumentationPoints(final Collection<? extends ImmutableType> types, final ClassCache classCache, final AgentConfiguration agentConfiguration,
+			final Environment environment, final Collection<MethodSensorAssignment> methodSensorAssignments, final Collection<ExceptionSensorAssignment> exceptionSensorAssignments) {
 		if (CollectionUtils.isEmpty(types)) {
 			return Collections.emptyList();
 		}
 
 		try {
-			return classCache.executeWithWriteLock(new Callable<Collection<ClassType>>() {
-				@SuppressWarnings("unchecked")
+			return classCache.executeWithWriteLock(new Callable<Collection<? extends ImmutableClassType>>() {
 				@Override
-				public Collection<ClassType> call() throws Exception {
-					// first clear all types that are not initialized or are not class
-					for (Iterator<? extends ImmutableType> it = types.iterator(); it.hasNext();) {
-						ImmutableType immutableType = it.next();
-						if (!immutableType.isInitialized() || !immutableType.isClass()) {
-							it.remove();
+				public Collection<? extends ImmutableClassType> call() throws Exception {
+					Collection<ImmutableClassType> results = new ArrayList<>();
+					for (ImmutableType type : types) {
+						// only initialized class types can have instrumentation points
+						if (type.isClass() && type.isInitialized()) {
+							if (instrumentationCreator.addInstrumentationPoints(agentConfiguration, environment, (ClassType) type.castToClass(), methodSensorAssignments, exceptionSensorAssignments)) {
+								results.add(type.castToClass());
+							}
 						}
 					}
-
-					// can cast here as we cleared the list in above loop
-					return instrumentationCreator.addInstrumentationPoints(agentConfiguration, environment, (Collection<ClassType>) types);
+					return results;
 				}
 			});
 		} catch (Exception e) {
-			log.error("Error occurred while trying to remove all instrumentation points from the class cache.", e);
+			log.error("Error occurred while trying to add instrumentation points from the class cache.", e);
 			return Collections.emptyList();
 		}
 	}

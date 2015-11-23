@@ -70,6 +70,7 @@
 			<class name="info.novatec.inspectit.cmr.classcache.config.filter.MethodSensorAssignmentFilterTest" />
 			<class name="info.novatec.inspectit.cmr.classcache.config.job.ProfileUpdateJobTest" />
 			<class name="info.novatec.inspectit.cmr.classcache.config.job.EnvironmentUpdateJobTest" />
+			<class name="info.novatec.inspectit.cmr.classcache.config.job.MappingUpdateJobTest" />
 		</classes>
 	</test>
 	<test name="AOP">

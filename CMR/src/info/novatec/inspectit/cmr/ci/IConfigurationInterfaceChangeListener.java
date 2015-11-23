@@ -44,4 +44,9 @@ public interface IConfigurationInterfaceChangeListener {
 	 *            Added {@link Profile}s from the environment.
 	 */
 	void environmentUpdated(Environment updated, Collection<Profile> removedProfiles, Collection<Profile> addedProfiles);
+
+	/**
+	 * Signals that the mappings have been updated.
+	 */
+	void agentMappingsUpdated();
 }

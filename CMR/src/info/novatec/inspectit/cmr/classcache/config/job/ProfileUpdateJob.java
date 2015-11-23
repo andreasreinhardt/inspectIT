@@ -48,11 +48,17 @@ public class ProfileUpdateJob extends AbstractConfigurationChangeJob {
 	 */
 	@Override
 	public void run() {
+		boolean changed = false;
+
 		// first process all removed assignments
-		super.processRemovedAssignments(removedMethodSensorAssignments, removedExceptionSensorAssignments);
+		changed |= super.processRemovedAssignments(removedMethodSensorAssignments, removedExceptionSensorAssignments);
 
 		// then process all added assignments
-		super.processAddedAssignments(addedMethodSensorAssignments, addedExceptionSensorAssignments);
+		changed |= super.processAddedAssignments(addedMethodSensorAssignments, addedExceptionSensorAssignments);
+
+		if (changed) {
+			updateInstrumentationPointsInConfiguration();
+		}
 	}
 
 	/**

@@ -1,22 +1,21 @@
 package info.novatec.inspectit.cmr.classcache.config.job;
 
 import info.novatec.inspectit.agent.config.impl.AgentConfiguration;
+import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
 import info.novatec.inspectit.ci.Environment;
 import info.novatec.inspectit.ci.assignment.impl.ExceptionSensorAssignment;
 import info.novatec.inspectit.ci.assignment.impl.MethodSensorAssignment;
-import info.novatec.inspectit.classcache.ClassType;
 import info.novatec.inspectit.classcache.ImmutableClassType;
 import info.novatec.inspectit.cmr.classcache.ClassCache;
 import info.novatec.inspectit.cmr.classcache.config.AgentCacheEntry;
 import info.novatec.inspectit.cmr.classcache.config.ClassCacheSearchNarrower;
 import info.novatec.inspectit.cmr.classcache.config.ConfigurationCreator;
-import info.novatec.inspectit.cmr.classcache.config.InstrumentationCreator;
+import info.novatec.inspectit.cmr.classcache.config.InstrumentationPointsUtil;
 import info.novatec.inspectit.spring.logger.Log;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.concurrent.Callable;
+import java.util.Map;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -46,10 +45,10 @@ public abstract class AbstractConfigurationChangeJob implements Runnable {
 	ClassCacheSearchNarrower classCacheSearchNarrower;
 
 	/**
-	 * {@link InstrumentationCreator}.
+	 * {@link InstrumentationPointsUtil}.
 	 */
 	@Autowired
-	InstrumentationCreator instrumentationCreator;
+	InstrumentationPointsUtil instrumentationPointsUtil;
 
 	/**
 	 * {@link ConfigurationCreator}.
@@ -89,75 +88,32 @@ public abstract class AbstractConfigurationChangeJob implements Runnable {
 	 *            Collection of removed {@link MethodSensorAssignment}s.
 	 * @param exceptionSensorAssignments
 	 *            Collection of removed {@link ExceptionSensorAssignment}s.
-	 * @return If any change to the instrumentation points was performed.
+	 * @return if processing removed any instrumentation points
 	 */
 	protected boolean processRemovedAssignments(Collection<MethodSensorAssignment> methodSensorAssignments, Collection<ExceptionSensorAssignment> exceptionSensorAssignments) {
-		final Collection<ClassType> changedClassTypes = new ArrayList<>();
+		final Collection<ImmutableClassType> changedClassTypes = new ArrayList<>();
 
 		// first process all method sensors for removal
 		for (final MethodSensorAssignment methodSensorAssignment : methodSensorAssignments) {
 			Collection<? extends ImmutableClassType> classTypes = classCacheSearchNarrower.narrowByMethodSensorAssignment(getClassCache(), methodSensorAssignment);
-			for (final ImmutableClassType classType : classTypes) {
-				try {
-					boolean changed = getClassCache().executeWithWriteLock(new Callable<Boolean>() {
-						@Override
-						public Boolean call() throws Exception {
-							return instrumentationCreator.removeInstrumentationPoints((ClassType) classType, Collections.singletonList(methodSensorAssignment), null);
-						}
-					});
-
-					if (changed) {
-						changedClassTypes.add((ClassType) classType);
-					}
-				} catch (Exception e) {
-					log.error("Error removing existing method instrumentation points during configuration change job.", e);
-					continue;
-				}
-			}
+			changedClassTypes.addAll(instrumentationPointsUtil.removeInstrumentationPoints(classTypes, getClassCache(), methodSensorAssignments, exceptionSensorAssignments));
 		}
 
 		// then process all exception sensors for removal
 		for (final ExceptionSensorAssignment exceptionSensorAssignment : exceptionSensorAssignments) {
 			Collection<? extends ImmutableClassType> classTypes = classCacheSearchNarrower.narrowByExceptionSensorAssignment(getClassCache(), exceptionSensorAssignment);
-			for (final ImmutableClassType classType : classTypes) {
-				try {
-					boolean changed = getClassCache().executeWithWriteLock(new Callable<Boolean>() {
-						@Override
-						public Boolean call() throws Exception {
-							return instrumentationCreator.removeInstrumentationPoints((ClassType) classType, null, Collections.singletonList(exceptionSensorAssignment));
-						}
-					});
-
-					if (changed) {
-						changedClassTypes.add((ClassType) classType);
-					}
-				} catch (Exception e) {
-					log.error("Error removing existing exception instrumentation points during configuration change job.", e);
-					continue;
-				}
-			}
+			changedClassTypes.addAll(instrumentationPointsUtil.removeInstrumentationPoints(classTypes, getClassCache(), methodSensorAssignments, exceptionSensorAssignments));
 		}
 
 		// if no class was affected just return
-		if (CollectionUtils.isEmpty(changedClassTypes)) {
+		if (CollectionUtils.isNotEmpty(changedClassTypes)) {
+			// if any class was affected re-check those classes against complete configuration
+			// because we removed all instrumentation points
+			instrumentationPointsUtil.addAllInstrumentationPoints(changedClassTypes, getClassCache(), getAgentConfiguration(), getEnvironment());
+			return true;
+		} else {
 			return false;
 		}
-
-		// if any class was affected re-check those classes against complete configuration
-		// because we removed all instrumentation points
-		try {
-			getClassCache().executeWithWriteLock(new Callable<Void>() {
-				@Override
-				public Void call() throws Exception {
-					instrumentationCreator.addInstrumentationPoints(getAgentConfiguration(), getEnvironment(), changedClassTypes);
-					return null;
-				}
-			});
-		} catch (Exception e) {
-			log.error("Error removing existing exception instrumentation points during configuration change job.", e);
-		}
-
-		return true;
 	}
 
 	/**
@@ -168,7 +124,7 @@ public abstract class AbstractConfigurationChangeJob implements Runnable {
 	 *            Collection of removed {@link MethodSensorAssignment}s.
 	 * @param exceptionSensorAssignments
 	 *            Collection of removed {@link ExceptionSensorAssignment}s.
-	 * @return If any new instrumentation point is added.
+	 * @return if processing inserted any new instrumentation points
 	 */
 	protected boolean processAddedAssignments(Collection<MethodSensorAssignment> methodSensorAssignments, Collection<ExceptionSensorAssignment> exceptionSensorAssignments) {
 		boolean added = false;
@@ -176,42 +132,38 @@ public abstract class AbstractConfigurationChangeJob implements Runnable {
 		// go over all method sensor assignments
 		for (final MethodSensorAssignment methodSensorAssignment : methodSensorAssignments) {
 			Collection<? extends ImmutableClassType> classTypes = classCacheSearchNarrower.narrowByMethodSensorAssignment(getClassCache(), methodSensorAssignment);
-			for (final ImmutableClassType classType : classTypes) {
-				try {
-					added |= getClassCache().executeWithWriteLock(new Callable<Boolean>() {
-						@Override
-						public Boolean call() throws Exception {
-							return instrumentationCreator.addInstrumentationPoints(getAgentConfiguration(), getEnvironment(), (ClassType) classType, Collections.singletonList(methodSensorAssignment),
-									null);
-						}
-					});
-				} catch (Exception e) {
-					log.error("Error adding new method instrumentation points configuration change job.", e);
-					continue;
-				}
-			}
+			Collection<? extends ImmutableClassType> instrumentedClassTypes = instrumentationPointsUtil.addInstrumentationPoints(classTypes, getClassCache(), getAgentConfiguration(),
+					getEnvironment(), methodSensorAssignments, exceptionSensorAssignments);
+			added |= CollectionUtils.isNotEmpty(instrumentedClassTypes);
 		}
 
 		// go over all exception sensor assignments
 		for (final ExceptionSensorAssignment exceptionSensorAssignment : exceptionSensorAssignments) {
 			Collection<? extends ImmutableClassType> classTypes = classCacheSearchNarrower.narrowByExceptionSensorAssignment(getClassCache(), exceptionSensorAssignment);
-			for (final ImmutableClassType classType : classTypes) {
-				try {
-					added |= getClassCache().executeWithWriteLock(new Callable<Boolean>() {
-						@Override
-						public Boolean call() throws Exception {
-							return instrumentationCreator.addInstrumentationPoints(getAgentConfiguration(), getEnvironment(), (ClassType) classType, null,
-									Collections.singletonList(exceptionSensorAssignment));
-						}
-					});
-				} catch (Exception e) {
-					log.error("Error adding new exception instrumentation points configuration change job.", e);
-					continue;
-				}
-			}
+			Collection<? extends ImmutableClassType> instrumentedClassTypes = instrumentationPointsUtil.addInstrumentationPoints(classTypes, getClassCache(), getAgentConfiguration(),
+					getEnvironment(), methodSensorAssignments, exceptionSensorAssignments);
+			added |= CollectionUtils.isNotEmpty(instrumentedClassTypes);
 		}
 
 		return added;
+	}
+
+	/**
+	 * Updates the instrumentation points in the {@link AgentConfiguration} so they reflect the
+	 * latest changes.
+	 */
+	protected void updateInstrumentationPointsInConfiguration() {
+		Map<Collection<String>, InstrumentationResult> instrumentationResults = instrumentationPointsUtil.collectInstrumentationResultsWithHashes(getClassCache(), getEnvironment());
+		getAgentConfiguration().setInitialInstrumentationResults(instrumentationResults);
+		getAgentConfiguration().setClassCacheExistsOnCmr(true);
+	}
+
+	/**
+	 * Clears the environment and configuration settings in the agent cache entry.
+	 */
+	protected void clearEnvironmentAndConfiguration() {
+		agentCacheEntry.setAgentConfiguration(null);
+		agentCacheEntry.setEnvironment(null);
 	}
 
 	/**
@@ -250,6 +202,15 @@ public abstract class AbstractConfigurationChangeJob implements Runnable {
 	 */
 	public void setAgentCacheEntry(AgentCacheEntry agentCacheEntry) {
 		this.agentCacheEntry = agentCacheEntry;
+	}
+
+	/**
+	 * Gets {@link #instrumentationPointsUtil}.
+	 * 
+	 * @return {@link #instrumentationPointsUtil}
+	 */
+	public InstrumentationPointsUtil getInstrumentationPointsUtil() {
+		return instrumentationPointsUtil;
 	}
 
 }
