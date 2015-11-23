@@ -29,8 +29,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * INstrumentation creator is responsible for creating and removing the instrumentation points in
- * the class cache.
+ * Instrumentation creator is responsible for creating and removing the instrumentation points in
+ * the class cache. As well it's capable of creating an {@link InstrumentationResult} for a class
+ * that will be used on the agent.
  * 
  * @author Ivan Senic
  * 
@@ -104,7 +105,7 @@ public class InstrumentationCreator {
 	 *            {@link Environment} holding configuration.
 	 * @return <code>true</code> if class loading delegation should be applied
 	 */
-	public boolean analyzeForClassLoadingDelegation(ImmutableClassType classType, Environment environment) {
+	boolean analyzeForClassLoadingDelegation(ImmutableClassType classType, Environment environment) {
 		if (!environment.isClassLoadingDelegation()) {
 			return false;
 		}

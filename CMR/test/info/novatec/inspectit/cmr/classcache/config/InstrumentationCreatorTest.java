@@ -1,8 +1,11 @@
 package info.novatec.inspectit.cmr.classcache.config;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -15,6 +18,7 @@ import static org.mockito.Mockito.when;
 import info.novatec.inspectit.agent.config.PriorityEnum;
 import info.novatec.inspectit.agent.config.impl.AgentConfiguration;
 import info.novatec.inspectit.agent.config.impl.ExceptionSensorTypeConfig;
+import info.novatec.inspectit.agent.config.impl.InstrumentationResult;
 import info.novatec.inspectit.agent.config.impl.MethodSensorTypeConfig;
 import info.novatec.inspectit.agent.config.impl.PropertyPathStart;
 import info.novatec.inspectit.agent.config.impl.RegisteredSensorConfig;
@@ -35,6 +39,7 @@ import info.novatec.inspectit.cmr.classcache.config.filter.MethodSensorAssignmen
 import info.novatec.inspectit.cmr.service.IRegistrationService;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -131,16 +136,24 @@ public class InstrumentationCreatorTest {
 		when(methodType.getMethodCharacter()).thenReturn(Character.METHOD);
 		when(methodType.getModifiers()).thenReturn(mod);
 
-		creator.addInstrumentationPoints(agentConfiguration, environment, classType);
+		// test direct and via collection
+		// we expect two calls to everything
+		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType);
+		Collection<ClassType> instrumentationCollection = creator.addInstrumentationPoints(agentConfiguration, environment, Collections.singletonList(classType));
+
+		// verify results
+		assertThat(changed, is(true));
+		assertThat(instrumentationCollection, hasSize(1));
+		assertThat(instrumentationCollection, hasItem(classType));
 
 		// verify registration service
-		verify(registrationService, times(1)).registerMethodIdent(agentId, packageName, className, methodName, parameters, returnType, mod);
-		verify(registrationService, times(1)).addSensorTypeToMethod(sensorId, methodId);
+		verify(registrationService, times(2)).registerMethodIdent(agentId, packageName, className, methodName, parameters, returnType, mod);
+		verify(registrationService, times(2)).addSensorTypeToMethod(sensorId, methodId);
 		verifyNoMoreInteractions(registrationService);
 
 		// check RSC
 		ArgumentCaptor<RegisteredSensorConfig> captor = ArgumentCaptor.forClass(RegisteredSensorConfig.class);
-		verify(methodType, times(1)).setRegisteredSensorConfig(captor.capture());
+		verify(methodType, times(2)).setRegisteredSensorConfig(captor.capture());
 
 		RegisteredSensorConfig rsc = captor.getValue();
 		assertThat(rsc.getId(), is(methodId));
@@ -205,17 +218,25 @@ public class InstrumentationCreatorTest {
 		when(methodType.getMethodCharacter()).thenReturn(Character.METHOD);
 		when(methodType.getModifiers()).thenReturn(mod);
 
-		creator.addInstrumentationPoints(agentConfiguration, environment, classType);
+		// test direct and via collection
+		// we expect two calls to everything
+		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType);
+		Collection<ClassType> instrumentationCollection = creator.addInstrumentationPoints(agentConfiguration, environment, Collections.singletonList(classType));
+
+		// verify results
+		assertThat(changed, is(true));
+		assertThat(instrumentationCollection, hasSize(1));
+		assertThat(instrumentationCollection, hasItem(classType));
 
 		// verify registration service
-		verify(registrationService, times(1)).registerMethodIdent(agentId, packageName, className, methodName, parameters, returnType, mod);
-		verify(registrationService, times(1)).addSensorTypeToMethod(sensorId, methodId);
-		verify(registrationService, times(1)).addSensorTypeToMethod(invocationSensorId, methodId);
+		verify(registrationService, times(2)).registerMethodIdent(agentId, packageName, className, methodName, parameters, returnType, mod);
+		verify(registrationService, times(2)).addSensorTypeToMethod(sensorId, methodId);
+		verify(registrationService, times(2)).addSensorTypeToMethod(invocationSensorId, methodId);
 		verifyNoMoreInteractions(registrationService);
 
 		// check RSC
 		ArgumentCaptor<RegisteredSensorConfig> captor = ArgumentCaptor.forClass(RegisteredSensorConfig.class);
-		verify(methodType, times(1)).setRegisteredSensorConfig(captor.capture());
+		verify(methodType, times(2)).setRegisteredSensorConfig(captor.capture());
 
 		// just check related to the timer sensor stuff
 		RegisteredSensorConfig rsc = captor.getValue();
@@ -263,17 +284,25 @@ public class InstrumentationCreatorTest {
 		when(methodType.getModifiers()).thenReturn(mod);
 		when(classType.isException()).thenReturn(true);
 
-		creator.addInstrumentationPoints(agentConfiguration, environment, classType);
+		// test direct and via collection
+		// we expect two calls to everything
+		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType);
+		Collection<ClassType> instrumentationCollection = creator.addInstrumentationPoints(agentConfiguration, environment, Collections.singletonList(classType));
+
+		// verify results
+		assertThat(changed, is(true));
+		assertThat(instrumentationCollection, hasSize(1));
+		assertThat(instrumentationCollection, hasItem(classType));
 
 		// verify registration service
 		// for constructors the registered method name is class name
-		verify(registrationService, times(1)).registerMethodIdent(agentId, packageName, className, className, parameters, returnType, mod);
-		verify(registrationService, times(1)).addSensorTypeToMethod(sensorId, methodId);
+		verify(registrationService, times(2)).registerMethodIdent(agentId, packageName, className, className, parameters, returnType, mod);
+		verify(registrationService, times(2)).addSensorTypeToMethod(sensorId, methodId);
 		verifyNoMoreInteractions(registrationService);
 
 		// check RSC
 		ArgumentCaptor<RegisteredSensorConfig> captor = ArgumentCaptor.forClass(RegisteredSensorConfig.class);
-		verify(methodType, times(1)).setRegisteredSensorConfig(captor.capture());
+		verify(methodType, times(2)).setRegisteredSensorConfig(captor.capture());
 
 		RegisteredSensorConfig rsc = captor.getValue();
 		assertThat(rsc.getId(), is(methodId));
@@ -313,7 +342,15 @@ public class InstrumentationCreatorTest {
 		when(rsc.getSensorIds()).thenReturn(new long[] { sensorId });
 		when(methodType.getRegisteredSensorConfig()).thenReturn(rsc);
 
-		creator.addInstrumentationPoints(agentConfiguration, environment, classType);
+		// test direct and via collection
+		// we expect two calls to everything
+		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType);
+		Collection<ClassType> instrumentationCollection = creator.addInstrumentationPoints(agentConfiguration, environment, Collections.singletonList(classType));
+
+		// verify results
+		assertThat(changed, is(true));
+		assertThat(instrumentationCollection, hasSize(1));
+		assertThat(instrumentationCollection, hasItem(classType));
 
 		// verify no interaction
 		verifyNoMoreInteractions(registrationService);
@@ -328,7 +365,15 @@ public class InstrumentationCreatorTest {
 		AgentConfiguration agentConfiguration = mock(AgentConfiguration.class);
 		when(classFilter.matches(methodSensorAssignment, classType)).thenReturn(false);
 
-		creator.addInstrumentationPoints(agentConfiguration, environment, classType);
+		// test direct and via collection
+		// we expect two calls to everything
+		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType);
+		Collection<ClassType> instrumentationCollection = creator.addInstrumentationPoints(agentConfiguration, environment, Collections.singletonList(classType));
+
+		// verify results
+		assertThat(changed, is(false));
+		assertThat(instrumentationCollection, hasSize(0));
+
 		verifyZeroInteractions(registrationService, methodType);
 	}
 
@@ -340,7 +385,15 @@ public class InstrumentationCreatorTest {
 		AgentConfiguration agentConfiguration = mock(AgentConfiguration.class);
 		when(methodFilter.matches(methodSensorAssignment, methodType)).thenReturn(false);
 
-		creator.addInstrumentationPoints(agentConfiguration, environment, classType);
+		// test direct and via collection
+		// we expect two calls to everything
+		boolean changed = creator.addInstrumentationPoints(agentConfiguration, environment, classType);
+		Collection<ClassType> instrumentationCollection = creator.addInstrumentationPoints(agentConfiguration, environment, Collections.singletonList(classType));
+
+		// verify results
+		assertThat(changed, is(false));
+		assertThat(instrumentationCollection, hasSize(0));
+
 		verifyZeroInteractions(registrationService, methodType);
 	}
 
@@ -445,5 +498,38 @@ public class InstrumentationCreatorTest {
 		when(classType.isSubClassOf(anyString())).thenReturn(true);
 
 		assertThat(creator.analyzeForClassLoadingDelegation(classType, environment), is(true));
+	}
+
+	@Test
+	public void instrumentationResult() {
+		when(classType.getFQN()).thenReturn("someClass");
+		when(classType.hasInstrumentationPoints()).thenReturn(false);
+		when(environment.isClassLoadingDelegation()).thenReturn(false);
+		assertThat(creator.createInstrumentationResult(classType, environment), is(nullValue()));
+
+		when(environment.isClassLoadingDelegation()).thenReturn(true);
+		assertThat(creator.createInstrumentationResult(classType, environment), is(nullValue()));
+
+		when(classType.getFQN()).thenReturn("java.lang.ClassLoader");
+		InstrumentationResult result = creator.createInstrumentationResult(classType, environment);
+		assertThat(result.getClassName(), is(classType.getFQN()));
+		assertThat(result.isClassLoadingDelegation(), is(true));
+		assertThat(result.getRegisteredSensorConfigs(), is(empty()));
+
+		RegisteredSensorConfig rsc = mock(RegisteredSensorConfig.class);
+		when(classType.hasInstrumentationPoints()).thenReturn(true);
+		when(classType.getInstrumentationPoints()).thenReturn(Collections.singletonList(rsc));
+		result = creator.createInstrumentationResult(classType, environment);
+		assertThat(result.getClassName(), is(classType.getFQN()));
+		assertThat(result.isClassLoadingDelegation(), is(true));
+		assertThat(result.getRegisteredSensorConfigs(), hasSize(1));
+		assertThat(result.getRegisteredSensorConfigs(), hasItem(rsc));
+
+		when(environment.isClassLoadingDelegation()).thenReturn(false);
+		result = creator.createInstrumentationResult(classType, environment);
+		assertThat(result.getClassName(), is(classType.getFQN()));
+		assertThat(result.isClassLoadingDelegation(), is(false));
+		assertThat(result.getRegisteredSensorConfigs(), hasSize(1));
+		assertThat(result.getRegisteredSensorConfigs(), hasItem(rsc));
 	}
 }

@@ -23,7 +23,7 @@ import org.testng.annotations.Test;
  * @author Ivan Senic
  * 
  */
-public class ClassSensorAssingmentFilterTest {
+public class ClassSensorAssignmentFilterTest {
 
 	private ClassSensorAssignmentFilter filter;
 

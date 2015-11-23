@@ -25,7 +25,7 @@ import org.testng.annotations.Test;
  * 
  */
 @SuppressWarnings("PMD")
-public class MethodSensorAssingmentFilterTest {
+public class MethodSensorAssignmentFilterTest {
 
 	private MethodSensorAssignmentFilter filter;
 
@@ -60,6 +60,14 @@ public class MethodSensorAssingmentFilterTest {
 
 	@Test
 	public void matchesNoConstructor() {
+		when(assignment.isConstructor()).thenReturn(false);
+		when(methodType.getMethodCharacter()).thenReturn(Character.CONSTRUCTOR);
+		assertThat(filter.matches(assignment, methodType), is(false));
+	}
+
+	@Test
+	public void matchesNoConstructorWildcard() {
+		when(assignment.getMethodName()).thenReturn("*");
 		when(assignment.isConstructor()).thenReturn(false);
 		when(methodType.getMethodCharacter()).thenReturn(Character.CONSTRUCTOR);
 		assertThat(filter.matches(assignment, methodType), is(false));
@@ -135,7 +143,7 @@ public class MethodSensorAssingmentFilterTest {
 		when(methodType.getModifiers()).thenReturn(Modifiers.getModifiers(Modifier.PUBLIC));
 		assertThat(filter.matches(assignment, methodType), is(false));
 	}
-	
+
 	@Test
 	public void matchesPackageModifiers() {
 		when(assignment.getMethodName()).thenReturn("*");
@@ -172,7 +180,7 @@ public class MethodSensorAssingmentFilterTest {
 
 		when(methodType.getParameters()).thenReturn(Arrays.asList(new String[] { "param1", "param2" }));
 		assertThat(filter.matches(assignment, methodType), is(false));
-		
+
 		when(assignment.getParameters()).thenReturn(Arrays.asList(new String[] { "param2", "param1" }));
 		assertThat(filter.matches(assignment, methodType), is(false));
 
