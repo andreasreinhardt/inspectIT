@@ -18,6 +18,8 @@ import info.novatec.inspectit.classcache.Type;
 import info.novatec.inspectit.exception.BusinessException;
 import info.novatec.inspectit.spring.logger.Log;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -26,6 +28,8 @@ import org.objectweb.asm.ClassWriter;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import com.google.common.io.ByteStreams;
 
 /**
  * {@link IByteCodeAnalyzer} that uses {@link IConnection} to connect to the CMR and instrument the
@@ -79,11 +83,12 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 	public byte[] analyzeAndInstrument(byte[] byteCode, String className, final ClassLoader classLoader) {
 		try {
 			if (null == byteCode) {
-				// no support for null byte-codes
-				// in future we want to have possibility to analyze also the null byte-codes
-				// in earlier versions we used javassist for this, however we want to use something
-				// ours in future
-				return null;
+				// try to read from class loader, if it fails just return
+				byteCode = getByteCodeFromClassLoader(className, classLoader);
+
+				if (null == byteCode) {
+					return null;
+				}
 			}
 
 			// create the hash
@@ -163,6 +168,47 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 		}
 
 		return classWriter.toByteArray();
+	}
+
+	/**
+	 * Tries to read the byte code form the input stream provided by the given class loader. If the
+	 * class loader is <code>null</code>, then {@link ClassLoader#getResourceAsStream(String)} will
+	 * be called in order to find byte code.
+	 * <p>
+	 * This method returns provided byte code or <code>null</code> if reading was not successful.
+	 * 
+	 * @param className
+	 *            Class name defined by the class object.
+	 * @param classLoader
+	 *            Class loader loading the class.
+	 * @return Byte code or <code>null</code> if reading was not successful
+	 */
+	private byte[] getByteCodeFromClassLoader(String className, ClassLoader classLoader) {
+		InputStream is = null;
+		try {
+			if (null != classLoader) {
+				is = classLoader.getResourceAsStream(className.replace('.', '/') + ".class");
+			} else {
+				is = ClassLoader.getSystemResourceAsStream(className.replace('.', '/') + ".class");
+			}
+
+			if (null == is) {
+				// nothing we can do here
+				return null;
+			}
+
+			return ByteStreams.toByteArray(is);
+		} catch (IOException e) {
+			return null;
+		} finally {
+			if (null != is) {
+				try {
+					is.close();
+				} catch (IOException e) { // NOPMD //NOCHK
+					// ignore
+				}
+			}
+		}
 	}
 
 }
