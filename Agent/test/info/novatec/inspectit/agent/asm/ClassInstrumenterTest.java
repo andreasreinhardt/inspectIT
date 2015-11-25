@@ -147,6 +147,32 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		assertThat(classInstrumenter.shouldInstrument("methodName", "(I)D"), is(nullValue()));
 	}
 
+	// no instrumentation
+
+	@Test
+	public void noInstrumenatation() throws Exception {
+		String methodName = "stringNullParameter";
+		long methodId = 3L;
+
+		ClassReader cr = new ClassReader(TEST_CLASS_FQN);
+		prepareWriter(cr, null);
+
+		when(rsc.getId()).thenReturn(methodId);
+		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(null);
+
+		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(false));
+		byte b[] = classWriter.toByteArray();
+
+		// now call this method
+		Object testClass = this.createInstance(TEST_CLASS_FQN, b);
+		// call this method via reflection as we would get a class cast
+		// exception by casting to the concrete class.
+		this.callMethod(testClass, methodName, null);
+
+		verifyZeroInteractions(hookDispatcher);
+	}
+
 	// return, params, static
 
 	@Test
@@ -161,6 +187,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -187,6 +214,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -213,6 +241,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -237,6 +266,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -261,6 +291,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -285,6 +316,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -309,6 +341,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -333,6 +366,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -357,6 +391,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -381,6 +416,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -405,6 +441,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -429,6 +466,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -454,6 +492,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -479,6 +518,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -504,6 +544,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -529,6 +570,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -553,6 +595,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -577,6 +620,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -603,6 +647,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -631,6 +676,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -658,6 +704,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq(methodName), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -683,6 +730,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq("<init>"), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// create instance
@@ -705,6 +753,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq("<init>"), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		Class<?> clazz = createClass(TEST_CLASS_FQN, b);
@@ -733,6 +782,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument("<init>", "(Ljava/lang/String;)V")).thenReturn(rsc2);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		Class<?> clazz = createClass(TEST_CLASS_FQN, b);
@@ -761,6 +811,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq("<init>"), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		Class<?> clazz = createClass(TEST_CLASS_FQN, b);
@@ -791,6 +842,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq("<init>"), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		Class<?> clazz = createClass(TEST_CLASS_FQN, b);
@@ -822,6 +874,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.shouldInstrument(eq("<init>"), Mockito.<String> any())).thenReturn(rsc);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		Class<?> clazz = createClass(TEST_CLASS_FQN, b);
@@ -848,6 +901,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.isEnhancedExceptionSensor()).thenReturn(true);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -876,6 +930,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.isEnhancedExceptionSensor()).thenReturn(true);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		Class<?> clazz = createClass(EXCEPTION_TEST_CLASS_FQN, b);
@@ -910,6 +965,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.isEnhancedExceptionSensor()).thenReturn(true);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -954,6 +1010,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.isEnhancedExceptionSensor()).thenReturn(true);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -997,6 +1054,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.isEnhancedExceptionSensor()).thenReturn(true);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -1045,6 +1103,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		when(classInstrumenter.isEnhancedExceptionSensor()).thenReturn(true);
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -1086,6 +1145,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		classInstrumenter.classLoadingDelegation = true;
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -1113,6 +1173,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		classInstrumenter.classLoadingDelegation = true;
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -1139,6 +1200,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		classInstrumenter.classLoadingDelegation = true;
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method
@@ -1161,6 +1223,7 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 		classInstrumenter.classLoadingDelegation = false;
 
 		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(false));
 		byte b[] = classWriter.toByteArray();
 
 		// now call this method

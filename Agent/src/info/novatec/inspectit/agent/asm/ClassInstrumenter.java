@@ -35,6 +35,11 @@ public class ClassInstrumenter extends ClassVisitor {
 	boolean classLoadingDelegation;
 
 	/**
+	 * If class has been added any kind of instrumentation.
+	 */
+	private boolean byteCodeAdded = false;
+
+	/**
 	 * All register sensor configs that should be added as instrumentation points.
 	 */
 	Collection<RegisteredSensorConfig> registeredSensorConfigs;
@@ -90,11 +95,12 @@ public class ClassInstrumenter extends ClassVisitor {
 			} else {
 				methodVisitor = getMethodInstrumenter(methodVisitor, access, name, desc, id, isEnhancedExceptionSensor());
 			}
-
+			byteCodeAdded = true;
 		}
 
 		if (isClassLoadingDelegationMethod(name, desc)) {
 			methodVisitor = getClassLoaderDelegationMethodInstrumenter(methodVisitor, access, name, desc);
+			byteCodeAdded = true;
 		}
 
 		return methodVisitor;
@@ -254,6 +260,15 @@ public class ClassInstrumenter extends ClassVisitor {
 	 */
 	ClassLoaderDelegationMethodInstrumenter getClassLoaderDelegationMethodInstrumenter(MethodVisitor superMethodVisitor, int access, String name, String desc) {
 		return new ClassLoaderDelegationMethodInstrumenter(superMethodVisitor, access, name, desc);
+	}
+
+	/**
+	 * Gets {@link #byteCodeAdded}.
+	 * 
+	 * @return {@link #byteCodeAdded}
+	 */
+	public boolean isByteCodeAdded() {
+		return byteCodeAdded;
 	}
 
 }

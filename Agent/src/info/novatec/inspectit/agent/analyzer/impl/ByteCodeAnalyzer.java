@@ -167,7 +167,12 @@ public class ByteCodeAnalyzer implements IByteCodeAnalyzer {
 			hookDispatcherMapper.addMapping(registeredSensorConfig.getId(), registeredSensorConfig);
 		}
 
-		return classWriter.toByteArray();
+		// return original byte code if the instrumenter did not actually add any byte code
+		if (classInstrumenter.isByteCodeAdded()) {
+			return classWriter.toByteArray();
+		} else {
+			return null;
+		}
 	}
 
 	/**
