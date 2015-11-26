@@ -13,8 +13,6 @@
 	</configurations>
 
 	<dependencies>
-		<dependency org="org.ow2.asm" name="asm-all" rev="5.0.3" conf="prod->default" />
-		
 		<!-- newer commons-codec versions require java 1.6 -->
 		<dependency org="commons-codec" name="commons-codec" rev="1.6" conf="prod->default" />
 		
