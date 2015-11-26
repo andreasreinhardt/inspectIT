@@ -2,11 +2,13 @@ package info.novatec.inspectit.cmr.classcache.config;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -17,6 +19,7 @@ import info.novatec.inspectit.classcache.ClassType;
 import info.novatec.inspectit.classcache.ImmutableAnnotationType;
 import info.novatec.inspectit.classcache.ImmutableClassType;
 import info.novatec.inspectit.classcache.ImmutableInterfaceType;
+import info.novatec.inspectit.classcache.InterfaceType;
 import info.novatec.inspectit.cmr.classcache.ClassCache;
 import info.novatec.inspectit.cmr.classcache.ClassCacheLookup;
 
@@ -28,7 +31,7 @@ import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-@SuppressWarnings("PMD")
+@SuppressWarnings({ "PMD", "all" })
 public class ClassCacheSearchNarrowerTest {
 
 	private ClassCacheSearchNarrower narrower;
@@ -115,6 +118,38 @@ public class ClassCacheSearchNarrowerTest {
 	}
 
 	@Test
+	public void classByInterfaceIndirect() {
+		String interfaceName = "info.novatec.MyClass";
+		when(methodSensorAssignment.getClassName()).thenReturn(interfaceName);
+		when(methodSensorAssignment.isInterf()).thenReturn(true);
+		when(methodSensorAssignment.isSuperclass()).thenReturn(false);
+
+		InterfaceType indirectInterfaceType = mock(InterfaceType.class);
+		doReturn(Collections.singleton(interfaceType)).when(lookup).findInterfaceTypesByPattern(eq(interfaceName), anyBoolean());
+		doReturn(Collections.singleton(indirectInterfaceType)).when(interfaceType).getImmutableSubInterfaces();
+		doReturn(Collections.singleton(classType)).when(indirectInterfaceType).getImmutableRealizingClasses();
+
+		when(classType.isInitialized()).thenReturn(false);
+		when(classType.isException()).thenReturn(false);
+		assertThat(narrower.narrowByMethodSensorAssignment(classCache, methodSensorAssignment), is(empty()));
+
+		when(classType.isInitialized()).thenReturn(true);
+		when(classType.isException()).thenReturn(true);
+		Collection<? extends ImmutableClassType> result = narrower.narrowByMethodSensorAssignment(classCache, methodSensorAssignment);
+		assertThat(result, hasSize(1));
+		assertThat(result.iterator().next(), is((ImmutableClassType) classType));
+
+		when(classType.isInitialized()).thenReturn(true);
+		when(classType.isException()).thenReturn(false);
+		result = narrower.narrowByMethodSensorAssignment(classCache, methodSensorAssignment);
+		assertThat(result, hasSize(1));
+		assertThat(result.iterator().next(), is((ImmutableClassType) classType));
+
+		verify(lookup, times(3)).findInterfaceTypesByPattern(interfaceName, false);
+		verifyNoMoreInteractions(lookup);
+	}
+
+	@Test
 	public void classBySuperClass() {
 		String superClassName = "info.novatec.MyClass";
 		when(methodSensorAssignment.getClassName()).thenReturn(superClassName);
@@ -141,6 +176,52 @@ public class ClassCacheSearchNarrowerTest {
 		assertThat(result.iterator().next(), is((ImmutableClassType) classType));
 
 		verify(lookup, times(3)).findClassTypesByPattern(superClassName, false);
+		verifyNoMoreInteractions(lookup);
+	}
+
+	@Test
+	public void classBySuperClassIndirect() {
+		String superClassName = "info.novatec.MyClass";
+		when(methodSensorAssignment.getClassName()).thenReturn(superClassName);
+		when(methodSensorAssignment.isInterf()).thenReturn(false);
+		when(methodSensorAssignment.isSuperclass()).thenReturn(true);
+
+		ClassType indirectSuperClassType = mock(ClassType.class);
+		doReturn(Collections.singleton(superClassType)).when(lookup).findClassTypesByPattern(eq(superClassName), anyBoolean());
+		doReturn(Collections.singleton(indirectSuperClassType)).when(superClassType).getImmutableSubClasses();
+		doReturn(Collections.singleton(classType)).when(indirectSuperClassType).getImmutableSubClasses();
+
+		when(classType.isInitialized()).thenReturn(false);
+		when(classType.isException()).thenReturn(false);
+		assertThat(narrower.narrowByMethodSensorAssignment(classCache, methodSensorAssignment), is(empty()));
+
+		when(classType.isInitialized()).thenReturn(true);
+		when(classType.isException()).thenReturn(true);
+		Collection<? extends ImmutableClassType> result = narrower.narrowByMethodSensorAssignment(classCache, methodSensorAssignment);
+		assertThat(result, hasSize(1));
+		assertThat(result.iterator().next(), is((ImmutableClassType) classType));
+
+		when(classType.isInitialized()).thenReturn(true);
+		when(classType.isException()).thenReturn(false);
+		result = narrower.narrowByMethodSensorAssignment(classCache, methodSensorAssignment);
+		assertThat(result, hasSize(1));
+		assertThat(result.iterator().next(), is((ImmutableClassType) classType));
+
+		when(indirectSuperClassType.isInitialized()).thenReturn(true);
+		when(indirectSuperClassType.isException()).thenReturn(true);
+		result = narrower.narrowByMethodSensorAssignment(classCache, methodSensorAssignment);
+		assertThat(result, hasSize(2));
+		assertThat((Collection<ImmutableClassType>) result, hasItem((ImmutableClassType) classType));
+		assertThat((Collection<ImmutableClassType>) result, hasItem((ImmutableClassType) indirectSuperClassType));
+
+		when(indirectSuperClassType.isInitialized()).thenReturn(true);
+		when(indirectSuperClassType.isException()).thenReturn(false);
+		result = narrower.narrowByMethodSensorAssignment(classCache, methodSensorAssignment);
+		assertThat(result, hasSize(2));
+		assertThat((Collection<ImmutableClassType>) result, hasItem((ImmutableClassType) classType));
+		assertThat((Collection<ImmutableClassType>) result, hasItem((ImmutableClassType) indirectSuperClassType));
+
+		verify(lookup, times(5)).findClassTypesByPattern(superClassName, false);
 		verifyNoMoreInteractions(lookup);
 	}
 
@@ -175,7 +256,7 @@ public class ClassCacheSearchNarrowerTest {
 		verify(lookup, times(3)).findAnnotationTypesByPattern(annotationName, false);
 		verifyNoMoreInteractions(lookup);
 	}
-	
+
 	@Test
 	public void exceptionByName() {
 		String className = "info.novatec.MyException";
@@ -220,6 +301,135 @@ public class ClassCacheSearchNarrowerTest {
 		assertThat(result.iterator().next(), is((ImmutableClassType) classType));
 
 		verify(lookup, times(3)).findAnnotationTypesByPattern(annotationName, false);
+		verifyNoMoreInteractions(lookup);
+	}
+
+	@Test
+	public void exceptionByInterface() {
+		String interfaceName = "info.novatec.MyClass";
+		when(exceptionSensorAssignment.getClassName()).thenReturn(interfaceName);
+		when(exceptionSensorAssignment.isInterf()).thenReturn(true);
+		when(exceptionSensorAssignment.isSuperclass()).thenReturn(false);
+
+		doReturn(Collections.singleton(interfaceType)).when(lookup).findInterfaceTypesByPattern(eq(interfaceName), anyBoolean());
+		doReturn(Collections.singleton(classType)).when(interfaceType).getImmutableRealizingClasses();
+
+		when(classType.isInitialized()).thenReturn(false);
+		when(classType.isException()).thenReturn(false);
+		assertThat(narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment), is(empty()));
+
+		when(classType.isInitialized()).thenReturn(true);
+		when(classType.isException()).thenReturn(false);
+		assertThat(narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment), is(empty()));
+
+		when(classType.isInitialized()).thenReturn(true);
+		when(classType.isException()).thenReturn(true);
+		Collection<? extends ImmutableClassType> result = narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment);
+		assertThat(result, hasSize(1));
+		assertThat(result.iterator().next(), is((ImmutableClassType) classType));
+
+		verify(lookup, times(3)).findInterfaceTypesByPattern(interfaceName, false);
+		verifyNoMoreInteractions(lookup);
+	}
+
+	@Test
+	public void exceptionByInterfaceIndirect() {
+		String interfaceName = "info.novatec.MyClass";
+		when(exceptionSensorAssignment.getClassName()).thenReturn(interfaceName);
+		when(exceptionSensorAssignment.isInterf()).thenReturn(true);
+		when(exceptionSensorAssignment.isSuperclass()).thenReturn(false);
+
+		InterfaceType indirectInterfaceType = mock(InterfaceType.class);
+		doReturn(Collections.singleton(interfaceType)).when(lookup).findInterfaceTypesByPattern(eq(interfaceName), anyBoolean());
+		doReturn(Collections.singleton(indirectInterfaceType)).when(interfaceType).getImmutableSubInterfaces();
+		doReturn(Collections.singleton(classType)).when(indirectInterfaceType).getImmutableRealizingClasses();
+
+		when(classType.isInitialized()).thenReturn(false);
+		when(classType.isException()).thenReturn(false);
+		assertThat(narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment), is(empty()));
+
+		when(classType.isInitialized()).thenReturn(true);
+		when(classType.isException()).thenReturn(false);
+		assertThat(narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment), is(empty()));
+
+		when(classType.isInitialized()).thenReturn(true);
+		when(classType.isException()).thenReturn(true);
+		Collection<? extends ImmutableClassType> result = narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment);
+		assertThat(result, hasSize(1));
+		assertThat(result.iterator().next(), is((ImmutableClassType) classType));
+
+		verify(lookup, times(3)).findInterfaceTypesByPattern(interfaceName, false);
+		verifyNoMoreInteractions(lookup);
+	}
+
+	@Test
+	public void exceptionBySuperClass() {
+		String superClassName = "info.novatec.MyClass";
+		when(exceptionSensorAssignment.getClassName()).thenReturn(superClassName);
+		when(exceptionSensorAssignment.isInterf()).thenReturn(false);
+		when(exceptionSensorAssignment.isSuperclass()).thenReturn(true);
+
+		doReturn(Collections.singleton(superClassType)).when(lookup).findClassTypesByPattern(eq(superClassName), anyBoolean());
+		doReturn(Collections.singleton(classType)).when(superClassType).getImmutableSubClasses();
+
+		when(classType.isInitialized()).thenReturn(false);
+		when(classType.isException()).thenReturn(false);
+		assertThat(narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment), is(empty()));
+
+		when(classType.isInitialized()).thenReturn(true);
+		when(classType.isException()).thenReturn(false);
+		assertThat(narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment), is(empty()));
+
+		when(classType.isInitialized()).thenReturn(true);
+		when(classType.isException()).thenReturn(true);
+		Collection<? extends ImmutableClassType> result = narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment);
+		assertThat(result, hasSize(1));
+		assertThat(result.iterator().next(), is((ImmutableClassType) classType));
+
+		verify(lookup, times(3)).findClassTypesByPattern(superClassName, false);
+		verifyNoMoreInteractions(lookup);
+	}
+
+	@Test
+	public void exceptionBySuperClassIndirect() {
+		String superClassName = "info.novatec.MyClass";
+		when(exceptionSensorAssignment.getClassName()).thenReturn(superClassName);
+		when(exceptionSensorAssignment.isInterf()).thenReturn(false);
+		when(exceptionSensorAssignment.isSuperclass()).thenReturn(true);
+
+		ClassType indirectSuperClassType = mock(ClassType.class);
+		doReturn(Collections.singleton(superClassType)).when(lookup).findClassTypesByPattern(eq(superClassName), anyBoolean());
+		doReturn(Collections.singleton(indirectSuperClassType)).when(superClassType).getImmutableSubClasses();
+		doReturn(Collections.singleton(classType)).when(indirectSuperClassType).getImmutableSubClasses();
+
+		when(classType.isInitialized()).thenReturn(false);
+		when(classType.isException()).thenReturn(false);
+		assertThat(narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment), is(empty()));
+
+		when(classType.isInitialized()).thenReturn(true);
+		when(classType.isException()).thenReturn(false);
+		assertThat(narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment), is(empty()));
+
+		when(classType.isInitialized()).thenReturn(true);
+		when(classType.isException()).thenReturn(true);
+		Collection<? extends ImmutableClassType> result = narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment);
+		assertThat(result, hasSize(1));
+		assertThat(result.iterator().next(), is((ImmutableClassType) classType));
+
+		when(indirectSuperClassType.isInitialized()).thenReturn(true);
+		when(indirectSuperClassType.isException()).thenReturn(false);
+		result = narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment);
+		assertThat(result, hasSize(1));
+		assertThat(result.iterator().next(), is((ImmutableClassType) classType));
+
+		when(indirectSuperClassType.isInitialized()).thenReturn(true);
+		when(indirectSuperClassType.isException()).thenReturn(true);
+		result = narrower.narrowByExceptionSensorAssignment(classCache, exceptionSensorAssignment);
+		assertThat(result, hasSize(2));
+		assertThat((Collection<ImmutableClassType>) result, hasItem((ImmutableClassType) classType));
+		assertThat((Collection<ImmutableClassType>) result, hasItem((ImmutableClassType) indirectSuperClassType));
+
+		verify(lookup, times(5)).findClassTypesByPattern(superClassName, false);
 		verifyNoMoreInteractions(lookup);
 	}
 }

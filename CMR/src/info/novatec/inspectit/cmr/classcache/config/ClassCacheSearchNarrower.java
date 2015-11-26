@@ -135,11 +135,7 @@ public class ClassCacheSearchNarrower {
 			// then load initialized realizing classes from all interfaces
 			Collection<ImmutableClassType> results = new ArrayList<>();
 			for (ImmutableInterfaceType interfaceType : interfaceTypes) {
-				for (ImmutableClassType classType : interfaceType.getImmutableRealizingClasses()) {
-					if (classType.isInitialized() && !(onlyExceptions && !classType.isException())) {
-						results.add(classType);
-					}
-				}
+				collectClassesFromInterfaceAndSubInterfaces(results, interfaceType, onlyExceptions);
 			}
 			return results;
 		} else if (isSuperClass) {
@@ -153,11 +149,7 @@ public class ClassCacheSearchNarrower {
 			// then load initialized sub-classes from all super types
 			Collection<ImmutableClassType> results = new ArrayList<>();
 			for (ImmutableClassType superClassType : superClassTypes) {
-				for (ImmutableClassType classType : superClassType.getImmutableSubClasses()) {
-					if (classType.isInitialized() && !(onlyExceptions && !classType.isException())) {
-						results.add(classType);
-					}
-				}
+				collectClassesFromSuperClassAndSubSuperClasses(results, superClassType, onlyExceptions);
 			}
 			return results;
 		} else {
@@ -211,6 +203,49 @@ public class ClassCacheSearchNarrower {
 		}
 
 		return results;
+	}
+
+	/**
+	 * Collects all realizing classes that implement given interface or any of its sub-interfaces
+	 * and adds them to the given results list. This method is recursive.
+	 * 
+	 * @param results
+	 *            List to store classes to.
+	 * @param interfaceType
+	 *            Type to check.
+	 * @param onlyExceptions
+	 *            if only exception types should be included
+	 */
+	private void collectClassesFromInterfaceAndSubInterfaces(Collection<ImmutableClassType> results, ImmutableInterfaceType interfaceType, boolean onlyExceptions) {
+		for (ImmutableClassType classType : interfaceType.getImmutableRealizingClasses()) {
+			if (classType.isInitialized() && !(onlyExceptions && !classType.isException())) {
+				results.add(classType);
+			}
+		}
+
+		for (ImmutableInterfaceType superInterfaceType : interfaceType.getImmutableSubInterfaces()) {
+			collectClassesFromInterfaceAndSubInterfaces(results, superInterfaceType, onlyExceptions);
+		}
+	}
+
+	/**
+	 * Collects all realizing classes that implement given interface or any of its sub-interfaces
+	 * and adds them to the given results list. This method is recursive.
+	 * 
+	 * @param results
+	 *            List to store classes to.
+	 * @param classType
+	 *            Type to check.
+	 * @param onlyExceptions
+	 *            if only exception types should be included
+	 */
+	private void collectClassesFromSuperClassAndSubSuperClasses(Collection<ImmutableClassType> results, ImmutableClassType classType, boolean onlyExceptions) {
+		for (ImmutableClassType superClassType : classType.getImmutableSubClasses()) {
+			if (superClassType.isInitialized() && !(onlyExceptions && !superClassType.isException())) {
+				results.add(superClassType);
+			}
+			collectClassesFromSuperClassAndSubSuperClasses(results, superClassType, onlyExceptions);
+		}
 	}
 
 }
