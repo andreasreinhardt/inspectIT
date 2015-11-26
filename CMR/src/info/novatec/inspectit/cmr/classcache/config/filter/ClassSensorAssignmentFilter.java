@@ -4,6 +4,7 @@ import info.novatec.inspectit.ci.assignment.AbstractClassSensorAssignment;
 import info.novatec.inspectit.classcache.ImmutableAbstractInterfaceType;
 import info.novatec.inspectit.classcache.ImmutableAnnotationType;
 import info.novatec.inspectit.classcache.ImmutableClassType;
+import info.novatec.inspectit.classcache.ImmutableInterfaceType;
 import info.novatec.inspectit.pattern.IMatchPattern;
 import info.novatec.inspectit.pattern.PatternFactory;
 
@@ -65,9 +66,8 @@ public class ClassSensorAssignmentFilter {
 			}
 		} else if (classSensorAssignment.isInterf()) {
 			// match any interface
-			// TODO not sure if realized interfaces include the super-interfaces?
 			for (ImmutableAbstractInterfaceType interfaceType : classType.getImmutableRealizedInterfaces()) {
-				if (pattern.match(interfaceType.getFQN())) {
+				if (interfaceType.isInterface() && checkInterfaceAndSuperInterfacesForName(interfaceType.castToInterface(), pattern)) {
 					return true;
 				}
 			}
@@ -103,6 +103,29 @@ public class ClassSensorAssignmentFilter {
 	}
 
 	/**
+	 * Check if the interface type or any of its super-interfaces matches the given name pattern.
+	 * 
+	 * @param interfaceType
+	 *            Type to check.
+	 * @param namePattern
+	 *            Pattern to test FQN with.
+	 * @return <code>true</code> if interface or any of the super-interface match the name pattern.
+	 */
+	private boolean checkInterfaceAndSuperInterfacesForName(ImmutableInterfaceType interfaceType, IMatchPattern namePattern) {
+		if (namePattern.match(interfaceType.getFQN())) {
+			return true;
+		}
+
+		for (ImmutableInterfaceType superInterfaceType : interfaceType.getImmutableSuperInterfaces()) {
+			if (checkInterfaceAndSuperInterfacesForName(superInterfaceType, namePattern)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Checks if the {@link AbstractClassSensorAssignment} matches the given
 	 * {@link ImmutableClassType} in terms of annotation specified in the
 	 * {@link AbstractClassSensorAssignment}.
@@ -128,9 +151,8 @@ public class ClassSensorAssignmentFilter {
 		}
 
 		// then all interfaces.
-		// TODO not sure if realized interfaces include the super-interfaces?
 		for (ImmutableAbstractInterfaceType interfaceType : classType.getImmutableRealizedInterfaces()) {
-			if (checkAnnotations(interfaceType.getImmutableAnnotations(), pattern)) {
+			if (interfaceType.isInterface() && checkInterfaceAndSuperInterfaceForAnnotation(interfaceType.castToInterface(), pattern)) {
 				return true;
 			}
 		}
@@ -155,6 +177,31 @@ public class ClassSensorAssignmentFilter {
 
 		for (ImmutableClassType superClassType : classType.getImmutableSuperClasses()) {
 			if (checkClassAndSuperClassForAnnotation(superClassType, annotationPattern)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Checks if the given {@link ImmutableInterfaceType} or any of it's super interfaces have an
+	 * annotation that matches given annotation pattern.
+	 * 
+	 * @param interfaceType
+	 *            Type to check.
+	 * @param annotationPattern
+	 *            Pattern to test annotation FQNs with.
+	 * @return <code>true</code> if interface or any super-interfaces have annotation that matches
+	 *         the pattern.
+	 */
+	private boolean checkInterfaceAndSuperInterfaceForAnnotation(ImmutableInterfaceType interfaceType, IMatchPattern annotationPattern) {
+		if (checkAnnotations(interfaceType.getImmutableAnnotations(), annotationPattern)) {
+			return true;
+		}
+
+		for (ImmutableInterfaceType superInterfaceType : interfaceType.getImmutableSuperInterfaces()) {
+			if (checkInterfaceAndSuperInterfaceForAnnotation(superInterfaceType, annotationPattern)) {
 				return true;
 			}
 		}

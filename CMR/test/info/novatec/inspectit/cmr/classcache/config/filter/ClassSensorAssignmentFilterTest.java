@@ -67,10 +67,9 @@ public class ClassSensorAssignmentFilterTest {
 		when(assignment.getClassName()).thenReturn(name);
 		when(assignment.isSuperclass()).thenReturn(true);
 
-		
 		ImmutableClassType superClass = Mockito.mock(ImmutableClassType.class);
 		when(superClass.getFQN()).thenReturn(name);
-		
+
 		when(classType.getFQN()).thenReturn("someOtherName");
 		doReturn(Collections.singleton(superClass)).when(classType).getImmutableSuperClasses();
 		assertThat(filter.matches(assignment, classType), is(true));
@@ -87,6 +86,8 @@ public class ClassSensorAssignmentFilterTest {
 
 		ImmutableInterfaceType interf = Mockito.mock(ImmutableInterfaceType.class);
 		when(interf.getFQN()).thenReturn(name);
+		when(interf.isInterface()).thenReturn(true);
+		when(interf.castToInterface()).thenReturn(interf);
 
 		when(classType.getFQN()).thenReturn("someOtherName");
 		doReturn(Collections.singleton(interf)).when(classType).getImmutableRealizedInterfaces();
@@ -115,6 +116,31 @@ public class ClassSensorAssignmentFilterTest {
 		assertThat(filter.matches(assignment, classType), is(true));
 
 		when(superSuperClass.getFQN()).thenReturn("someOtherName");
+		assertThat(filter.matches(assignment, classType), is(false));
+	}
+
+	@Test
+	public void matchesInterfaceIndirectly() {
+		String name = "name";
+		when(assignment.getClassName()).thenReturn(name);
+		when(assignment.isInterf()).thenReturn(true);
+
+		ImmutableInterfaceType indirect = Mockito.mock(ImmutableInterfaceType.class);
+		when(indirect.getFQN()).thenReturn(name);
+		when(indirect.isInterface()).thenReturn(true);
+		when(indirect.castToInterface()).thenReturn(indirect);
+
+		ImmutableInterfaceType interf = Mockito.mock(ImmutableInterfaceType.class);
+		when(interf.getFQN()).thenReturn("someOtherName");
+		when(interf.isInterface()).thenReturn(true);
+		when(interf.castToInterface()).thenReturn(interf);
+
+		when(classType.getFQN()).thenReturn("someOtherName");
+		doReturn(Collections.singleton(interf)).when(classType).getImmutableRealizedInterfaces();
+		doReturn(Collections.singleton(indirect)).when(interf).getImmutableSuperInterfaces();
+		assertThat(filter.matches(assignment, classType), is(true));
+
+		when(indirect.getFQN()).thenReturn("someOtherName");
 		assertThat(filter.matches(assignment, classType), is(false));
 	}
 
@@ -183,11 +209,42 @@ public class ClassSensorAssignmentFilterTest {
 		when(annotation.getFQN()).thenReturn(name);
 
 		ImmutableInterfaceType interf = Mockito.mock(ImmutableInterfaceType.class);
+		when(interf.isInterface()).thenReturn(true);
+		when(interf.castToInterface()).thenReturn(interf);
 		when(interf.getFQN()).thenReturn("someOtherName");
 
 		when(classType.getFQN()).thenReturn("someOtherName");
 		doReturn(Collections.singleton(interf)).when(classType).getImmutableRealizedInterfaces();
 		doReturn(Collections.singleton(annotation)).when(interf).getImmutableAnnotations();
+		assertThat(filter.matches(assignment, classType), is(true));
+
+		when(annotation.getFQN()).thenReturn("someOtherName");
+		assertThat(filter.matches(assignment, classType), is(false));
+	}
+
+	@Test
+	public void matchesInterfaceAnnotationIndirectly() {
+		String name = "name";
+		when(assignment.getClassName()).thenReturn("*");
+		when(assignment.getAnnotation()).thenReturn(name);
+
+		ImmutableAnnotationType annotation = Mockito.mock(ImmutableAnnotationType.class);
+		when(annotation.getFQN()).thenReturn(name);
+
+		ImmutableInterfaceType indirect = Mockito.mock(ImmutableInterfaceType.class);
+		when(indirect.getFQN()).thenReturn("someOtherName");
+		when(indirect.isInterface()).thenReturn(true);
+		when(indirect.castToInterface()).thenReturn(indirect);
+
+		ImmutableInterfaceType interf = Mockito.mock(ImmutableInterfaceType.class);
+		when(interf.getFQN()).thenReturn("someOtherName");
+		when(interf.isInterface()).thenReturn(true);
+		when(interf.castToInterface()).thenReturn(interf);
+
+		when(classType.getFQN()).thenReturn("someOtherName");
+		doReturn(Collections.singleton(interf)).when(classType).getImmutableRealizedInterfaces();
+		doReturn(Collections.singleton(indirect)).when(interf).getImmutableSuperInterfaces();
+		doReturn(Collections.singleton(annotation)).when(indirect).getImmutableAnnotations();
 		assertThat(filter.matches(assignment, classType), is(true));
 
 		when(annotation.getFQN()).thenReturn("someOtherName");
