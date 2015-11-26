@@ -80,8 +80,10 @@ public class InstrumentationCreator {
 		}
 
 		InstrumentationResult instrumentationResult = new InstrumentationResult(classType.getFQN());
-		instrumentationResult.setRegisteredSensorConfigs(classType.getInstrumentationPoints());
 		instrumentationResult.setClassLoadingDelegation(classLoadingDelegation);
+		if (classType.hasInstrumentationPoints()) {
+			instrumentationResult.setRegisteredSensorConfigs(classType.getInstrumentationPoints());
+		}
 		return instrumentationResult;
 	}
 
