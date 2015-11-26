@@ -88,7 +88,7 @@ public class ClassInstrumenter extends ClassVisitor {
 		RegisteredSensorConfig rsc = shouldInstrument(name, desc);
 		if (null != rsc) {
 			long id = rsc.getId();
-			boolean constructor = "<init>".equals(name);
+			boolean constructor = "<init>".equals(name) | "<clinit>".equals(name);
 
 			if (constructor) {
 				methodVisitor = getConstructorInstrumenter(methodVisitor, access, name, desc, id, isEnhancedExceptionSensor());

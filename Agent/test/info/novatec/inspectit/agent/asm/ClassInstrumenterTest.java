@@ -720,6 +720,28 @@ public class ClassInstrumenterTest extends AbstractInstrumentationTest {
 	// constructors
 
 	@Test
+	public void staticConstructor() throws Exception {
+		long methodId = 9L;
+
+		ClassReader cr = new ClassReader(TEST_CLASS_FQN);
+		prepareWriter(cr, null);
+
+		when(rsc.getId()).thenReturn(methodId);
+		when(classInstrumenter.shouldInstrument(eq("<clinit>"), Mockito.<String> any())).thenReturn(rsc);
+
+		cr.accept(classInstrumenter, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+		assertThat(classInstrumenter.isByteCodeAdded(), is(true));
+		byte b[] = classWriter.toByteArray();
+
+		// create instance
+		this.createInstance(TEST_CLASS_FQN, b);
+
+		verify(hookDispatcher).dispatchConstructorBeforeBody(methodId, new Object[0]);
+		verify(hookDispatcher).dispatchConstructorAfterBody(methodId, null, new Object[0]);
+		verifyNoMoreInteractions(hookDispatcher);
+	}
+
+	@Test
 	public void constructorNullParameter() throws Exception {
 		long methodId = 9L;
 

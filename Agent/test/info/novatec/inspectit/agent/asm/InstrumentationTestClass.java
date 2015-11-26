@@ -3,6 +3,12 @@ package info.novatec.inspectit.agent.asm;
 @SuppressWarnings("PMD")
 public class InstrumentationTestClass {
 
+	public static String s;
+
+	static {
+		s = "";
+	}
+
 	public InstrumentationTestClass() {
 	}
 

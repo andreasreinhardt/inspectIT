@@ -254,7 +254,7 @@ public class InstrumentationCreator {
 			int index = fqn.lastIndexOf('.');
 			String packageName = fqn.substring(0, index);
 			String className = fqn.substring(index + 1);
-			String methodName = Character.CONSTRUCTOR.equals(methodType.getMethodCharacter()) ? className : methodType.getName();
+			String methodName = methodType.getName();
 
 			long id = registrationService.registerMethodIdent(agentConfiguration.getPlatformId(), packageName, className, methodName, methodType.getParameters(), methodType.getReturnType(),
 					methodType.getModifiers());

@@ -80,7 +80,12 @@ public class ConstructorInstrumenter extends AbstractMethodInstrumenter {
 
 		// after constructor we can load this object
 		// just load on stack and generate call
-		loadThis();
+		// this object or null if's static
+		if (isStatic) {
+			pushNull();
+		} else {
+			loadThis();
+		}
 
 		// generate code for calling first and second
 		generateAfterBodyCall();
@@ -111,7 +116,12 @@ public class ConstructorInstrumenter extends AbstractMethodInstrumenter {
 
 		// generate code for calling after
 		// push created object and call
-		loadThis();
+		// this object or null if's static
+		if (isStatic) {
+			pushNull();
+		} else {
+			loadThis();
+		}
 		generateAfterBodyCall();
 
 		mv.visitInsn(ATHROW);
@@ -208,8 +218,12 @@ public class ConstructorInstrumenter extends AbstractMethodInstrumenter {
 		pop2();
 		// l-l2-r :)
 
-		// then this object
-		loadThis();
+		// then this object or null if's static
+		if (isStatic) {
+			pushNull();
+		} else {
+			loadThis();
+		}
 		swap();
 
 		// then parameters

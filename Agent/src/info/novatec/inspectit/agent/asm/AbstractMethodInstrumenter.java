@@ -50,6 +50,11 @@ public abstract class AbstractMethodInstrumenter extends AdviceAdapter {
 	protected static final String THROWABLE_INTERNAL_NAME = Type.getInternalName(Throwable.class);
 
 	/**
+	 * If method is static or not.
+	 */
+	protected boolean isStatic;
+
+	/**
 	 * Id of the method. This id will be passed to the dispatcher.
 	 */
 	protected long methodId;
@@ -103,6 +108,7 @@ public abstract class AbstractMethodInstrumenter extends AdviceAdapter {
 		this.methodId = methodId;
 		this.enhancedExceptionSensor = enhancedExceptionSensor;
 		this.argumentTypes = Type.getArgumentTypes(desc);
+		this.isStatic = (access & Opcodes.ACC_STATIC) != 0;
 	}
 
 	/**

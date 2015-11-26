@@ -151,8 +151,8 @@ public class MethodType implements TypeWithAnnotations, ImmutableMethodType {
 	 * {@inheritDoc}
 	 */
 	public Character getMethodCharacter() {
-		// cinit is static initialization method, we consider it as constructor
-		if ("<init>".equals(name) || "<cinit>".equals(name)) {
+		// clinit is static initialization method, we consider it as constructor
+		if ("<init>".equals(name) || "<clinit>".equals(name)) {
 			return Character.CONSTRUCTOR;
 		} else {
 			return Character.METHOD;

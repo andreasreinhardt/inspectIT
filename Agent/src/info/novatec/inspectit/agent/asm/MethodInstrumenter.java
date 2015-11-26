@@ -34,11 +34,6 @@ public class MethodInstrumenter extends AbstractMethodInstrumenter {
 	private static final String DISPATCH_BEFORE_CATCH_DESCRIPTOR = Type.getMethodDescriptor(Type.VOID_TYPE, Type.LONG_TYPE, Type.getType(Object.class));;
 
 	/**
-	 * If method is static or not.
-	 */
-	private boolean isStatic;
-
-	/**
 	 * @param mv
 	 *            Super method visitor.
 	 * @param access
@@ -54,7 +49,6 @@ public class MethodInstrumenter extends AbstractMethodInstrumenter {
 	 */
 	public MethodInstrumenter(MethodVisitor mv, int access, String name, String desc, long methodId, boolean enhancedExceptionSensor) {
 		super(mv, access, name, desc, methodId, enhancedExceptionSensor);
-		this.isStatic = (access & Opcodes.ACC_STATIC) != 0;
 	}
 
 	/**
