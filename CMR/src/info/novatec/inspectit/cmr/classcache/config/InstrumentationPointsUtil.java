@@ -190,6 +190,27 @@ public class InstrumentationPointsUtil {
 	public Collection<? extends ImmutableClassType> addAllInstrumentationPoints(final ClassCache classCache, final AgentConfiguration agentConfiguration, final Environment environment) {
 		final Collection<? extends ImmutableType> types = classCache.getLookupService().findAll();
 		return addAllInstrumentationPoints(types, classCache, agentConfiguration, environment);
+
+		// TODO make a decision here what is better, in theory bottom code should be more effective
+
+		/*
+		Collection<MethodSensorAssignment> methodSensorAssignments = configurationResolver.getAllMethodSensorAssignments(environment);
+		Collection<ExceptionSensorAssignment> exceptionSensorAssignments = configurationResolver.getAllExceptionSensorAssignments(environment);
+
+		Collection<ImmutableClassType> results = new ArrayList<ImmutableClassType>();
+
+		for (MethodSensorAssignment assignment : methodSensorAssignments) {
+			results.addAll(addInstrumentationPoints(searchNarrower.narrowByMethodSensorAssignment(classCache, assignment), classCache, agentConfiguration, environment,
+					Collections.singleton(assignment), null));
+		}
+
+		for (ExceptionSensorAssignment assignment : exceptionSensorAssignments) {
+			results.addAll(addInstrumentationPoints(searchNarrower.narrowByExceptionSensorAssignment(classCache, assignment), classCache, agentConfiguration, environment, null,
+					Collections.singleton(assignment)));
+		}
+
+		return results;
+		*/
 	}
 
 	/**
