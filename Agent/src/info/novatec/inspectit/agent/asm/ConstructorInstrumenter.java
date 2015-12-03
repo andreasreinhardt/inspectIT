@@ -142,7 +142,7 @@ public class ConstructorInstrumenter extends AbstractMethodInstrumenter {
 		push(methodId);
 
 		// then parameters
-		pushParameters();
+		loadArgArray();
 
 		mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IHOOK_DISPATCHER_INTERNAL_NAME, "dispatchConstructorBeforeBody", DISPATCH_CONSTRUCTOR_BEFORE_BODY_DESCRIPTOR, true);
 	}
@@ -169,7 +169,7 @@ public class ConstructorInstrumenter extends AbstractMethodInstrumenter {
 		// l-l2-r :)
 
 		// then parameters, no need to swap
-		pushParameters();
+		loadArgArray();
 
 		// execute after body
 		mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IHOOK_DISPATCHER_INTERNAL_NAME, "dispatchConstructorAfterBody", DISPATCH_CONSTRUCTOR_AFTER_BODY_DESCRIPTOR, true);
@@ -227,7 +227,7 @@ public class ConstructorInstrumenter extends AbstractMethodInstrumenter {
 		swap();
 
 		// then parameters
-		pushParameters();
+		loadArgArray();
 		swap();
 
 		// execute after body

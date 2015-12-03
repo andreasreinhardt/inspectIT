@@ -156,7 +156,7 @@ public class MethodInstrumenter extends AbstractMethodInstrumenter {
 		}
 
 		// then parameters
-		pushParameters();
+		loadArgArray();
 
 		mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, IHOOK_DISPATCHER_INTERNAL_NAME, "dispatchMethodBeforeBody", DISPATCH_METHOD_BEFORE_BODY_DESCRIPTOR, true);
 	}
@@ -195,7 +195,7 @@ public class MethodInstrumenter extends AbstractMethodInstrumenter {
 		swap();
 
 		// then parameters
-		pushParameters();
+		loadArgArray();
 		swap();
 
 		// execute after body

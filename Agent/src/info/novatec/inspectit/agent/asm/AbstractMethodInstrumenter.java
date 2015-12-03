@@ -65,11 +65,6 @@ public abstract class AbstractMethodInstrumenter extends AdviceAdapter {
 	protected boolean enhancedExceptionSensor;
 
 	/**
-	 * Parameters of the method.
-	 */
-	private Type[] argumentTypes;
-
-	/**
 	 * The label for the start of the try/finally or try/catch/finally block that we are adding.
 	 */
 	protected Label tryBlockStart = new Label();
@@ -107,7 +102,6 @@ public abstract class AbstractMethodInstrumenter extends AdviceAdapter {
 		super(Opcodes.ASM5, mv, access, name, desc);
 		this.methodId = methodId;
 		this.enhancedExceptionSensor = enhancedExceptionSensor;
-		this.argumentTypes = Type.getArgumentTypes(desc);
 		this.isStatic = (access & Opcodes.ACC_STATIC) != 0;
 	}
 
@@ -167,33 +161,6 @@ public abstract class AbstractMethodInstrumenter extends AdviceAdapter {
 	 */
 	protected void pushNull() {
 		mv.visitInsn(Opcodes.ACONST_NULL);
-	}
-
-	/**
-	 * Creates Object[] array on stack containing values of all parameters. Primitive types are
-	 * boxed.
-	 */
-	protected void pushParameters() {
-		int size = argumentTypes.length;
-
-		// push size of new array to the stack;
-		push(size);
-
-		// create a new array for storing all of the parameters in this
-		newArray(Type.getType(Object.class));
-
-		for (int i = 0; i < size; i++) {
-			// duplicate the array so that we can push elements into
-			dup();
-			// push the current value of the iteration to the stack for the array index to be used
-			push(i);
-			// load the method parameter with the specific index
-			loadArg(i);
-			// optionally: box the primitive to the object
-			box(argumentTypes[i]);
-			// execute the array store
-			mv.visitInsn(AASTORE);
-		}
 	}
 
 }
