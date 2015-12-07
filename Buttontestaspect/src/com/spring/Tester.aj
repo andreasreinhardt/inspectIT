@@ -11,7 +11,7 @@ public  aspect Tester {
 	//AndroidAgent agent = AndroidAgent.INSTANCE;
 	//AndroidAgent agent = new AndroidAgent("");
 	AndroidAgent agent = new AndroidAgent();
-	Methods method = new Methods();
+	
 	 
 	long start,end,onclickstart,onclickend,onClickduration,t;
 	String n,m,n1,m1;
@@ -48,6 +48,7 @@ public  aspect Tester {
 
      after(): methodCalls(){
     	 m1 = thisJoinPointStaticPart.getSignature().toString();
+    	 Log.d("hi", "Method name : " + m1);
     	 clsname = thisJoinPoint.getTarget().getClass().getName();
     	 end = System.nanoTime();
          t = (end - start);

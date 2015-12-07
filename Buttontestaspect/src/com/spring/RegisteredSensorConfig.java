@@ -6,10 +6,14 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import com.spring.PropertyAccessor.PropertyPathStart;
 
 import javassist.CtBehavior;
 import javassist.Modifier;
@@ -35,11 +39,15 @@ public class RegisteredSensorConfig  {
 	 * The hash value.
 	 */
 	private long id;
+	
+	private List<PropertyPathStart> propertyAccessorList = new CopyOnWriteArrayList<PropertyPathStart>();
 
 	/**
 	 * The return type of the method.
 	 */
 	private String returnType = "";
+	
+	private Map<String, Object> settings = new HashMap<String, Object>();
 
 	/**
 	 * This list contains all configurations of the sensor types for this sensor configuration.
@@ -57,7 +65,7 @@ public class RegisteredSensorConfig  {
 	private MethodSensorTypeConfig exceptionSensorTypeConfig = null;
 
 	
-
+	private boolean propertyAccess = false;
 	/**
 	 * The method visibility.
 	 */
@@ -293,6 +301,21 @@ public class RegisteredSensorConfig  {
 	public int getModifiers() {
 		return modifiers;
 	}
+	
+	//Mine
+	public boolean isPropertyAccess() {
+		return propertyAccess;
+	}
+	
+	public List<PropertyPathStart> getPropertyAccessorList() {
+		return propertyAccessorList;
+	}
+	
+	public Map<String, Object> getSettings() {
+		return settings;
+	}
+
+	//Mine
 
 	/**
 	 * {@inheritDoc}

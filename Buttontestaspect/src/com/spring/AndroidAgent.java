@@ -1,5 +1,7 @@
 package com.spring;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.ConnectException;
@@ -15,6 +17,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -29,6 +34,7 @@ import android.content.pm.PackageManager;
 import android.os.CountDownTimer;
 import android.os.Debug;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 import info.novatec.inspectit.communication.DefaultData;
 import info.novatec.inspectit.communication.SystemSensorData;
@@ -53,7 +59,7 @@ public class AndroidAgent {
 	long pltid;
 	MemoryInformationData memoryData;
 	CpuInformationData cpuData;
-	String Memory = "info.novatec.inspectit.agent.sensor.platform.Memorynformation";
+	String Memory = "info.novatec.inspectit.agent.sensor.platform.MemoryInformation";
 	String CPU = "info.novatec.inspectit.agent.sensor.platform.CpuInformation";
 	String TimerSensor = "info.novatec.inspectit.agent.sensor.method.timer.TimerSensor";
 	String isequence = "info.novatec.inspectit.agent.sensor.method.invocationsequence.InvocationSequenceSensor";
@@ -64,6 +70,8 @@ public class AndroidAgent {
 	float cpuUsage;
 	long processCpuTime;
 	long usedHeapMemorySize;
+	long usedNonHeapMemorySize;
+	long comittedHeapMemorySize;
 	String agent = "AndroidAgent";
 	String version = "1.0";
 	private  IPropertyAccessor propertyAccessor;   
@@ -73,6 +81,8 @@ public class AndroidAgent {
     private final ThreadLocal<InvocationSequenceData> threadLocalInvocationData = new ThreadLocal<InvocationSequenceData>();
     private final ThreadLocal<Long> invocationStartId = new ThreadLocal<Long>();
     private Map<Long, Double> minDurationMap = new HashMap<Long, Double>();
+    long usedmem;
+    private final boolean enhancedExceptionSensor = false;
 	/**
 	 * Stores the count of the of the starting method being called in the same invocation sequence
 	 * so that closing is done on the right end.
@@ -80,8 +90,8 @@ public class AndroidAgent {
 	private final ThreadLocal<Long> invocationStartIdCount = new ThreadLocal<Long>();
 	private  Timer2 timer2;
 	RegisteredSensorConfig rsc;
-	Memory mem;
-	CPU cpu;
+	
+	    
 	public AndroidAgent() {
 		Log.d("hi", "Inside Android Agent");
 	
@@ -120,8 +130,7 @@ public class AndroidAgent {
 		coredata = new CoreData(kryo);
 		propertyAccessor = new PropertyAccessor();
 		rsc = new RegisteredSensorConfig();
-		mem = new Memory(); 
-		cpu = new CPU();
+		
 	} catch (Exception e) {
 		Log.d("hi", "Exceptionviv is " + e);
 		// TODO Auto-generated catch block
@@ -135,17 +144,20 @@ public class AndroidAgent {
                        public void run() {
                     	
                     	cpuUsage = retrieveCpuUsage();
+                    	Log.d("hi", "cpuusage" + cpuUsage);
                     	processCpuTime = getProcessCpuTime();
                     	usedHeapMemorySize = getUsedHeapMemorySize();
-                    	
+                        usedNonHeapMemorySize = getUsedNonHeapMemorySize();
+                        comittedHeapMemorySize = getComittedHeapMemorySize();
+                        
                     	//CPU
                     	CpuInformationData cpuData = (CpuInformationData) coredata.getPlatformSensorData(sensorIDcpu);
                     	MemoryInformationData memoryData = (MemoryInformationData) coredata.getPlatformSensorDataformem(sensorIDmem);
                     	if (cpuData == null) {
                 			try {
                 				 Log.d("hi", "italy0");
-                				pltid = kryo.registerPlatform(agent, version);
-                				sensorIDcpu = kryo.registerPlatformSensorType(pltid, CPU);//Get Sensor ID
+                				//pltid = kryo.registerPlatform(agent, version);
+                				//sensorIDcpu = kryo.registerPlatformSensorType(pltid, CPU);//Get Sensor ID
      							Timestamp timestamp = new Timestamp(GregorianCalendar.getInstance().getTimeInMillis());
                 				cpuData = new CpuInformationData(timestamp, pltid, sensorIDcpu);
                 				cpuData.incrementCount();
@@ -177,19 +189,24 @@ public class AndroidAgent {
                     	//MEMORY
                     	if (memoryData == null) {
                 			try {
-                				pltid = kryo.registerPlatform(agent, version);
+                				//pltid = kryo.registerPlatform(agent, version);
                 				sensorIDmem = kryo.registerPlatformSensorType(pltid, Memory);//Get Sensor ID
                 				Timestamp timestamp = new Timestamp(GregorianCalendar.getInstance().getTimeInMillis());
 
                 				memoryData = new MemoryInformationData(timestamp, pltid, sensorIDmem);
                 				memoryData.incrementCount();
 
-                			
+                				memoryData.addUsedNonHeapMemorySize(usedNonHeapMemorySize);
+                				memoryData.setMinUsedNonHeapMemorySize(usedNonHeapMemorySize);
+                				memoryData.setMaxUsedNonHeapMemorySize(usedNonHeapMemorySize);
 
                 				memoryData.addUsedHeapMemorySize(usedHeapMemorySize);
                 				memoryData.setMinUsedHeapMemorySize(usedHeapMemorySize);
                 				memoryData.setMaxUsedHeapMemorySize(usedHeapMemorySize);
-
+                                
+                				memoryData.addComittedHeapMemorySize(comittedHeapMemorySize);
+                				memoryData.setMinComittedHeapMemorySize(comittedHeapMemorySize);
+                				memoryData.setMaxComittedHeapMemorySize(comittedHeapMemorySize);
                 			
                 				coredata.addPlatformSensorDataformem(sensorIDmem, memoryData);
                 			} catch (Exception e) {
@@ -198,14 +215,25 @@ public class AndroidAgent {
                 		} else {
                 			memoryData.incrementCount();
                 			
-                			memoryData.addUsedHeapMemorySize((long) usedHeapMemorySize);
-                			
-
+                			memoryData.addUsedHeapMemorySize(usedHeapMemorySize);
+                			memoryData.addUsedNonHeapMemorySize(usedNonHeapMemorySize);
+                			memoryData.addComittedHeapMemorySize(comittedHeapMemorySize);
                 			
                 			if (usedHeapMemorySize < memoryData.getMinUsedHeapMemorySize()) {
                 				memoryData.setMinUsedHeapMemorySize(usedHeapMemorySize);
                 			} else if (usedHeapMemorySize > memoryData.getMaxUsedHeapMemorySize()) {
                 				memoryData.setMaxUsedHeapMemorySize(usedHeapMemorySize);
+                			}
+                			if (comittedHeapMemorySize < memoryData.getMinComittedHeapMemorySize()) {
+                				memoryData.setMinComittedHeapMemorySize(comittedHeapMemorySize);
+                			} else if (comittedHeapMemorySize > memoryData.getMaxComittedHeapMemorySize()) {
+                				memoryData.setMaxComittedHeapMemorySize(comittedHeapMemorySize);
+                			}
+
+                			if (usedNonHeapMemorySize < memoryData.getMinUsedNonHeapMemorySize()) {
+                				memoryData.setMinUsedNonHeapMemorySize(usedNonHeapMemorySize);
+                			} else if (usedNonHeapMemorySize > memoryData.getMaxUsedNonHeapMemorySize()) {
+                				memoryData.setMaxUsedNonHeapMemorySize(usedNonHeapMemorySize);
                 			}
                 			coredata.addPlatformSensorDataformem(sensorIDmem, memoryData);
                 		
@@ -218,6 +246,30 @@ public class AndroidAgent {
                           myThread.start();
                    }
 
+					private long getComittedHeapMemorySize() {
+						// TODO Auto-generated method stub
+						Runtime rt = Runtime.getRuntime();
+						long maxMemory = rt.maxMemory();//Returns the maximum number of bytes the heap can expand to
+						
+					    Log.d("hi", "heapmemmax" + maxMemory);
+						
+							return maxMemory;
+					}
+
+					private long getUsedNonHeapMemorySize() {
+						// TODO Auto-generated method stub
+						Runtime rt = Runtime.getRuntime();
+						long maxMemory = rt.maxMemory();//Returns the maximum number of bytes the heap can expand to
+						long totalMemory = rt.totalMemory();//Returns the number of bytes taken by the heap at its current size.
+						long freeMemory = rt.freeMemory();//Returns the number of bytes currently available on the heap without expanding the heap
+						long usedMemory = (maxMemory - (freeMemory + (maxMemory - totalMemory)));
+						long unusedMEmory = ((maxMemory - usedMemory)/1024);
+					    Log.d("hi", "heapmemnon" + unusedMEmory);
+						
+							return unusedMEmory;
+						
+					}
+
 					},  
                12000, 10000
                );
@@ -226,39 +278,49 @@ public class AndroidAgent {
 
    
 	public long getUsedHeapMemorySize() {
-		 Runtime rt = Runtime.getRuntime();
-		 long maxMemory = rt.maxMemory();//Returns the maximum number of bytes the heap can expand to
-		 long totalMemory = rt.totalMemory();//Returns the number of bytes taken by the heap at its current size.
-		 long freeMemory = rt.freeMemory();//Returns the number of bytes currently available on the heap without expanding the heap
-		 long usedMemory = (maxMemory - (freeMemory + (maxMemory - totalMemory)))/(1024 * 1024 * 1024);
-			Log.d("hi", "heapmem" + usedMemory);
+		Runtime rt = Runtime.getRuntime();
+		long maxMemory = rt.maxMemory();//Returns the maximum number of bytes the heap can expand to
+		long totalMemory = rt.totalMemory();//Returns the number of bytes taken by the heap at its current size.
+		long freeMemory = rt.freeMemory();//Returns the number of bytes currently available on the heap without expanding the heap
+		long usedMemory = (maxMemory - (freeMemory + (maxMemory - totalMemory)));
+	    Log.d("hi", "heapmem" + usedMemory);
+		
 			return usedMemory;
+	    
 	}
 	
 
     private float retrieveCpuUsage() {
 		// TODO Auto-generated method stub
-		float usage = 30;
+	float usage;
+
+	     
 		float end = Debug.threadCpuTimeNanos();
 		Log.d("hi", "torre = " + end);//nanos
 		float start = 10000;//millis
 		float end1 = (end/1000000);
 		Log.d("hi", "end1 = " + end1);
 		Log.d("hi", "start = " + start);
-		 //usage = end1/start * 100;
-		
-		return usage;
-	}
+		 usage = end1/start * 100;
+		Log.d("hi", "cpu = " + usage);
+		return (usage * 10);
+    	
     
-	public long getProcessCpuTime() {
-		long z =  Debug.threadCpuTimeNanos();
-		
-		return z;
-	}
+    }
+
+ 	public long getProcessCpuTime() {
+ 		long z =  Debug.threadCpuTimeNanos();
+ 		
+ 		return z;
+ 	}
 	
 	//TIMER METHODS
 	public void methodhandler(long start,long end,long duration,String func,String classname){
 		List<String> parameterTypes = null;
+		long duration1 = duration/1000000;
+		long start1 = start/1000000;
+		long end1 = end/1000000;
+		
 		try {
 			methodID = kryo.registerMethod(pltid, func,classname,parameterTypes);
 		} catch (ServerUnavailableException e1) {
@@ -293,9 +355,9 @@ public class AndroidAgent {
 
 				timerData = new TimerData(timestamp, pltid, methodtimerID, methodID, parameterContentData);
 				timerData.increaseCount();
-				timerData.addDuration(duration/1000000);
-				timerData.calculateMin(duration/1000000);
-				timerData.calculateMax(duration/1000000);
+				timerData.addDuration(duration1);
+				timerData.calculateMin(duration1);
+				timerData.calculateMax(duration1);
 
 				coredata.addMethodSensorData(methodtimerID, methodID, prefix, timerData);
 			} catch (Exception e) {
@@ -303,18 +365,78 @@ public class AndroidAgent {
 			}
 		} else {
 			timerData.increaseCount();
-			timerData.addDuration(duration/1000000);
+			timerData.addDuration(duration1);
 
-			timerData.calculateMin(duration/1000000);
-			timerData.calculateMax(duration/1000000);
+			timerData.calculateMin(duration1);
+			timerData.calculateMax(duration1);
 			coredata.addMethodSensorData(methodtimerID, methodID, prefix, timerData);
 		}
 		
-		
+		//Invocation
+		if (null != invocationSequenceData) {
+			// check if some properties need to be accessed and saved
+			if (rsc.isPropertyAccess()) {
+				List<ParameterContentData> parameterContentData1 = propertyAccessor.getParameterContentData(rsc.getPropertyAccessorList(), object, parameters, result);
+
+				// crop the content strings of all ParameterContentData
+				for (ParameterContentData contentData : parameterContentData1) {
+					contentData.setContent(strConstraint.crop(contentData.getContent()));
+				}
+			}
+
+			if (methodID == invocationStartId.get().longValue() && 0 == invocationStartIdCount.get().longValue()) {
+				
+
+				// complete the sequence and store the data object in the 'true'
+				// core service so that it can be transmitted to the server. we
+				// just need an arbitrary prefix so that this sequence will
+				// never be overwritten in the core service!
+				if (minDurationMap.containsKey(invocationStartId.get())) {
+					checkForSavingOrNot(coredata, methodID, methodinvoID, rsc, invocationSequenceData, start1, end1, duration1);
+				} else {
+					// maybe not saved yet in the map
+					if (rsc.getSettings().containsKey("minduration")) {
+						minDurationMap.put(invocationStartId.get(), Double.valueOf((String) rsc.getSettings().get("minduration")));
+						checkForSavingOrNot(coredata, methodID, methodinvoID, rsc, invocationSequenceData, start1, end1, duration1);
+					} else {
+						invocationSequenceData.setDuration(duration1);
+						invocationSequenceData.setStart(start1);
+						invocationSequenceData.setEnd(end1);
+						coredata.addMethodSensorData(methodinvoID, methodID, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
+					}
+				}
+
+				threadLocalInvocationData.set(null);
+			} else {
+				// just close the nested sequence and set the correct child count
+				InvocationSequenceData parentSequence = invocationSequenceData.getParentSequence();
+				// check if we should not include this invocation because of exception delegation or
+				// SQL wrapping
+				if (removeDueToExceptionDelegation(rsc, invocationSequenceData) || removeDueToWrappedSqls(rsc, invocationSequenceData)) {
+					parentSequence.getNestedSequences().remove(invocationSequenceData);
+					parentSequence.setChildCount(parentSequence.getChildCount() - 1);
+					// but connect all possible children to the parent then
+					// we are eliminating one level here
+					if (CollectionUtils.isNotEmpty(invocationSequenceData.getNestedSequences())) {
+						parentSequence.getNestedSequences().addAll(invocationSequenceData.getNestedSequences());
+						parentSequence.setChildCount(parentSequence.getChildCount() + invocationSequenceData.getChildCount());
+					}
+				} else {
+					invocationSequenceData.setEnd(timer2.getCurrentTime());
+					invocationSequenceData.setDuration(invocationSequenceData.getEnd() - invocationSequenceData.getStart());
+					parentSequence.setChildCount(parentSequence.getChildCount() + invocationSequenceData.getChildCount());
+				}
+				threadLocalInvocationData.set(parentSequence);
+				coredata.addMethodSensorData(methodinvoID, methodID, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
+			}
+		}
+		//Invocation
 
 
 	}
 	//TIMER METHODS
+	
+
 	
 
    
@@ -322,32 +444,68 @@ public class AndroidAgent {
 		return propertyAccessorList;
 	}
 	
+	//INVOCATION
 	private void checkForSavingOrNot(CoreData coredata, long methodId, long sensorTypeId, RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData, double startTime, // NOCHK
-			double endTime, double duration) {
+			double endTime, double duration2) {
 		double minduration = minDurationMap.get(invocationStartId.get()).doubleValue();
-		if (duration >= minduration) {
-			//if (LOG.isDebugEnabled()) {
-				//LOG.debug("Saving invocation. " + duration + " > " + minduration + " ID(local): " + rsc.getId());
-			//}
-			invocationSequenceData.setDuration(duration);
+		if (duration2 >= minduration) {
+		
+			invocationSequenceData.setDuration(duration2);
 			invocationSequenceData.setStart(startTime);
 			invocationSequenceData.setEnd(endTime);
 			coredata.addMethodSensorData(sensorTypeId, methodId, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
 		} else {
-			//if (LOG.isDebugEnabled()) {
-				//LOG.debug("Not saving invocation. " + duration + " < " + minduration + " ID(local): " + rsc.getId());
-			//}
+			
 		}
 	}
 	
+	private boolean removeDueToExceptionDelegation(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
+		if (1 == rsc.getSensorTypeConfigs().size()) {
+			MethodSensorTypeConfig methodSensorTypeConfig = rsc.getSensorTypeConfigs().get(0);
+
+		//	if (ExceptionSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
+				//return CollectionUtils.isEmpty(invocationSequenceData.getExceptionSensorDataObjects());
+			//}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Returns if the given {@link InvocationSequenceData} should be removed due to the wrapping of
+	 * the prepared SQL statements.
+	 * 
+	 * @param rsc
+	 *            {@link RegisteredSensorConfig}
+	 * @param invocationSequenceData
+	 *            {@link InvocationSequenceData} to check.
+	 * @return True if the invocation should be removed.
+	 */
+	private boolean removeDueToWrappedSqls(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
+		if (1 == rsc.getSensorTypeConfigs().size() || (2 == rsc.getSensorTypeConfigs().size() && enhancedExceptionSensor)) {
+			for (MethodSensorTypeConfig methodSensorTypeConfig : rsc.getSensorTypeConfigs()) {
+
+			//	if (PreparedStatementSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
+					if (null == invocationSequenceData.getSqlStatementData() || 0 == invocationSequenceData.getSqlStatementData().getCount()) {
+						return true;
+					}
+				//}
+			}
+		}
+
+		return false;
+	}
+	//INVOCATION
+	
+	
+	}
+	
+
 
 	
 	
 	
-	
-	
-	
-}
+
 
 
 

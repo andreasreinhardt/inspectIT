@@ -62,7 +62,8 @@ public class CoreData {
 		buffer.append('.');
 		buffer.append(sensorTypeIdent3);
 		sensorDataObjects3.put(buffer.toString(), methodSensorData);
-		
+		Log.d("hi", "methodinvoc" + sensorDataObjects3);
+		//prepareData();
 	}
 
 	/**
