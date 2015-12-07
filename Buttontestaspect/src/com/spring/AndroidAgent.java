@@ -37,6 +37,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import info.novatec.inspectit.communication.DefaultData;
+import info.novatec.inspectit.communication.MethodSensorData;
 import info.novatec.inspectit.communication.SystemSensorData;
 import info.novatec.inspectit.communication.data.CpuInformationData;
 import info.novatec.inspectit.communication.data.InvocationSequenceData;
@@ -83,14 +84,12 @@ public class AndroidAgent {
     private Map<Long, Double> minDurationMap = new HashMap<Long, Double>();
     long usedmem;
     private final boolean enhancedExceptionSensor = false;
-	/**
-	 * Stores the count of the of the starting method being called in the same invocation sequence
-	 * so that closing is done on the right end.
-	 */
+    private Map<String, DefaultData> sensorDataObjects3 = new ConcurrentHashMap<String, DefaultData>();//Methods
 	private final ThreadLocal<Long> invocationStartIdCount = new ThreadLocal<Long>();
 	private  Timer2 timer2;
 	RegisteredSensorConfig rsc;
-	
+	CPU cpuclass;
+	Memory memclass;
 	    
 	public AndroidAgent() {
 		Log.d("hi", "Inside Android Agent");
@@ -130,7 +129,8 @@ public class AndroidAgent {
 		coredata = new CoreData(kryo);
 		propertyAccessor = new PropertyAccessor();
 		rsc = new RegisteredSensorConfig();
-		
+		cpuclass = new CPU(sensorIDcpu,pltid,coredata,kryo);
+		memclass = new Memory(sensorIDmem,pltid,coredata,kryo);
 	} catch (Exception e) {
 		Log.d("hi", "Exceptionviv is " + e);
 		// TODO Auto-generated catch block
@@ -143,177 +143,19 @@ public class AndroidAgent {
                     @Override
                        public void run() {
                     	
-                    	cpuUsage = retrieveCpuUsage();
-                    	Log.d("hi", "cpuusage" + cpuUsage);
-                    	processCpuTime = getProcessCpuTime();
-                    	usedHeapMemorySize = getUsedHeapMemorySize();
-                        usedNonHeapMemorySize = getUsedNonHeapMemorySize();
-                        comittedHeapMemorySize = getComittedHeapMemorySize();
-                        
-                    	//CPU
-                    	CpuInformationData cpuData = (CpuInformationData) coredata.getPlatformSensorData(sensorIDcpu);
-                    	MemoryInformationData memoryData = (MemoryInformationData) coredata.getPlatformSensorDataformem(sensorIDmem);
-                    	if (cpuData == null) {
-                			try {
-                				 Log.d("hi", "italy0");
-                				//pltid = kryo.registerPlatform(agent, version);
-                				//sensorIDcpu = kryo.registerPlatformSensorType(pltid, CPU);//Get Sensor ID
-     							Timestamp timestamp = new Timestamp(GregorianCalendar.getInstance().getTimeInMillis());
-                				cpuData = new CpuInformationData(timestamp, pltid, sensorIDcpu);
-                				cpuData.incrementCount();
-                				cpuData.updateProcessCpuTime(processCpuTime);
-                                cpuData.addCpuUsage(cpuUsage);
-                                cpuData.setMinCpuUsage(cpuUsage);
-                                cpuData.setMaxCpuUsage(cpuUsage);
-                                coredata.addPlatformSensorData(sensorIDcpu, cpuData);
-                			} catch (Exception e) {
-                				e.printStackTrace();
-                				 Log.d("hi", "italy1");
-                			}
-                		} else{
-                			 Log.d("hi", "italy2");
-                			cpuData.incrementCount();
-                			cpuData.updateProcessCpuTime(processCpuTime);
-                			cpuData.addCpuUsage(cpuUsage);
-
-                			if (cpuUsage < cpuData.getMinCpuUsage()) {
-                				cpuData.setMinCpuUsage(cpuUsage);
-                			} else if (cpuUsage > cpuData.getMaxCpuUsage()) {
-                				cpuData.setMaxCpuUsage(cpuUsage);
-                			}
-                			 Log.d("hi", "cpudata2 = " + cpuData + "platformid2 = " + pltid + "sensorid2 = " + sensorIDcpu);   
-                			coredata.addPlatformSensorData(sensorIDcpu, cpuData);
-                		}
-                		//CPU
-                    	  
-                    	//MEMORY
-                    	if (memoryData == null) {
-                			try {
-                				//pltid = kryo.registerPlatform(agent, version);
-                				sensorIDmem = kryo.registerPlatformSensorType(pltid, Memory);//Get Sensor ID
-                				Timestamp timestamp = new Timestamp(GregorianCalendar.getInstance().getTimeInMillis());
-
-                				memoryData = new MemoryInformationData(timestamp, pltid, sensorIDmem);
-                				memoryData.incrementCount();
-
-                				memoryData.addUsedNonHeapMemorySize(usedNonHeapMemorySize);
-                				memoryData.setMinUsedNonHeapMemorySize(usedNonHeapMemorySize);
-                				memoryData.setMaxUsedNonHeapMemorySize(usedNonHeapMemorySize);
-
-                				memoryData.addUsedHeapMemorySize(usedHeapMemorySize);
-                				memoryData.setMinUsedHeapMemorySize(usedHeapMemorySize);
-                				memoryData.setMaxUsedHeapMemorySize(usedHeapMemorySize);
-                                
-                				memoryData.addComittedHeapMemorySize(comittedHeapMemorySize);
-                				memoryData.setMinComittedHeapMemorySize(comittedHeapMemorySize);
-                				memoryData.setMaxComittedHeapMemorySize(comittedHeapMemorySize);
-                			
-                				coredata.addPlatformSensorDataformem(sensorIDmem, memoryData);
-                			} catch (Exception e) {
-                				
-                			}
-                		} else {
-                			memoryData.incrementCount();
-                			
-                			memoryData.addUsedHeapMemorySize(usedHeapMemorySize);
-                			memoryData.addUsedNonHeapMemorySize(usedNonHeapMemorySize);
-                			memoryData.addComittedHeapMemorySize(comittedHeapMemorySize);
-                			
-                			if (usedHeapMemorySize < memoryData.getMinUsedHeapMemorySize()) {
-                				memoryData.setMinUsedHeapMemorySize(usedHeapMemorySize);
-                			} else if (usedHeapMemorySize > memoryData.getMaxUsedHeapMemorySize()) {
-                				memoryData.setMaxUsedHeapMemorySize(usedHeapMemorySize);
-                			}
-                			if (comittedHeapMemorySize < memoryData.getMinComittedHeapMemorySize()) {
-                				memoryData.setMinComittedHeapMemorySize(comittedHeapMemorySize);
-                			} else if (comittedHeapMemorySize > memoryData.getMaxComittedHeapMemorySize()) {
-                				memoryData.setMaxComittedHeapMemorySize(comittedHeapMemorySize);
-                			}
-
-                			if (usedNonHeapMemorySize < memoryData.getMinUsedNonHeapMemorySize()) {
-                				memoryData.setMinUsedNonHeapMemorySize(usedNonHeapMemorySize);
-                			} else if (usedNonHeapMemorySize > memoryData.getMaxUsedNonHeapMemorySize()) {
-                				memoryData.setMaxUsedNonHeapMemorySize(usedNonHeapMemorySize);
-                			}
-                			coredata.addPlatformSensorDataformem(sensorIDmem, memoryData);
+                    	cpuclass.update();
+                    	memclass.update();
                 		
-                		}
-                    	//MEMORY
-                		
-                		
-                    	
-                          Thread myThread = new Thread();
-                          myThread.start();
+                        Thread myThread = new Thread();
+                        myThread.start();
                    }
-
-					private long getComittedHeapMemorySize() {
-						// TODO Auto-generated method stub
-						Runtime rt = Runtime.getRuntime();
-						long maxMemory = rt.maxMemory();//Returns the maximum number of bytes the heap can expand to
-						
-					    Log.d("hi", "heapmemmax" + maxMemory);
-						
-							return maxMemory;
-					}
-
-					private long getUsedNonHeapMemorySize() {
-						// TODO Auto-generated method stub
-						Runtime rt = Runtime.getRuntime();
-						long maxMemory = rt.maxMemory();//Returns the maximum number of bytes the heap can expand to
-						long totalMemory = rt.totalMemory();//Returns the number of bytes taken by the heap at its current size.
-						long freeMemory = rt.freeMemory();//Returns the number of bytes currently available on the heap without expanding the heap
-						long usedMemory = (maxMemory - (freeMemory + (maxMemory - totalMemory)));
-						long unusedMEmory = ((maxMemory - usedMemory)/1024);
-					    Log.d("hi", "heapmemnon" + unusedMEmory);
-						
-							return unusedMEmory;
-						
-					}
-
-					},  
+                  },  
                12000, 10000
                );
      }
 	
 
-   
-	public long getUsedHeapMemorySize() {
-		Runtime rt = Runtime.getRuntime();
-		long maxMemory = rt.maxMemory();//Returns the maximum number of bytes the heap can expand to
-		long totalMemory = rt.totalMemory();//Returns the number of bytes taken by the heap at its current size.
-		long freeMemory = rt.freeMemory();//Returns the number of bytes currently available on the heap without expanding the heap
-		long usedMemory = (maxMemory - (freeMemory + (maxMemory - totalMemory)));
-	    Log.d("hi", "heapmem" + usedMemory);
-		
-			return usedMemory;
-	    
-	}
-	
 
-    private float retrieveCpuUsage() {
-		// TODO Auto-generated method stub
-	float usage;
-
-	     
-		float end = Debug.threadCpuTimeNanos();
-		Log.d("hi", "torre = " + end);//nanos
-		float start = 10000;//millis
-		float end1 = (end/1000000);
-		Log.d("hi", "end1 = " + end1);
-		Log.d("hi", "start = " + start);
-		 usage = end1/start * 100;
-		Log.d("hi", "cpu = " + usage);
-		return (usage * 10);
-    	
-    
-    }
-
- 	public long getProcessCpuTime() {
- 		long z =  Debug.threadCpuTimeNanos();
- 		
- 		return z;
- 	}
-	
 	//TIMER METHODS
 	public void methodhandler(long start,long end,long duration,String func,String classname){
 		List<String> parameterTypes = null;
@@ -331,17 +173,20 @@ public class AndroidAgent {
 			e1.printStackTrace();
 		}
 		List<ParameterContentData> parameterContentData = null;
+		String prefix = null;
 		Object object = null;
-		 Object[] parameters = null;
-		 Object result = null;
-		 String prefix = null;
-		 
-		parameterContentData = propertyAccessor.getParameterContentData(getPropertyAccessorList(), object, parameters, result);
-		prefix = parameterContentData.toString();
+		Object[] parameters = null;
+		Object result = null;
+		
+		// check if some properties need to be accessed and saved
+		if (rsc.isPropertyAccess()) {
+			parameterContentData = propertyAccessor.getParameterContentData(rsc.getPropertyAccessorList(), object, parameters, result);
+			prefix = parameterContentData.toString();
 
-		// crop the content strings of all ParameterContentData but leave the prefix as it is
-		for (ParameterContentData contentData : parameterContentData) {
-			contentData.setContent(strConstraint.crop(contentData.getContent()));
+			// crop the content strings of all ParameterContentData but leave the prefix as it is
+			for (ParameterContentData contentData : parameterContentData) {
+				contentData.setContent(strConstraint.crop(contentData.getContent()));
+			}
 		}
 		
 		TimerData timerData = (TimerData) coredata.getMethodSensorData(methodtimerID, methodID, prefix);
@@ -359,7 +204,8 @@ public class AndroidAgent {
 				timerData.calculateMin(duration1);
 				timerData.calculateMax(duration1);
 
-				coredata.addMethodSensorData(methodtimerID, methodID, prefix, timerData);
+				addMethodSensorData(methodtimerID, methodID, prefix, timerData);
+				
 			} catch (Exception e) {
 			
 			}
@@ -369,11 +215,11 @@ public class AndroidAgent {
 
 			timerData.calculateMin(duration1);
 			timerData.calculateMax(duration1);
-			coredata.addMethodSensorData(methodtimerID, methodID, prefix, timerData);
+			addMethodSensorData(methodtimerID, methodID, prefix, timerData);
 		}
 		
 		//Invocation
-		if (null != invocationSequenceData) {
+	/*	if (null != invocationSequenceData) {
 			// check if some properties need to be accessed and saved
 			if (rsc.isPropertyAccess()) {
 				List<ParameterContentData> parameterContentData1 = propertyAccessor.getParameterContentData(rsc.getPropertyAccessorList(), object, parameters, result);
@@ -402,7 +248,7 @@ public class AndroidAgent {
 						invocationSequenceData.setDuration(duration1);
 						invocationSequenceData.setStart(start1);
 						invocationSequenceData.setEnd(end1);
-						coredata.addMethodSensorData(methodinvoID, methodID, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
+						//coredata.addMethodSensorData(methodinvoID, methodID, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
 					}
 				}
 
@@ -427,9 +273,9 @@ public class AndroidAgent {
 					parentSequence.setChildCount(parentSequence.getChildCount() + invocationSequenceData.getChildCount());
 				}
 				threadLocalInvocationData.set(parentSequence);
-				coredata.addMethodSensorData(methodinvoID, methodID, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
+				//coredata.addMethodSensorData(methodinvoID, methodID, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
 			}
-		}
+		}*/
 		//Invocation
 
 
@@ -444,58 +290,24 @@ public class AndroidAgent {
 		return propertyAccessorList;
 	}
 	
-	//INVOCATION
-	private void checkForSavingOrNot(CoreData coredata, long methodId, long sensorTypeId, RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData, double startTime, // NOCHK
-			double endTime, double duration2) {
-		double minduration = minDurationMap.get(invocationStartId.get()).doubleValue();
-		if (duration2 >= minduration) {
-		
-			invocationSequenceData.setDuration(duration2);
-			invocationSequenceData.setStart(startTime);
-			invocationSequenceData.setEnd(endTime);
-			coredata.addMethodSensorData(sensorTypeId, methodId, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
-		} else {
-			
-		}
-	}
 	
-	private boolean removeDueToExceptionDelegation(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
-		if (1 == rsc.getSensorTypeConfigs().size()) {
-			MethodSensorTypeConfig methodSensorTypeConfig = rsc.getSensorTypeConfigs().get(0);
-
-		//	if (ExceptionSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
-				//return CollectionUtils.isEmpty(invocationSequenceData.getExceptionSensorDataObjects());
-			//}
+	
+	public void addMethodSensorData(long sensorTypeIdent3, long methodIdent, String prefix, MethodSensorData methodSensorData) {
+		StringBuffer buffer = new StringBuffer();
+		if (null != prefix) {
+			buffer.append(prefix);
+			buffer.append('.');
 		}
-
-		return false;
+		buffer.append(methodIdent);
+		buffer.append('.');
+		buffer.append(sensorTypeIdent3);
+		sensorDataObjects3.put(buffer.toString(), methodSensorData);
+		Log.d("hi", "methodinvoc" + sensorDataObjects3);
+		//Methods
+		List<DefaultData> tempList2 = new ArrayList<DefaultData>(sensorDataObjects3.values());
+		Log.d("hi", "tempList2" + tempList2);
+		kryo.sendDataObjects(tempList2);
 	}
-
-	/**
-	 * Returns if the given {@link InvocationSequenceData} should be removed due to the wrapping of
-	 * the prepared SQL statements.
-	 * 
-	 * @param rsc
-	 *            {@link RegisteredSensorConfig}
-	 * @param invocationSequenceData
-	 *            {@link InvocationSequenceData} to check.
-	 * @return True if the invocation should be removed.
-	 */
-	private boolean removeDueToWrappedSqls(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
-		if (1 == rsc.getSensorTypeConfigs().size() || (2 == rsc.getSensorTypeConfigs().size() && enhancedExceptionSensor)) {
-			for (MethodSensorTypeConfig methodSensorTypeConfig : rsc.getSensorTypeConfigs()) {
-
-			//	if (PreparedStatementSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
-					if (null == invocationSequenceData.getSqlStatementData() || 0 == invocationSequenceData.getSqlStatementData().getCount()) {
-						return true;
-					}
-				//}
-			}
-		}
-
-		return false;
-	}
-	//INVOCATION
 	
 	
 	}

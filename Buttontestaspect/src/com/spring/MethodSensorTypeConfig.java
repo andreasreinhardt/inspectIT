@@ -10,7 +10,7 @@ import org.apache.commons.collections.MapUtils;
  * 
  * @author Patrice Bouillet
  */
-public class MethodSensorTypeConfig extends AbstractSensorTypeConfig {
+public class MethodSensorTypeConfig {
 
 	/**
 	 * The name of the sensor type.
@@ -66,26 +66,6 @@ public class MethodSensorTypeConfig extends AbstractSensorTypeConfig {
 		this.priority = priority;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public String toString() {
-		return getId() + " :: name: " + name + " (" + priority + ")";
-	}
 
-	/**
-	 * Returns if jRebel property is activated on the sensor.
-	 * 
-	 * @return Returns if jRebel property is activated on the sensor.
-	 */
-	public boolean isJRebelActive() {
-		if (MapUtils.isNotEmpty(getParameters())) {
-			Object jRebelValue = getParameters().get("jRebel");
-			if ("true".equals(jRebelValue)) {
-				return true;
-			}
-		}
-		return false;
-	}
 
 }

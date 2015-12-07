@@ -6,7 +6,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -39,15 +38,11 @@ public class RegisteredSensorConfig  {
 	 * The hash value.
 	 */
 	private long id;
-	
-	private List<PropertyPathStart> propertyAccessorList = new CopyOnWriteArrayList<PropertyPathStart>();
 
 	/**
 	 * The return type of the method.
 	 */
 	private String returnType = "";
-	
-	private Map<String, Object> settings = new HashMap<String, Object>();
 
 	/**
 	 * This list contains all configurations of the sensor types for this sensor configuration.
@@ -65,11 +60,18 @@ public class RegisteredSensorConfig  {
 	private MethodSensorTypeConfig exceptionSensorTypeConfig = null;
 
 	
-	private boolean propertyAccess = false;
 	/**
 	 * The method visibility.
 	 */
 	private int modifiers;
+	
+	private boolean propertyAccess = false;
+
+	/**
+	 * If <code>propertyAccess</code> is set to true, then this list contains at least one element.
+	 * The contents is of type {@link PropertyPathStart}.
+	 */
+	private List<PropertyPathStart> propertyAccessorList = new CopyOnWriteArrayList<PropertyPathStart>();
 
 	/**
 	 * Sets the {@link CtBehavior} object.
@@ -137,49 +139,9 @@ public class RegisteredSensorConfig  {
 		return sensorTypeConfigs;
 	}
 
-	/**
-	 * Adds a sensor type to this configuration.
-	 * 
-	 * @param sensorTypeConfig
-	 *            The sensor type to add.
-	 */
-	public void addSensorTypeConfig(MethodSensorTypeConfig sensorTypeConfig) {
-		// check for the invocation sequence sensor type
-		if (sensorTypeConfig.getClassName().endsWith("InvocationSequenceSensor")) {
-			invocationSequenceSensorTypeConfig = sensorTypeConfig;
-		}
+	
 
-		if (sensorTypeConfig.getClassName().endsWith("ExceptionSensor")) {
-			exceptionSensorTypeConfig = sensorTypeConfig;
-		}
 
-		if (!sensorTypeConfigs.contains(sensorTypeConfig)) {
-			sensorTypeConfigs.add(sensorTypeConfig);
-
-			sortSensorTypeConfigs();
-		
-
-			// TODO
-			// getCoreService().getIdManager().addSensorTypeToMethod(
-			// sensorTypeConfig.getId(), getId());
-		}
-	}
-
-	/**
-	 * Remove a sensor type from this configuration.
-	 * 
-	 * @param sensorTypeConfig
-	 *            The sensor type to remove.
-	 */
-	public void removeSensorTypeConfig(MethodSensorTypeConfig sensorTypeConfig) {
-		if (sensorTypeConfigs.contains(sensorTypeConfig)) {
-			sensorTypeConfigs.remove(sensorTypeConfig);
-
-			
-
-			// TODO remove at the server
-		}
-	}
 
 	/**
 	 * The sensor comparator is used to sort the sensor type configurations according to their
@@ -196,25 +158,7 @@ public class RegisteredSensorConfig  {
 		}
 	}
 
-	/**
-	 * Returns the sorted method hooks as a {@link Map} with the hash value of the corresponding
-	 * sensor type as the key and the {@link IMethodHook} implementation as the value.
-	 * <p>
-	 * The returned {@link Map} of this method is not locked for modification because of performance
-	 * reasons.
-	 * <p>
-	 * This map is always generated along calling
-	 * {@link #addSensorTypeConfig(MethodSensorTypeConfig)} and
-	 * {@link #removeSensorTypeConfig(MethodSensorTypeConfig)}.
-	 * 
-	 * @return The sorted map of method hooks.
-	 */
 	
-
-	/**
-	 * Initialized the method hooks map by iterating over the list containing the sensorTypeConfigs.
-	 */
-
 
 	/**
 	 * Inner class to sort the sensor list according to their priority.
@@ -302,26 +246,14 @@ public class RegisteredSensorConfig  {
 		return modifiers;
 	}
 	
-	//Mine
-	public boolean isPropertyAccess() {
-		return propertyAccess;
-	}
-	
 	public List<PropertyPathStart> getPropertyAccessorList() {
 		return propertyAccessorList;
 	}
 	
-	public Map<String, Object> getSettings() {
-		return settings;
+	public boolean isPropertyAccess() {
+		return propertyAccess;
 	}
 
-	//Mine
 
-	/**
-	 * {@inheritDoc}
-	 */
-//	public String toString() {
-		//return id + " :: " + Modifier.toString(modifiers) + " " + getTargetPackageName() + "." + getTargetClassName() + "#" + getTargetMethodName() + "(" + getParameterTypes() + ")";
-	//}
 
 }
