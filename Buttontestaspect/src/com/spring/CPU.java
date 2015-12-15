@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import android.content.Intent;
 import android.os.Debug;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import info.novatec.inspectit.communication.DefaultData;
 import info.novatec.inspectit.communication.SystemSensorData;
@@ -104,8 +106,7 @@ public class CPU {
 			Log.d("hi", "deva0 = " + sensorDataObjects);
 			List<DefaultData> tempList = new ArrayList<DefaultData>(sensorDataObjects.values());
 			Log.d("hi", "tempList" + tempList);
-			
+	        
 			kry1.sendDataObjects(tempList);
 		}
-
 }

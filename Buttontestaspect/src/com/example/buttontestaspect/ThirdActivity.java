@@ -21,8 +21,8 @@ public class ThirdActivity extends Activity {
      	image.setImageResource(R.drawable.hi);
 	}
 
-	public void hello(){
+	/*public void hello(){
 		SecondActivity sec = new SecondActivity();
 		sec.hi();
-	}
+	}*/
 }

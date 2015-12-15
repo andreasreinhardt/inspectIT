@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -66,6 +67,8 @@ public class RegisteredSensorConfig  {
 	private int modifiers;
 	
 	private boolean propertyAccess = false;
+	
+	private Map<String, Object> settings = new HashMap<String, Object>();
 
 	/**
 	 * If <code>propertyAccess</code> is set to true, then this list contains at least one element.
@@ -254,6 +257,8 @@ public class RegisteredSensorConfig  {
 		return propertyAccess;
 	}
 
-
+	public Map<String, Object> getSettings() {
+		return settings;
+	}
 
 }

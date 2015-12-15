@@ -140,7 +140,7 @@ public class Memory {
 		public void addPlatformSensorData(long sensorTypeIdent, SystemSensorData systemSensorData) {
 			Log.d("hi", "deva" + sensorTypeIdent + systemSensorData);
 			sensorDataObjects.put(Long.toString(sensorTypeIdent), systemSensorData);
-			Log.d("hi", "deva0 = " + sensorDataObjects);
+			
 			List<DefaultData> tempListmem = new ArrayList<DefaultData>(sensorDataObjects.values());
 			Log.d("hi", "tempList" + tempListmem);
 			

@@ -23,6 +23,8 @@ public  aspect Tester {
       
     pointcut OnClickListener_onClick(View v) :
         execution(void OnClickListener.onClick(View)) && args(v);
+    
+    pointcut forconst() : execution(*.new(..));
      
     before(View v) : OnClickListener_onClick(v) {
     	n = thisJoinPointStaticPart.getSignature().toString();
@@ -33,11 +35,12 @@ public  aspect Tester {
     after(View v) : OnClickListener_onClick(v) {
     	onclickend = System.nanoTime();
     	m = thisJoinPointStaticPart.getSignature().toString();
-    	clsname = thisJoinPoint.getTarget().getClass().getName();
+    	
  
     	onClickduration = (onclickend - onclickstart);
     	Log.d("hi", "onClickduration = " + onClickduration);
-    	agent.methodhandler(onclickstart,onclickend,onClickduration,m,clsname);
+    	//agent.methodhandler(onclickstart,onclickend,onClickduration,m,clsname);
+    	store(onclickstart,onclickend,onClickduration,m,clsname);
     }
      
      before(): methodCalls(){
@@ -48,12 +51,21 @@ public  aspect Tester {
 
      after(): methodCalls(){
     	 m1 = thisJoinPointStaticPart.getSignature().toString();
-    	 Log.d("hi", "Method name : " + m1);
-    	 clsname = thisJoinPoint.getTarget().getClass().getName();
+    	 
     	 end = System.nanoTime();
          t = (end - start);
-         agent.methodhandler(start,end,t,m1,clsname);
+         //agent.methodhandler(start,end,t,m1,clsname);
+         store(start,end,t,m1,clsname);
     }
+     
+     public void store(long s,long e1,long d,String met,String cls){
+    	 Log.d("hi", "Method name : " + met);
+ 
+       	 agent.methodhandler(s, e1, d, met, cls);
+         
+     }
+     
+     
 
  }
 

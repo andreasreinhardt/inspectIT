@@ -20,10 +20,10 @@ ThirdActivity thr;
 		 button1.setOnClickListener(new OnClickListener() {
 			            @Override
 			 	            public void onClick(View view) {
-			            	SecondActivity sec = new SecondActivity();
-			 	             ThirdActivity thr = new ThirdActivity();
-			 	              sec.hi();
-		                      thr.hello();
+			            	//SecondActivity sec = new SecondActivity();
+			 	             //ThirdActivity thr = new ThirdActivity();
+			 	              //sec.hi();
+		                      //thr.hello();
 			 	              Intent hi =  new Intent(MainActivity.this,SecondActivity.class);
 			 	              startActivity(hi);
 			 	              
