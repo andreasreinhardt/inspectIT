@@ -1,27 +1,23 @@
 package com.spring;
 
-
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.apache.commons.collections.CollectionUtils;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.spring.PropertyAccessor.PropertyPathStart;
 import android.annotation.SuppressLint;
 import android.util.Log;
-import info.novatec.inspectit.communication.DefaultData;
-import info.novatec.inspectit.communication.MethodSensorData;
-import info.novatec.inspectit.communication.data.CpuInformationData;
-import info.novatec.inspectit.communication.data.InvocationSequenceData;
-import info.novatec.inspectit.communication.data.MemoryInformationData;
-import info.novatec.inspectit.communication.data.ParameterContentData;
-import info.novatec.inspectit.communication.data.TimerData;
-import com.spring.Timer2;
+
 
 @SuppressLint("UseValueOf")
 public class AndroidAgent {
@@ -43,9 +39,7 @@ public class AndroidAgent {
 	long sensorIDcpu;
 	long methodtimerID;
 	long methodinvoID;
-	String agent = "AndroidAgent";
-	String version = "1.0";
-	public  IPropertyAccessor propertyAccessor;   
+    public  IPropertyAccessor propertyAccessor;   
 	private List<PropertyPathStart> propertyAccessorList = new CopyOnWriteArrayList<PropertyPathStart>();
 	public StringConstraint strConstraint;
     long methodID;
@@ -53,7 +47,19 @@ public class AndroidAgent {
 	CPU cpuclass;
 	Memory memclass;
 	Methods met;
+	InvocationSensor invos;
 	long start1,end1,duration1;
+	private static final String Package_Name = "packagename:";
+	private static final String HOST = "host:";
+	private static final String PORT = "port:";
+	private static final String Agent_Name = "agentname:";
+	private static final String Agent_Version = "version:";
+	String pkg;
+	String hostip;
+	String port;
+	int portaddress;
+	String agentname;
+	String agentversion;
 	    
 	public AndroidAgent() {
 		Log.d("hi", "Inside Android Agent");
@@ -61,12 +67,17 @@ public class AndroidAgent {
 		
  	try {
  		//KRYO CONNECTION.........................................................................................
- 	    kryo = new KryoNetConnection();
- 		kryo.connect("10.0.2.2", 9070);//connect to CMR 
+ 	    
+ 		hostip = getHostIP();
+ 		portaddress = getPort();
+ 		kryo = new KryoNetConnection();
+ 		kryo.connect(hostip, portaddress);//connect to CMR 
  		//KRYO CONNECTION.........................................................................................
  		
  		//Register the Agent and get Platform ID .................................................................
-		pltid = kryo.registerPlatform(agent, version);
+ 		agentname = getAgentName();
+ 		agentversion = getAgentVersion();
+		pltid = kryo.registerPlatform(agentname,agentversion);
     	Log.d("hi", "pltid" + pltid);
     	//Register the Agent and get Platform ID .................................................................
     	
@@ -95,7 +106,8 @@ public class AndroidAgent {
 		rsc = new RegisteredSensorConfig();
 		cpuclass = new CPU(sensorIDcpu,pltid,coredata,kryo);
 		memclass = new Memory(sensorIDmem,pltid,coredata,kryo);
-		met = new Methods(methodtimerID,methodinvoID,pltid,coredata,kryo,rsc,propertyAccessor);
+		met = new Methods(methodtimerID,pltid,coredata,kryo,rsc,propertyAccessor);
+		invos = new InvocationSensor(methodinvoID,pltid,coredata,kryo,rsc,propertyAccessor);
 	} catch (Exception e) {
 		Log.d("hi", "Exceptionviv is " + e);
 		// TODO Auto-generated catch block
@@ -137,6 +149,7 @@ public class AndroidAgent {
         long endms = end/1000000;
         long durationms = duration/1000000;
         met.update(methodID,startms,endms,durationms);
+        invos.update(methodID,startms,endms,durationms);
 }
 //TIMER METHODS......................................................................................................................................................................
 	
@@ -144,6 +157,110 @@ public class AndroidAgent {
 	public List<PropertyPathStart> getPropertyAccessorList() {
 		return propertyAccessorList;
 	}
+	
+	public String PackageNameGetter(){
+		String line = null;
+		 try{
+         BufferedReader Br=new BufferedReader(new FileReader("/data/local/agentconfig.txt"));
+		while ((line = Br.readLine()) != null)  {
+		 if(line.startsWith(Package_Name)){
+		 pkg = line.substring(line.lastIndexOf(":")+1);
+		 }
+	 }
+	 } catch (Throwable throwable) { // NOPMD
+					try {
+						throw new ParserException("Error reading config on line : " + line, throwable);
+					} catch (ParserException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}Log.d("hi", "PackageName = " + pkg);
+		return pkg;
+	}
+	
+	public String getHostIP(){
+		String line = null;
+		try{
+        BufferedReader Br=new BufferedReader(new FileReader("/data/local/agentconfig.txt"));
+		while ((line = Br.readLine()) != null)  {
+		 if(line.startsWith(HOST)){
+			 hostip = line.substring(line.lastIndexOf(":")+1);
+		 }
+	 }
+	 } catch (Throwable throwable) { // NOPMD
+					try {
+						throw new ParserException("Error reading config on line : " + line, throwable);
+					} catch (ParserException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}Log.d("hi", "Host Address = " + hostip);
+		return hostip;
+	}
+
+	public int getPort(){
+		String line = null;
+		try{
+        BufferedReader Br=new BufferedReader(new FileReader("/data/local/agentconfig.txt"));
+		while ((line = Br.readLine()) != null)  {
+		 if(line.startsWith(PORT)){
+			 port = line.substring(line.lastIndexOf(":")+1);
+			 Log.d("hi", "Port  = " + port);
+			 portaddress = Integer.parseInt(port);
+		 }
+	 }
+	 } catch (Throwable throwable) { // NOPMD
+					try {
+						throw new ParserException("Error reading config on line : " + line, throwable);
+					} catch (ParserException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+	    Log.d("hi", "Port Address = " + portaddress);
+		return portaddress;
+	}
+	
+	public String getAgentName(){
+		String line = null;
+		try{
+        BufferedReader Br=new BufferedReader(new FileReader("/data/local/agentconfig.txt"));
+		while ((line = Br.readLine()) != null)  {
+		 if(line.startsWith(Agent_Name)){
+			 agentname = line.substring(line.lastIndexOf(":")+1);
+		 }
+	 }
+	 } catch (Throwable throwable) { // NOPMD
+					try {
+						throw new ParserException("Error reading config on line : " + line, throwable);
+					} catch (ParserException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}Log.d("hi", "AgentName = " + agentname);
+		return agentname;
+	}
+	
+	public String getAgentVersion(){
+		String line = null;
+		try{
+        BufferedReader Br=new BufferedReader(new FileReader("/data/local/agentconfig.txt"));
+		while ((line = Br.readLine()) != null)  {
+		 if(line.startsWith(Agent_Version)){
+			 agentversion = line.substring(line.lastIndexOf(":")+1);
+		 }
+	 }
+	 } catch (Throwable throwable) { // NOPMD
+					try {
+						throw new ParserException("Error reading config on line : " + line, throwable);
+					} catch (ParserException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}Log.d("hi", "AgentVersion = " + agentversion);
+		return agentversion;
+	}
+
 	
 	
 }

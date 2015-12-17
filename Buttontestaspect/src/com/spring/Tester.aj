@@ -10,16 +10,16 @@ public  aspect Tester {
 	
 	//AndroidAgent agent = AndroidAgent.INSTANCE;
 	//AndroidAgent agent = new AndroidAgent("");
-	AndroidAgent agent = new AndroidAgent();
 	
-	 
 	long start,end,onclickstart,onclickend,onClickduration,t;
 	String n,m,n1,m1;
     String clsname,pckgname;
-   
-    
+	  
+	AndroidAgent agent = new AndroidAgent();
+	String pkg1 = agent.PackageNameGetter();
+	
 	pointcut methodCalls():
-		  execution(* com.example.buttontestaspect..*(..)) && !within(com.spring.Tester);
+		  execution(* "pkg1"..*(..)) && !within(com.spring.Tester);
       
     pointcut OnClickListener_onClick(View v) :
         execution(void OnClickListener.onClick(View)) && args(v);
@@ -35,11 +35,8 @@ public  aspect Tester {
     after(View v) : OnClickListener_onClick(v) {
     	onclickend = System.nanoTime();
     	m = thisJoinPointStaticPart.getSignature().toString();
-    	
- 
     	onClickduration = (onclickend - onclickstart);
     	Log.d("hi", "onClickduration = " + onClickduration);
-    	//agent.methodhandler(onclickstart,onclickend,onClickduration,m,clsname);
     	store(onclickstart,onclickend,onClickduration,m,clsname);
     }
      

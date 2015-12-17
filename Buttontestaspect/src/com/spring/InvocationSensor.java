@@ -6,17 +6,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 import android.util.Log;
 import info.novatec.inspectit.communication.DefaultData;
 import info.novatec.inspectit.communication.MethodSensorData;
 import info.novatec.inspectit.communication.data.InvocationSequenceData;
 import info.novatec.inspectit.communication.data.ParameterContentData;
 import info.novatec.inspectit.communication.data.TimerData;
-import org.apache.commons.collections.CollectionUtils;
 
-public class Methods {
+public class InvocationSensor {
 	
-	long timersensorID;
+	long invocationsensorID;
 	long pltid;
 	KryoNetConnection kry1;
 	CoreData cd;
@@ -39,8 +39,8 @@ public class Methods {
 
 		
 	
-	public Methods(long timersensorID,long pltid,CoreData cd,KryoNetConnection kry1,RegisteredSensorConfig rsc, IPropertyAccessor propertyAccessor){
-		this.timersensorID = timersensorID;
+	public InvocationSensor(long invocationsensorID,long pltid,CoreData cd,KryoNetConnection kry1,RegisteredSensorConfig rsc, IPropertyAccessor propertyAccessor){
+		this.invocationsensorID = invocationsensorID;
 		this.pltid = pltid;
 		this.cd = cd;
 		this.kry1 = kry1;
@@ -51,44 +51,12 @@ public class Methods {
 	}
 	
 	public void update(long methodID,long metstarttime,long metendtime,long metduration){
-	
+		
 		String prefix = null;
 		Object object = null;
 		Object[] parameters = null;
 		Object result = null;
-		
-		
-		//TimerSensor
-		if (rsc.isPropertyAccess()) {
-			
-			parameterContentData = propertyAccessor.getParameterContentData(rsc.getPropertyAccessorList(), object, parameters, result);
-			prefix = parameterContentData.toString();
-		
-			// crop the content strings of all ParameterContentData but leave the prefix as it is
-			for (ParameterContentData contentData : parameterContentData) {
-				contentData.setContent(strConstraint.crop(contentData.getContent()));
-			}
-		}
-		TimerData timerData = (TimerData) cd.getMethodSensorData(timersensorID, methodID, prefix);
-		if (null == timerData) {
-			try {
-				Timestamp timestamp = new Timestamp(System.currentTimeMillis() - Math.round(metduration));
-				timerData = new TimerData(timestamp, pltid, timersensorID, methodID, parameterContentData);
-				timerData.increaseCount();
-				timerData.addDuration(metduration);
-				timerData.calculateMin(metduration);
-				timerData.calculateMax(metduration);
-				addMethodSensorData(timersensorID, methodID, prefix, timerData);
-				} catch (Exception e) {
-			}
-		} else {
-			timerData.increaseCount();
-			timerData.addDuration(metduration);
-			timerData.calculateMin(metduration);
-			timerData.calculateMax(metduration);
-			addMethodSensorData(timersensorID, methodID, prefix, timerData);
-		}
-		//TimerSensor
+	
 }
 		
 		
@@ -111,4 +79,5 @@ public class Methods {
 		Log.d("hi", "tempList2" + tempList2);
 		kry1.sendDataObjects(tempList2);
 	}
+
 }
