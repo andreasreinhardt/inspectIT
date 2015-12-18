@@ -19,17 +19,14 @@ public  aspect Tester {
 	String pkg1 = agent.PackageNameGetter();
 	
 	pointcut methodCalls():
-		  execution(* "pkg1"..*(..)) && !within(com.spring.Tester);
+		  execution(* com.example.buttontestaspect..*(..)) && !within(com.spring.Tester);
       
     pointcut OnClickListener_onClick(View v) :
         execution(void OnClickListener.onClick(View)) && args(v);
     
-    pointcut forconst() : execution(*.new(..));
-     
     before(View v) : OnClickListener_onClick(v) {
     	n = thisJoinPointStaticPart.getSignature().toString();
         onclickstart = System.nanoTime();
-    	//display(null,0,0,0,0,0,0,0);
     }
     
     after(View v) : OnClickListener_onClick(v) {
@@ -42,24 +39,19 @@ public  aspect Tester {
      
      before(): methodCalls(){
     	 n1 = thisJoinPointStaticPart.getSignature().toString();
-         start = System.nanoTime();//Start of execution time of method
-	     //display(ts0,null,0,0,0,0,0,0,0);
-    }
-
+         start = System.nanoTime();//Start of execution time of method 
+     }
+         
      after(): methodCalls(){
     	 m1 = thisJoinPointStaticPart.getSignature().toString();
-    	 
     	 end = System.nanoTime();
          t = (end - start);
-         //agent.methodhandler(start,end,t,m1,clsname);
          store(start,end,t,m1,clsname);
     }
      
      public void store(long s,long e1,long d,String met,String cls){
     	 Log.d("hi", "Method name : " + met);
- 
-       	 agent.methodhandler(s, e1, d, met, cls);
-         
+        agent.methodhandler(s, e1, d, met, cls);
      }
      
      

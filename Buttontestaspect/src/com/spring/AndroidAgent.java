@@ -1,23 +1,15 @@
 package com.spring;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.spring.PropertyAccessor.PropertyPathStart;
 import android.annotation.SuppressLint;
 import android.util.Log;
-
 
 @SuppressLint("UseValueOf")
 public class AndroidAgent {
@@ -167,7 +159,7 @@ public class AndroidAgent {
 		 pkg = line.substring(line.lastIndexOf(":")+1);
 		 }
 	 }
-	 } catch (Throwable throwable) { // NOPMD
+	 } catch (Throwable throwable) {
 					try {
 						throw new ParserException("Error reading config on line : " + line, throwable);
 					} catch (ParserException e) {
@@ -187,7 +179,7 @@ public class AndroidAgent {
 			 hostip = line.substring(line.lastIndexOf(":")+1);
 		 }
 	 }
-	 } catch (Throwable throwable) { // NOPMD
+	 } catch (Throwable throwable) { 
 					try {
 						throw new ParserException("Error reading config on line : " + line, throwable);
 					} catch (ParserException e) {
@@ -209,7 +201,7 @@ public class AndroidAgent {
 			 portaddress = Integer.parseInt(port);
 		 }
 	 }
-	 } catch (Throwable throwable) { // NOPMD
+	 } catch (Throwable throwable) { 
 					try {
 						throw new ParserException("Error reading config on line : " + line, throwable);
 					} catch (ParserException e) {
@@ -230,7 +222,7 @@ public class AndroidAgent {
 			 agentname = line.substring(line.lastIndexOf(":")+1);
 		 }
 	 }
-	 } catch (Throwable throwable) { // NOPMD
+	 } catch (Throwable throwable) { 
 					try {
 						throw new ParserException("Error reading config on line : " + line, throwable);
 					} catch (ParserException e) {
@@ -250,7 +242,7 @@ public class AndroidAgent {
 			 agentversion = line.substring(line.lastIndexOf(":")+1);
 		 }
 	 }
-	 } catch (Throwable throwable) { // NOPMD
+	 } catch (Throwable throwable) { 
 					try {
 						throw new ParserException("Error reading config on line : " + line, throwable);
 					} catch (ParserException e) {
@@ -260,9 +252,6 @@ public class AndroidAgent {
 				}Log.d("hi", "AgentVersion = " + agentversion);
 		return agentversion;
 	}
-
-	
-	
 }
 	
 

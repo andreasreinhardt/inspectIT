@@ -1,5 +1,9 @@
 package com.spring;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
@@ -106,7 +110,27 @@ public class CPU {
 			Log.d("hi", "deva0 = " + sensorDataObjects);
 			List<DefaultData> tempList = new ArrayList<DefaultData>(sensorDataObjects.values());
 			Log.d("hi", "tempList" + tempList);
-	        
-			kry1.sendDataObjects(tempList);
+			try {
+
+				
+
+				File file = new File("/data/local/datameasurements.txt");
+
+				// if file doesnt exists, then create it
+				if (!file.exists()) {
+					file.createNewFile();
+				}
+
+				FileWriter fw = new FileWriter(file.getAbsoluteFile());
+				BufferedWriter bw = new BufferedWriter(fw);
+				bw.write(tempList.toString());
+				bw.close();
+
+				Log.d("hi", "WRITTEN");
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			//kry1.sendDataObjects(tempList);
 		}
 }
