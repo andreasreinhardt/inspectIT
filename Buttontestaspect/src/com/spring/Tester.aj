@@ -20,6 +20,8 @@ public  aspect Tester {
 	
 	pointcut methodCalls():
 		  execution(* com.example.buttontestaspect..*(..)) && !within(com.spring.Tester);
+	
+	
       
     pointcut OnClickListener_onClick(View v) :
         execution(void OnClickListener.onClick(View)) && args(v);

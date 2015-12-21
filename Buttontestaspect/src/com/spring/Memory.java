@@ -59,9 +59,9 @@ public class Memory {
 				memoryData.setMinComittedHeapMemorySize(comittedHeapMemorySize);
 				memoryData.setMaxComittedHeapMemorySize(comittedHeapMemorySize);
 
-				memoryData.addUsedNonHeapMemorySize(usedNonHeapMemorySize);
-				memoryData.setMinUsedNonHeapMemorySize(usedNonHeapMemorySize);
-				memoryData.setMaxUsedNonHeapMemorySize(usedNonHeapMemorySize);
+				//memoryData.addUsedNonHeapMemorySize(usedNonHeapMemorySize);
+				//memoryData.setMinUsedNonHeapMemorySize(usedNonHeapMemorySize);
+				//memoryData.setMaxUsedNonHeapMemorySize(usedNonHeapMemorySize);
 
 	
 

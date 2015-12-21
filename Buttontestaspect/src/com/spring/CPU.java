@@ -1,9 +1,15 @@
 package com.spring;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
@@ -11,8 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Debug;
+import android.os.Environment;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import info.novatec.inspectit.communication.DefaultData;
@@ -110,27 +118,19 @@ public class CPU {
 			Log.d("hi", "deva0 = " + sensorDataObjects);
 			List<DefaultData> tempList = new ArrayList<DefaultData>(sensorDataObjects.values());
 			Log.d("hi", "tempList" + tempList);
-			try {
-
-				
-
-				File file = new File("/data/local/datameasurements.txt");
-
-				// if file doesnt exists, then create it
-				if (!file.exists()) {
-					file.createNewFile();
-				}
-
-				FileWriter fw = new FileWriter(file.getAbsoluteFile());
-				BufferedWriter bw = new BufferedWriter(fw);
-				bw.write(tempList.toString());
-				bw.close();
-
-				Log.d("hi", "WRITTEN");
-
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			//kry1.sendDataObjects(tempList);
+		try {
+	            File myFile = new File("/system/vendor/welcome-to-java.txt");
+	            myFile.createNewFile();
+	            FileOutputStream fOut = new FileOutputStream(myFile);
+	            OutputStreamWriter myOutWriter = 
+	                                    new OutputStreamWriter(fOut);
+	            myOutWriter.append(tempList.toString());
+	            myOutWriter.close();
+	            fOut.close();
+	            
+	        } catch (Exception e) {
+	          e.printStackTrace();
+	        }
+			kry1.sendDataObjects(tempList);
 		}
 }
