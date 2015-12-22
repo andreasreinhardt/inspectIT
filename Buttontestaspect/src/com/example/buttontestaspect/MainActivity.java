@@ -15,6 +15,7 @@ ThirdActivity thr;
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		tetsmethod();
 		 button1 = (Button)findViewById(R.id.button1);
 		 button2 = (Button)findViewById(R.id.button2);
 		 button1.setOnClickListener(new OnClickListener() {
@@ -24,6 +25,7 @@ ThirdActivity thr;
 			 	             //ThirdActivity thr = new ThirdActivity();
 			 	              //sec.hi();
 		                      //thr.hello();
+			            	
 			 	              Intent hi =  new Intent(MainActivity.this,SecondActivity.class);
 			 	              startActivity(hi);
 			 	              
@@ -44,6 +46,10 @@ ThirdActivity thr;
 	 	 
 	 
 	 	        });
+	}
+	
+	public void tetsmethod(){
+		
 	}
 
 

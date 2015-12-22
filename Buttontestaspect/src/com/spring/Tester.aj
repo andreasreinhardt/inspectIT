@@ -4,7 +4,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import com.spring.AndroidAgent;
-
+import android.app.Activity;
 
 public  aspect Tester {
 	
@@ -12,23 +12,27 @@ public  aspect Tester {
 	//AndroidAgent agent = new AndroidAgent("");
 	
 	long start,end,onclickstart,onclickend,onClickduration,t;
-	String n,m,n1,m1;
+	long activitystart,activityend,activityduration;
+	String n,m,n1,m1,a,b;
     String clsname,pckgname;
 	  
 	AndroidAgent agent = new AndroidAgent();
-	String pkg1 = agent.PackageNameGetter();
+	//String pkg1 = agent.PackageNameGetter();
+	
+	
 	
 	pointcut methodCalls():
 		  execution(* com.example.buttontestaspect..*(..)) && !within(com.spring.Tester);
 	
-	
-      
     pointcut OnClickListener_onClick(View v) :
         execution(void OnClickListener.onClick(View)) && args(v);
+    
+  
     
     before(View v) : OnClickListener_onClick(v) {
     	n = thisJoinPointStaticPart.getSignature().toString();
         onclickstart = System.nanoTime();
+        agent.beforeinvocation(onclickstart,n);
     }
     
     after(View v) : OnClickListener_onClick(v) {
@@ -37,11 +41,13 @@ public  aspect Tester {
     	onClickduration = (onclickend - onclickstart);
     	Log.d("hi", "onClickduration = " + onClickduration);
     	store(onclickstart,onclickend,onClickduration,m,clsname);
+    	agent.afterinvocation(onclickend,onClickduration,m);
     }
      
      before(): methodCalls(){
     	 n1 = thisJoinPointStaticPart.getSignature().toString();
-         start = System.nanoTime();//Start of execution time of method 
+         start = System.nanoTime();
+         agent.beforeinvocation(start,n1);
      }
          
      after(): methodCalls(){
@@ -49,6 +55,7 @@ public  aspect Tester {
     	 end = System.nanoTime();
          t = (end - start);
          store(start,end,t,m1,clsname);
+         agent.afterinvocation(end,t,m1);
     }
      
      public void store(long s,long e1,long d,String met,String cls){

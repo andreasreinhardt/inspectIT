@@ -27,15 +27,15 @@ public class InvocationSensor {
 	RegisteredSensorConfig rsc;
 	IPropertyAccessor propertyAccessor;
 	StringConstraint strConstraint;
-	 private Map<String, DefaultData> sensorDataObjects3 = new ConcurrentHashMap<String, DefaultData>();
-	 private final ThreadLocal<InvocationSequenceData> threadLocalInvocationData = new ThreadLocal<InvocationSequenceData>();
-	 Timestamp timestamp;
-	 List<ParameterContentData> parameterContentData = null;
-		private final ThreadLocal<Long> invocationStartId = new ThreadLocal<Long>();
-        public Timer2 timer;
-		private final ThreadLocal<Long> invocationStartIdCount = new ThreadLocal<Long>();
-		InvocationSequenceData invocationSequenceData ;
-		private Map<Long, Double> minDurationMap = new HashMap<Long, Double>();
+	private Map<String, DefaultData> sensorDataObjectsinvo = new ConcurrentHashMap<String, DefaultData>();
+	private final ThreadLocal<InvocationSequenceData> threadLocalInvocationData = new ThreadLocal<InvocationSequenceData>();
+	Timestamp timestamp;
+	List<ParameterContentData> parameterContentData = null;
+    private final ThreadLocal<Long> invocationStartId = new ThreadLocal<Long>();
+    public Timer2 timer;
+    private final ThreadLocal<Long> invocationStartIdCount = new ThreadLocal<Long>();
+	InvocationSequenceData invocationSequenceData ;
+	private Map<Long, Double> minDurationMap = new HashMap<Long, Double>();
 
 		
 	
@@ -50,34 +50,23 @@ public class InvocationSensor {
 		this.timer = timer;
 	}
 	
-	public void update(long methodID,long metstarttime,long metendtime,long metduration){
-		
-		String prefix = null;
-		Object object = null;
-		Object[] parameters = null;
-		Object result = null;
 	
-}
-		
-		
-
-	public void addMethodSensorData(long sensorTypeIdent, long methodIdent1, String prefix, MethodSensorData methodSensorData) {
-		sensorDataObjects3.clear();
+	public void addMethodSensorData(long sensorTypeIdentinvo, long methodIdentinvo, String prefix, MethodSensorData methodSensorDatainvo) {
+		sensorDataObjectsinvo.clear();
 		StringBuffer buffer = new StringBuffer();
 		
 		if (null != prefix) {
 			buffer.append(prefix);
 			buffer.append('.');
 		}
-		buffer.append(methodIdent1);
+		buffer.append(methodIdentinvo);
 		buffer.append('.');
-		buffer.append(sensorTypeIdent);
-		sensorDataObjects3.put(buffer.toString(), methodSensorData);
-		Log.d("hi", "methodtimer" + sensorDataObjects3);
-		//Methods
-		List<DefaultData> tempList2 = new ArrayList<DefaultData>(sensorDataObjects3.values());
-		Log.d("hi", "tempList2" + tempList2);
-		kry1.sendDataObjects(tempList2);
+		buffer.append(sensorTypeIdentinvo);
+		sensorDataObjectsinvo.put(buffer.toString(), methodSensorDatainvo);
+		Log.d("hi", "methodtimerinvo" + sensorDataObjectsinvo);
+	    List<DefaultData> tempListinvo = new ArrayList<DefaultData>(sensorDataObjectsinvo.values());
+		Log.d("hi", "tempListinvo" + tempListinvo);
+		kry1.sendDataObjects(tempListinvo);
 	}
 
 }

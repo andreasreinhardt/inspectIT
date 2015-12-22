@@ -36,7 +36,7 @@ public class Memory {
 		//long comittedVirtualMemSize = getComittedVirtualMemSize();
 		long usedHeapMemorySize = getUsedHeapMemorySize();
 		long comittedHeapMemorySize = getComittedHeapMemorySize();
-		long usedNonHeapMemorySize = getUsedNonHeapMemorySize();
+		
 		//long comittedNonHeapMemorySize = getComittedNonHeapMemoryUsage();
 
 		MemoryInformationData memoryData = (MemoryInformationData) cd.getPlatformSensorData(sensorIDmem);
@@ -74,7 +74,7 @@ public class Memory {
 		
 			memoryData.addUsedHeapMemorySize(usedHeapMemorySize);
 			memoryData.addComittedHeapMemorySize(comittedHeapMemorySize);
-			memoryData.addUsedNonHeapMemorySize(usedNonHeapMemorySize);
+			
 			
 
 			if (usedHeapMemorySize < memoryData.getMinUsedHeapMemorySize()) {
@@ -89,12 +89,7 @@ public class Memory {
 				memoryData.setMaxComittedHeapMemorySize(comittedHeapMemorySize);
 			}
 
-			if (usedNonHeapMemorySize < memoryData.getMinUsedNonHeapMemorySize()) {
-				memoryData.setMinUsedNonHeapMemorySize(usedNonHeapMemorySize);
-			} else if (usedNonHeapMemorySize > memoryData.getMaxUsedNonHeapMemorySize()) {
-				memoryData.setMaxUsedNonHeapMemorySize(usedNonHeapMemorySize);
-			}
-
+			
 		
 			addPlatformSensorData(sensorIDmem, memoryData);
 		}
@@ -115,26 +110,14 @@ public class Memory {
 	private long getComittedHeapMemorySize() {
 		// TODO Auto-generated method stub
 		Runtime rt = Runtime.getRuntime();
-		long maxMemory = rt.maxMemory();//Returns the maximum number of bytes the heap can expand to
+		long totalMemory = rt.totalMemory();//Returns the number of bytes taken by the heap at its current size.
 		
-	    Log.d("hi", "heapmemmax" + maxMemory);
+	    Log.d("hi", "heapmemmax" + totalMemory);
 		
-			return maxMemory;
+			return totalMemory;
 	}
 
-	private long getUsedNonHeapMemorySize() {
-		// TODO Auto-generated method stub
-		Runtime rt = Runtime.getRuntime();
-		long maxMemory = rt.maxMemory();//Returns the maximum number of bytes the heap can expand to
-		long totalMemory = rt.totalMemory();//Returns the number of bytes taken by the heap at its current size.
-		long freeMemory = rt.freeMemory();//Returns the number of bytes currently available on the heap without expanding the heap
-		long usedMemory = (maxMemory - (freeMemory + (maxMemory - totalMemory)));
-		long unusedMEmory = ((maxMemory - usedMemory)/1024);
-	    Log.d("hi", "heapmemnon" + unusedMEmory);
-		
-			return unusedMEmory;
-		
-	}
+
 	 	
 		
 		public void addPlatformSensorData(long sensorTypeIdent, SystemSensorData systemSensorData) {
