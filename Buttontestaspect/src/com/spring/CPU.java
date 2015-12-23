@@ -84,7 +84,7 @@ public class CPU {
 		}
 
 	}
-		//CPU
+		
 	
 	
 	 private float retrieveCpuUsage() {
@@ -111,26 +111,13 @@ public class CPU {
 	 		return z;
 	 	}
 	 	
-		//CPU
+
 		public void addPlatformSensorData(long sensorTypeIdent, SystemSensorData systemSensorData) {
 			Log.d("hi", "deva" + sensorTypeIdent + systemSensorData);
 			sensorDataObjects.put(Long.toString(sensorTypeIdent), systemSensorData);
 			Log.d("hi", "deva0 = " + sensorDataObjects);
 			List<DefaultData> tempList = new ArrayList<DefaultData>(sensorDataObjects.values());
 			Log.d("hi", "tempList" + tempList);
-		try {
-	            File myFile = new File("/system/vendor/welcome-to-java.txt");
-	            myFile.createNewFile();
-	            FileOutputStream fOut = new FileOutputStream(myFile);
-	            OutputStreamWriter myOutWriter = 
-	                                    new OutputStreamWriter(fOut);
-	            myOutWriter.append(tempList.toString());
-	            myOutWriter.close();
-	            fOut.close();
-	            
-	        } catch (Exception e) {
-	          e.printStackTrace();
-	        }
-			kry1.sendDataObjects(tempList);
+	        kry1.sendDataObjects(tempList);
 		}
 }

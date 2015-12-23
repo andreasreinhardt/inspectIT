@@ -41,10 +41,14 @@ public class AndroidAgent  {
 	Timestamp timestamp;
     CoreData coredata;
 	long pltid;
-	String Memory = "info.novatec.inspectit.agent.sensor.platform.MemoryInformation";
-	String CPU = "info.novatec.inspectit.agent.sensor.platform.CpuInformation";
-	String TimerSensor = "info.novatec.inspectit.agent.sensor.method.timer.TimerSensor";
-	String Isequence = "info.novatec.inspectit.agent.sensor.method.invocationsequence.InvocationSequenceSensor";
+	//String Memory = "info.novatec.inspectit.agent.sensor.platform.MemoryInformation";
+	String Memory;
+	//String CPU = "info.novatec.inspectit.agent.sensor.platform.CpuInformation";
+	String CPU;
+	//String TimerSensor = "info.novatec.inspectit.agent.sensor.method.timer.TimerSensor";
+	String TimerSensor;
+	//String Isequence = "info.novatec.inspectit.agent.sensor.method.invocationsequence.InvocationSequenceSensor";
+	String Isequence;
 	long sensorIDmem;
 	long sensorIDcpu;
 	long methodtimerID;
@@ -67,32 +71,31 @@ public class AndroidAgent  {
 	String agentname;
 	String agentversion = "1.0";
 	AndroidAgent agent;
+	
 	//INVO
-	StringConstraint strConstraint;
+	 StringConstraint strConstraint;
 	 private Map<String, DefaultData> sensorDataObjects3 = new ConcurrentHashMap<String, DefaultData>();
 	 private final ThreadLocal<InvocationSequenceData> threadLocalInvocationData = new ThreadLocal<InvocationSequenceData>();
 	 private final ThreadLocalStack<Double> timeStack = new ThreadLocalStack<Double>();
 	 List<ParameterContentData> parameterContentData = null;
-		private final ThreadLocal<Long> invocationStartId = new ThreadLocal<Long>();
-       public Timer2 timer2;
-		private final ThreadLocal<Long> invocationStartIdCount = new ThreadLocal<Long>();
-		InvocationSequenceData invocationSequenceData ;
-		private Map<Long, Double> minDurationMap = new HashMap<Long, Double>();
-	//INVO
-		String agentname1;
-		int port1;
-		String host1;
-		private static final String CONFIG_COMMENT = "#";
-		private static final String CONFIG_REPOSITORY = "repository";
-		private static final String CONFIG_SEND_STRATEGY = "send-strategy";
-		private static final String CONFIG_BUFFER_STRATEGY = "buffer-strategy";
-		private static final String CONFIG_METHOD_SENSOR_TYPE = "method-sensor-type";
-		private static final String CONFIG_PLATFORM_SENSOR_TYPE = "platform-sensor-type";
+	 private final ThreadLocal<Long> invocationStartId = new ThreadLocal<Long>();
+     public Timer2 timer2;
+	 private final ThreadLocal<Long> invocationStartIdCount = new ThreadLocal<Long>();
+	 InvocationSequenceData invocationSequenceData ;
+	 private Map<Long, Double> minDurationMap = new HashMap<Long, Double>();
+	 //INVO
+	 
+	 private static final String CONFIG_COMMENT = "#";
+	 private static final String CONFIG_REPOSITORY = "repository";
+	 private static final String CONFIG_SEND_STRATEGY = "send-strategy";
+	 private static final String CONFIG_BUFFER_STRATEGY = "buffer-strategy";
+	 private static final String CONFIG_METHOD_SENSOR_TYPE = "method-sensor-type";
+	 private static final String CONFIG_PLATFORM_SENSOR_TYPE = "platform-sensor-type";
+		
 	public AndroidAgent() {
 		Log.d("hi", "Inside Android Agent");
 	
-		
- 	try {
+	try {
  		loadconfig();//Load configuration file
  		  
  		//KRYO CONNECTION.........................................................................................
@@ -130,7 +133,7 @@ public class AndroidAgent  {
 		rsc = new RegisteredSensorConfig();
 		cpuclass = new CPU(sensorIDcpu,pltid,coredata,kryo);
 		memclass = new Memory(sensorIDmem,pltid,coredata,kryo);
-		met = new Methods(methodtimerID,pltid,coredata,kryo,rsc,propertyAccessor);
+	    met = new Methods(methodtimerID,pltid,coredata,kryo,rsc,propertyAccessor);
 		invos = new InvocationSensor(methodinvoID,pltid,coredata,kryo,rsc,propertyAccessor);
 	} catch (Exception e) {
 		Log.d("hi", "Exceptionviv is " + e);
@@ -144,9 +147,13 @@ public class AndroidAgent  {
                     @Override
                        public void run() {
                     	
+                    	
                     	cpuclass.update();//CPU Data
+                    	
+                    	
                     	memclass.update();//Memory Data
-                		
+                    	
+                    	
                         Thread myThread = new Thread();
                         myThread.start();
                    }
@@ -155,25 +162,138 @@ public class AndroidAgent  {
                );
      }
 	
-//KRYONET CONNECTION
-	   public void kryoconnect(String hostip,int portaddress,String agentname){
-		   kryo = new KryoNetConnection();
-	 		 try {
-				kryo.connect(hostip, portaddress);//connect to CMR 
-			} catch (ConnectException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+//Reading Config File...................................................................................................................................................................	
+		 public void loadconfig() throws ParserException {
+		    	
+				try{
+				BufferedReader Br=new BufferedReader(new FileReader("/data/local/inspectit-agent.cfg"));
+				File configFile = new File("/data/local/inspectit-agent.cfg");
+				InputStream is = new FileInputStream(configFile);
+				InputStreamReader reader = new InputStreamReader(is);
+				this.parse(reader,"/data/local/inspectit-agent.cfg");
+				}
+			    catch (FileNotFoundException e) {
+					Log.d("hi","Agent Configuration file not found at ");
+					throw new ParserException("Agent Configuration file not found at " +  e);
+				}
 			}
-	 		 
-	   }
-//KRYONET CONNECTION
+			
+		public void parse(Reader reader, String pathToConfig) throws ParserException {
+				// check for a valid Reader object
+				if (null == reader) {
+					throw new ParserException("Input is null! Aborting parsing.");
+				}
 
-	//TIMER METHODS.....................................................................................................................................................................
-	public void methodhandler(long start,long end,long duration,String func,String classname){
+				BufferedReader br = new BufferedReader(reader);
+
+				String line = null;
+				try {
+					while ((line = br.readLine()) != null) { // NOPMD
+						// Skip empty and comment lines
+						if (line.trim().equals("") || line.startsWith(CONFIG_COMMENT)) {
+							continue;
+						}
+
+						// Split the line into tokens
+						StringTokenizer tokenizer = new StringTokenizer(line, " ");
+						String discriminator = tokenizer.nextToken();
+
+						// check for the repository
+						if (discriminator.equalsIgnoreCase(CONFIG_REPOSITORY)) {
+							processRepositoryLine(tokenizer);
+							continue;
+						}
+
+						// check for a sending strategy
+						if (discriminator.equalsIgnoreCase(CONFIG_SEND_STRATEGY)) {
+						//	processSendStrategyLine(tokenizer);
+							continue;
+						}
+
+						// check for a buffer strategy
+						if (discriminator.equalsIgnoreCase(CONFIG_BUFFER_STRATEGY)) {
+						//	processBufferStrategyLine(tokenizer);
+							continue;
+						}
+
+						// Check for the method sensor type
+						if (discriminator.equalsIgnoreCase(CONFIG_METHOD_SENSOR_TYPE)) {
+						  processMethodSensorTypeLine(tokenizer);
+							continue;
+						}
+
+						// Check for the platform sensor type
+						if (discriminator.equalsIgnoreCase(CONFIG_PLATFORM_SENSOR_TYPE)) {
+							processPlatformSensorTypeLine(tokenizer);
+							continue;
+						}
+		           }
+				} catch (Throwable throwable) {
+					
+					throw new ParserException("Error reading config on line : " + line, throwable);
+				}
+			}
+			
+			/*Read the config file and get-
+			AgentName
+			Hostip
+			Port Address
+			*/
+	       private void processRepositoryLine(StringTokenizer tokenizer) throws ParserException {
+		        Log.d("hi", "Inside parse");
+				hostip = tokenizer.nextToken();
+				portaddress = Integer.parseInt(tokenizer.nextToken()); 
+		        agentname = tokenizer.nextToken();
+		   }
+	       
+	       /*Process method sensor type and get - 
+	       Timer Sensor
+	       Invocation Sensor
+	       */
+	       private void processMethodSensorTypeLine(StringTokenizer tokenizer) throws ParserException {
+	   		String sensorTypeName = tokenizer.nextToken();
+	   		String sensorTypeClass = tokenizer.nextToken();
+	   		String priorityString = tokenizer.nextToken();
+	   		PriorityEnum priority = PriorityEnum.valueOf(priorityString);
+
+	        if(sensorTypeName.equalsIgnoreCase("timer")){
+	        	TimerSensor = sensorTypeClass;
+	        	Log.d("hi", "TimerSensor" + TimerSensor);
+	        }
+	        else if(sensorTypeName.equalsIgnoreCase("isequence")){
+	        	Isequence = sensorTypeClass;
+	        	Log.d("hi", "Isequence" + Isequence);
+	        }
+	   		
+	   	}
+	       
+	       /*Process Platform Sensors like
+	         CPU and Memory */
+	       private void processPlatformSensorTypeLine(StringTokenizer tokenizer) throws ParserException {
+	   		String sensorTypePlatform = tokenizer.nextToken();
+	        
+	   		Log.d("hi", "sensorTypePlatform" + sensorTypePlatform);
+	   		
+	   		if(sensorTypePlatform.equalsIgnoreCase("info.novatec.inspectit.agent.sensor.platform.MemoryInformation")){
+	   			Memory = sensorTypePlatform;
+	   			Log.d("hi", "Memory" + Memory);
+	   		}
+	   		if(sensorTypePlatform.equalsIgnoreCase("info.novatec.inspectit.agent.sensor.platform.CpuInformation")){
+	   			CPU = sensorTypePlatform;
+	   			Log.d("hi", "CPU" + CPU);
+	   		}
+	   	}
+			
+//Reading Config File...................................................................................................................................................................	
+			
+	
+
+//TIMER METHODS.....................................................................................................................................................................
+	  public void methodhandler(long start,long end,long duration,String func,String classname){
 		List<String> parameterTypes = null;
 		try {
 			methodID = kryo.registerMethod(pltid, func,func,parameterTypes);
-			Log.d("hi", "methodID" + methodID);
+			Log.d("hi", "methodID" + methodID + func);
 		} catch (ServerUnavailableException e1) {
 			
 			e1.printStackTrace();
@@ -185,23 +305,20 @@ public class AndroidAgent  {
         long startms = start/1000000;
         long endms = end/1000000;
         long durationms = duration/1000000;
+        if(TimerSensor!=null){
         met.update(methodID,startms,endms,durationms);
+        }else{}
        // invos.update(methodID,startms,endms,durationms);
-}
+   }
 //TIMER METHODS......................................................................................................................................................................
-	
-	
-	public List<PropertyPathStart> getPropertyAccessorList() {
-		return propertyAccessorList;
-	}
-	
+
 //INVOCATION SENSOR....................................................................................................................................
 	
 	public void beforeinvocation(long stime1,String function){
 		List<String> parameterTypes = null;
 		try {
 			methodID = kryo.registerMethod(pltid, function,function,parameterTypes);
-			Log.d("hi", "methodID" + methodID);
+			//Log.d("hi", "methodID" + methodID);
 		} catch (ServerUnavailableException e1) {
 			
 			e1.printStackTrace();
@@ -344,115 +461,9 @@ public class AndroidAgent  {
 	}
 //INVOCATION SENSOR.....................................................................................................................................................................
 	
-//Reading Config File...................................................................................................................................................................	
-	 public void loadconfig() throws ParserException {
-	    	
-			try{
-			BufferedReader Br=new BufferedReader(new FileReader("/data/local/inspectit-agent.cfg"));
-			File configFile = new File("/data/local/inspectit-agent.cfg");
-			InputStream is = new FileInputStream(configFile);
-			InputStreamReader reader = new InputStreamReader(is);
-			this.parse(reader,"/data/local/inspectit-agent.cfg");
-			}
-		    catch (FileNotFoundException e) {
-				Log.d("hi","Agent Configuration file not found at ");
-				throw new ParserException("Agent Configuration file not found at " +  e);
-			}
-		}
-		
-		public void parse(Reader reader, String pathToConfig) throws ParserException {
-			// check for a valid Reader object
-			if (null == reader) {
-				throw new ParserException("Input is null! Aborting parsing.");
-			}
-
-			BufferedReader br = new BufferedReader(reader);
-
-			String line = null;
-			try {
-				while ((line = br.readLine()) != null) { // NOPMD
-					// Skip empty and comment lines
-					if (line.trim().equals("") || line.startsWith(CONFIG_COMMENT)) {
-						continue;
-					}
-
-					// Split the line into tokens
-					StringTokenizer tokenizer = new StringTokenizer(line, " ");
-					String discriminator = tokenizer.nextToken();
-
-					// check for the repository
-					if (discriminator.equalsIgnoreCase(CONFIG_REPOSITORY)) {
-						processRepositoryLine(tokenizer);
-						continue;
-					}
-
-					// check for a sending strategy
-					if (discriminator.equalsIgnoreCase(CONFIG_SEND_STRATEGY)) {
-					//	processSendStrategyLine(tokenizer);
-						continue;
-					}
-
-					// check for a buffer strategy
-					if (discriminator.equalsIgnoreCase(CONFIG_BUFFER_STRATEGY)) {
-					//	processBufferStrategyLine(tokenizer);
-						continue;
-					}
-
-					// Check for the method sensor type
-					if (discriminator.equalsIgnoreCase(CONFIG_METHOD_SENSOR_TYPE)) {
-						//processMethodSensorTypeLine(tokenizer);
-						continue;
-					}
-
-					// Check for the platform sensor type
-					if (discriminator.equalsIgnoreCase(CONFIG_PLATFORM_SENSOR_TYPE)) {
-						//processMethodSensorTypeLine(tokenizer);
-						continue;
-					}
-	           }
-			} catch (Throwable throwable) {
-				
-				throw new ParserException("Error reading config on line : " + line, throwable);
-			}
-		}
-		
-		/*Read the config file and get-
-		AgentName
-		Hostip
-		Port Address
-		*/
-       private void processRepositoryLine(StringTokenizer tokenizer) throws ParserException {
-	        Log.d("hi", "Inside parse");
-			hostip = tokenizer.nextToken();
-			portaddress = Integer.parseInt(tokenizer.nextToken()); 
-	        agentname = tokenizer.nextToken();
-	   }
-       
-       /*Process method sensor type and get - 
-       Timer Sensor
-       Invocation Sensor
-       */
-       private void processMethodSensorTypeLine(StringTokenizer tokenizer) throws ParserException {
-   		String sensorTypeName = tokenizer.nextToken();
-   		String sensorTypeClass = tokenizer.nextToken();
-   		String priorityString = tokenizer.nextToken();
-   		PriorityEnum priority = PriorityEnum.valueOf(priorityString);
-
-   		Map<String, Object> settings = new HashMap<String, Object>();
-   		while (tokenizer.hasMoreTokens()) {
-   			String parameterToken = tokenizer.nextToken();
-   			StringTokenizer parameterTokenizer = new StringTokenizer(parameterToken, "=");
-   			String leftSide = parameterTokenizer.nextToken();
-   			String rightSide = parameterTokenizer.nextToken();
-   			settings.put(leftSide, rightSide);
-   		}
-
-   		
-   	}
-		
-	
-	
-//Reading Config File...................................................................................................................................................................	
+	public List<PropertyPathStart> getPropertyAccessorList() {
+		return propertyAccessorList;
+	}
 	
 	
 	
