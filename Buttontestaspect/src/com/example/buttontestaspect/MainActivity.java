@@ -48,7 +48,8 @@ ThirdActivity thr;
 	 	        });
 	}
 	
-	public void tetsmethod(){
+	public int tetsmethod(){
+		return 0;
 		
 	}
 

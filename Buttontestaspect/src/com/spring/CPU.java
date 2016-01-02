@@ -5,10 +5,12 @@ import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -16,9 +18,10 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Debug;
 import android.os.Environment;
 import android.support.v4.app.NotificationCompat;
@@ -37,11 +40,36 @@ public class CPU {
 	public Map<String, DefaultData> sensorDataObjects = new ConcurrentHashMap<String, DefaultData>();//CPU
 	KryoNetConnection kry1;
 	
+	OutputStreamWriter fileStream;
+	//ObjectOutputStream fileStream;
+	int count = 0;
+	
 	public CPU(long sensorIDcpu,long pltid,CoreData cd,KryoNetConnection kry1){
 		this.sensorIDcpu = sensorIDcpu;
 		this.pltid = pltid;
 		this.cd = cd;
 		this.kry1 = kry1;
+		try {
+			String path;
+			
+			String filename = "CPU.txt";
+			
+				path = Environment.getExternalStorageDirectory() + File.separator + "Documents";
+			
+               path += File.separatorChar + "CPUData";
+               File file = new File(path,filename);
+               new File(path).mkdirs();
+               file.createNewFile();
+                fileStream = new OutputStreamWriter(new FileOutputStream(file));
+                // fileStream = new ObjectOutputStream(new FileOutputStream(file));
+               Log.d("hi", "PATH = " + file.getAbsolutePath());
+              
+            }
+            
+            catch (Exception e) {
+               // TODO Auto-generated catch block
+               e.printStackTrace();
+            }
 	}
 	
 	public void update() {
@@ -112,12 +140,29 @@ public class CPU {
 	 	}
 	 	
 
+		
+		
 		public void addPlatformSensorData(long sensorTypeIdent, SystemSensorData systemSensorData) {
 			Log.d("hi", "deva" + sensorTypeIdent + systemSensorData);
 			sensorDataObjects.put(Long.toString(sensorTypeIdent), systemSensorData);
 			Log.d("hi", "deva0 = " + sensorDataObjects);
 			List<DefaultData> tempList = new ArrayList<DefaultData>(sensorDataObjects.values());
-			Log.d("hi", "tempList" + tempList);
-	        kry1.sendDataObjects(tempList);
+			Log.d("hi", "tempListcpu" + tempList);
+			
+			try {
+				
+				fileStream.write(tempList.toString());
+				//fileStream.writeObject(tempList);
+				count++;
+				if(count == 5){
+				fileStream.flush();
+				fileStream.close();
+				}
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		
+	        //kry1.sendDataObjects(tempList);
 		}
 }

@@ -45,7 +45,7 @@ public  aspect Tester {
     	Log.d("hi", "activityduration = " + activityduration);
     	store(activitystart,activityend,activityduration,act2,clsname);
     	agent.afterinvocation(activityend,activityduration,act2);
-    	
+    	//agent.secondafterbody();
     }
     
     before() : bothActivityandmethodcalls(){
@@ -73,6 +73,7 @@ public  aspect Tester {
     	Log.d("hi", "onClickduration = " + onClickduration);
     	store(onclickstart,onclickend,onClickduration,m,clsname);
     	agent.afterinvocation(onclickend,onClickduration,m);
+    	//agent.secondafterbody();
     }
    
     public void store(long s,long e1,long d,String met,String cls){

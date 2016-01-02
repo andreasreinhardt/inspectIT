@@ -28,6 +28,7 @@ import android.util.Log;
 import info.novatec.inspectit.communication.DefaultData;
 import info.novatec.inspectit.communication.data.InvocationSequenceData;
 import info.novatec.inspectit.communication.data.ParameterContentData;
+import info.novatec.inspectit.communication.data.TimerData;
 
 @SuppressLint("UseValueOf")
 public class AndroidAgent  {
@@ -61,7 +62,7 @@ public class AndroidAgent  {
 	CPU cpuclass;
 	Memory memclass;
 	Methods met;
-	InvocationSensor invos;
+	//InvocationSensor invos;
 	long start1,end1,duration1;
 
 	String pkg;
@@ -81,8 +82,12 @@ public class AndroidAgent  {
 	 private final ThreadLocal<Long> invocationStartId = new ThreadLocal<Long>();
      public Timer2 timer2;
 	 private final ThreadLocal<Long> invocationStartIdCount = new ThreadLocal<Long>();
-	 InvocationSequenceData invocationSequenceData ;
+	// InvocationSequenceData invocationSequenceData ;
 	 private Map<Long, Double> minDurationMap = new HashMap<Long, Double>();
+	 long time3;
+	 long dur2;
+	 double duration;
+	 InvocationSequence invos;
 	 //INVO
 	 
 	 private static final String CONFIG_COMMENT = "#";
@@ -133,8 +138,8 @@ public class AndroidAgent  {
 		rsc = new RegisteredSensorConfig();
 		cpuclass = new CPU(sensorIDcpu,pltid,coredata,kryo);
 		memclass = new Memory(sensorIDmem,pltid,coredata,kryo);
-	    met = new Methods(methodtimerID,pltid,coredata,kryo,rsc,propertyAccessor);
-		invos = new InvocationSensor(methodinvoID,pltid,coredata,kryo,rsc,propertyAccessor);
+	    met = new Methods(methodtimerID,pltid,coredata,kryo,rsc,propertyAccessor,agent);
+		invos = new InvocationSequence(methodinvoID,pltid,coredata,kryo,rsc,propertyAccessor);
 	} catch (Exception e) {
 		Log.d("hi", "Exceptionviv is " + e);
 		
@@ -293,7 +298,7 @@ public class AndroidAgent  {
 		List<String> parameterTypes = null;
 		try {
 			methodID = kryo.registerMethod(pltid, func,func,parameterTypes);
-			Log.d("hi", "methodID" + methodID + func);
+			Log.d("hi", "methodIDtimer" + methodID + func);
 		} catch (ServerUnavailableException e1) {
 			
 			e1.printStackTrace();
@@ -308,7 +313,7 @@ public class AndroidAgent  {
         if(TimerSensor!=null){
         met.update(methodID,startms,endms,durationms);
         }else{}
-       // invos.update(methodID,startms,endms,durationms);
+       
    }
 //TIMER METHODS......................................................................................................................................................................
 
@@ -318,7 +323,7 @@ public class AndroidAgent  {
 		List<String> parameterTypes = null;
 		try {
 			methodID = kryo.registerMethod(pltid, function,function,parameterTypes);
-			//Log.d("hi", "methodID" + methodID);
+			Log.d("hi", "methodIDinvo" + methodID + function);
 		} catch (ServerUnavailableException e1) {
 			
 			e1.printStackTrace();
@@ -335,29 +340,38 @@ public class AndroidAgent  {
 
 			if (null == threadLocalInvocationData.get()) {
 				// save the start time
+				Log.d("hi", "invo 0" + threadLocalInvocationData.get());
 				timeStack.push(new Double(time2));
-
+				Log.d("hi", "invo 1");
 				// no invocation tracer is currently started, so we do that now.
 				InvocationSequenceData invocationSequenceData = new InvocationSequenceData(timestamp, pltid, methodinvoID, methodID);
+				Log.d("hi", "invo 2");
 				threadLocalInvocationData.set(invocationSequenceData);
-
+				Log.d("hi", "invo 3" + invocationSequenceData);
 				invocationStartId.set(Long.valueOf(methodID));
+				Log.d("hi", "invo 4");
 				invocationStartIdCount.set(Long.valueOf(1));
-			} else {
-				  Log.d("hi", "inside else");
+				Log.d("hi", "invo 5" + invocationStartIdCount);
+			
+			}else {
+				Log.d("hi", "invo 6");
 				if (methodID == invocationStartId.get().longValue()) {
+					Log.d("hi", "invo 7");
 					long count = invocationStartIdCount.get().longValue();
 					invocationStartIdCount.set(Long.valueOf(count + 1));
 				}
 				// A subsequent call to the before body method where an
 				// invocation tracer is already started.
 				InvocationSequenceData invocationSequenceData = threadLocalInvocationData.get();
+				Log.d("hi", "invo 7");
 				invocationSequenceData.setChildCount(invocationSequenceData.getChildCount() + 1L);
-                Log.d("hi", "invocationSequenceData"+ invocationSequenceData);
+                Log.d("hi", "invo 8"+ invocationSequenceData);
 				InvocationSequenceData nestedInvocationSequenceData = new InvocationSequenceData(timestamp, pltid, invocationSequenceData.getSensorTypeIdent(), methodID);
+				Log.d("hi", "invo 9");
 				nestedInvocationSequenceData.setStart(time2);
+				Log.d("hi", "invo 10" + nestedInvocationSequenceData);
 				nestedInvocationSequenceData.setParentSequence(invocationSequenceData);
-
+				Log.d("hi", "invo 11" + nestedInvocationSequenceData);
 				invocationSequenceData.getNestedSequences().add(nestedInvocationSequenceData);
 
 				threadLocalInvocationData.set(nestedInvocationSequenceData);
@@ -369,88 +383,114 @@ public class AndroidAgent  {
 	
 	public void afterinvocation(long etime1,long dur1,String function1){
 		
-		long time3 = etime1/1000000;
-		String prefix = null;
-		Object object = null;
-		Object[] parameters = null;
-		Object result = null;
+		 time3 = etime1/1000000;
+
 		InvocationSequenceData invocationSequenceData = threadLocalInvocationData.get();
 
 		if (null != invocationSequenceData) {
+			Log.d("hi", "invo 12");
 			if (methodID == invocationStartId.get().longValue()) {
+				Log.d("hi", "invo 13");
 				long count = invocationStartIdCount.get().longValue();
 				invocationStartIdCount.set(Long.valueOf(count - 1));
 
 				if (0 == count - 1) {
+					Log.d("hi", "invo 14");
 					timeStack.push(new Double(time3));
 				}
 			}
-			
+		}
+		secondafterbody();
+	}
+	
+	public void secondafterbody(){
 			//Second After Body
-			
-						if (rsc.isPropertyAccess()) {
-							List<ParameterContentData> parameterContentData = propertyAccessor.getParameterContentData(rsc.getPropertyAccessorList(), object, parameters, result);
+	
+		String prefix = null;
+		Object object = null;
+		Object[] parameters = null;
+		Object result = null;
+		
+		Log.d("hi", "invo 15");
+		InvocationSequenceData invocationSequenceData = threadLocalInvocationData.get();
 
-							// crop the content strings of all ParameterContentData
-							for (ParameterContentData contentData : parameterContentData) {
-								contentData.setContent(strConstraint.crop(contentData.getContent()));
-							}
-						}
+		if (null != invocationSequenceData) {
+			Log.d("hi", "invo 16");
+			// check if some properties need to be accessed and saved
+			if (rsc.isPropertyAccess()) {
+				List<ParameterContentData> parameterContentData = propertyAccessor.getParameterContentData(rsc.getPropertyAccessorList(), object, parameters, result);
 
-						if (methodID == invocationStartId.get().longValue() && 0 == invocationStartIdCount.get().longValue()) {
-							double endTime = timeStack.pop().doubleValue();
-							double startTime = timeStack.pop().doubleValue();
-							double duration = endTime - startTime;
-                             Log.d("hi", "OLA" + methodID);
-							// complete the sequence and store the data object in the 'true'
-							// core service so that it can be transmitted to the server. we
-							// just need an arbitrary prefix so that this sequence will
-							// never be overwritten in the core service!
-							if (minDurationMap.containsKey(invocationStartId.get())) {
-								checkForSavingOrNot( methodID, methodinvoID, rsc, invocationSequenceData, startTime, endTime, duration);
-							} else {
-								// maybe not saved yet in the map
-								if (rsc.getSettings().containsKey("minduration")) {
-									minDurationMap.put(invocationStartId.get(), Double.valueOf((String) rsc.getSettings().get("minduration")));
-									checkForSavingOrNot(methodID, methodinvoID, rsc, invocationSequenceData, startTime, endTime, duration);
-								} else {
-									invocationSequenceData.setDuration(duration);
-									invocationSequenceData.setStart(startTime);
-									invocationSequenceData.setEnd(endTime);
-									invos.addMethodSensorData(methodinvoID, methodID, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
-								}
-							}
+				// crop the content strings of all ParameterContentData
+				for (ParameterContentData contentData : parameterContentData) {
+					contentData.setContent(strConstraint.crop(contentData.getContent()));
+				}
+			}
 
-							threadLocalInvocationData.set(null);
-						} else {
-						
-							InvocationSequenceData parentSequence = invocationSequenceData.getParentSequence();
-						
-						//if (removeDueToExceptionDelegation(rsc, invocationSequenceData) || removeDueToWrappedSqls(rsc, invocationSequenceData)) {
-								parentSequence.getNestedSequences().remove(invocationSequenceData);
-								parentSequence.setChildCount(parentSequence.getChildCount() - 1);
-								
-								if (CollectionUtils.isNotEmpty(invocationSequenceData.getNestedSequences())) {
-									parentSequence.getNestedSequences().addAll(invocationSequenceData.getNestedSequences());
-									parentSequence.setChildCount(parentSequence.getChildCount() + invocationSequenceData.getChildCount());
-								}
-							//} else {
-								invocationSequenceData.setEnd(time3);
-								invocationSequenceData.setDuration(invocationSequenceData.getEnd() - invocationSequenceData.getStart());
-								parentSequence.setChildCount(parentSequence.getChildCount() + invocationSequenceData.getChildCount());
-							//}
-							threadLocalInvocationData.set(parentSequence);
-						}
+			if (methodID == invocationStartId.get().longValue() && 0 == invocationStartIdCount.get().longValue()) {
+				Log.d("hi", "invo 17");
+				double endTime = timeStack.pop().doubleValue();
+				double startTime = timeStack.pop().doubleValue();
+				double duration = endTime - startTime;
+				Log.d("hi", "invo 18");
+				// complete the sequence and store the data object in the 'true'
+				// core service so that it can be transmitted to the server. we
+				// just need an arbitrary prefix so that this sequence will
+				// never be overwritten in the core service!
+				if (minDurationMap.containsKey(invocationStartId.get())) {
+					Log.d("hi", "invo 19");
+					checkForSavingOrNot(methodID, methodinvoID, rsc, invocationSequenceData, startTime, endTime, duration);
+				} else {
+					Log.d("hi", "invo 20");
+					// maybe not saved yet in the map
+					if (rsc.getSettings().containsKey("minduration")) {
+						Log.d("hi", "invo 20a");
+						minDurationMap.put(invocationStartId.get(), Double.valueOf((String) rsc.getSettings().get("minduration")));
+						checkForSavingOrNot(methodID, methodinvoID, rsc, invocationSequenceData, startTime, endTime, duration);
+					} else {
+						Log.d("hi", "invo 21");
+						invocationSequenceData.setDuration(duration);
+						invocationSequenceData.setStart(startTime);
+						invocationSequenceData.setEnd(endTime);
+						invos.addMethodSensorData(methodinvoID, methodID, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
+					}
+				}
+
+				threadLocalInvocationData.set(null);
+			} else {
+				Log.d("hi", "invo 22");
+				// just close the nested sequence and set the correct child count
+				InvocationSequenceData parentSequence = invocationSequenceData.getParentSequence();
+				// check if we should not include this invocation because of exception delegation or
+				// SQL wrapping
+				Log.d("hi", "invo 23");
+					parentSequence.getNestedSequences().remove(invocationSequenceData);
+					parentSequence.setChildCount(parentSequence.getChildCount() - 1);
+					// but connect all possible children to the parent then
+					// we are eliminating one level here
+					if (CollectionUtils.isNotEmpty(invocationSequenceData.getNestedSequences())) {
+						Log.d("hi", "invo 24");
+						parentSequence.getNestedSequences().addAll(invocationSequenceData.getNestedSequences());
+						parentSequence.setChildCount(parentSequence.getChildCount() + invocationSequenceData.getChildCount());
+					}
+					Log.d("hi", "invo 25");
+					invocationSequenceData.setEnd(time3);
+					invocationSequenceData.setDuration(invocationSequenceData.getEnd() - invocationSequenceData.getStart());
+					parentSequence.setChildCount(parentSequence.getChildCount() + invocationSequenceData.getChildCount());
+				
+				threadLocalInvocationData.set(parentSequence);
+			}
+		}
 			//Second After Body
 		}
 		
-	}
+	
 	
 	private void checkForSavingOrNot( long methodId, long sensorTypeId, RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData, double startTime, // NOCHK
 			double endTime, double duration) {
+		Log.d("hi", "invo 25a");
 		double minduration = minDurationMap.get(invocationStartId.get()).doubleValue();
 		if (duration >= minduration) {
-			
+			Log.d("hi", "invo 25b");
 			invocationSequenceData.setDuration(duration);
 			invocationSequenceData.setStart(startTime);
 			invocationSequenceData.setEnd(endTime);
@@ -458,6 +498,22 @@ public class AndroidAgent  {
 		} else {
 		
 		}
+	}
+	
+	
+	public void saveDataObject(DefaultData dataObject) {
+		InvocationSequenceData invocationSequenceData = threadLocalInvocationData.get();
+
+		
+
+		if (dataObject.getClass().equals(TimerData.class)) {
+			// don't overwrite an already existing timerdata or httptimerdata object.
+			if (null == invocationSequenceData.getTimerData()) {
+				invocationSequenceData.setTimerData((TimerData) dataObject);
+			}
+		}
+
+		
 	}
 //INVOCATION SENSOR.....................................................................................................................................................................
 	

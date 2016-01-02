@@ -36,10 +36,10 @@ public class Methods {
 		private final ThreadLocal<Long> invocationStartIdCount = new ThreadLocal<Long>();
 		InvocationSequenceData invocationSequenceData ;
 		private Map<Long, Double> minDurationMap = new HashMap<Long, Double>();
-
+        AndroidAgent agent;
 		
 	
-	public Methods(long timersensorID,long pltid,CoreData cd,KryoNetConnection kry1,RegisteredSensorConfig rsc, IPropertyAccessor propertyAccessor){
+	public Methods(long timersensorID,long pltid,CoreData cd,KryoNetConnection kry1,RegisteredSensorConfig rsc, IPropertyAccessor propertyAccessor,AndroidAgent agent){
 		this.timersensorID = timersensorID;
 		this.pltid = pltid;
 		this.cd = cd;
@@ -48,6 +48,7 @@ public class Methods {
 		this.propertyAccessor = propertyAccessor;
 		Timer2 timer = new Timer2(); 
 		this.timer = timer;
+		this.agent = agent;
 	}
 	
 	public void update(long methodID,long metstarttime,long metendtime,long metduration){
@@ -95,6 +96,7 @@ public class Methods {
 
 	public void addMethodSensorData(long sensorTypeIdent, long methodIdent1, String prefix, MethodSensorData methodSensorData) {
 		sensorDataObjects3.clear();
+		agent.saveDataObject(methodSensorData.finalizeData());
 		StringBuffer buffer = new StringBuffer();
 		
 		if (null != prefix) {
