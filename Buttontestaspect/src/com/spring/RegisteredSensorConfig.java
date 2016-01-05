@@ -28,7 +28,7 @@ import javassist.Modifier;
  * @author Eduard Tudenhoefner
  * 
  */
-public class RegisteredSensorConfig  {
+public class RegisteredSensorConfig extends AbstractSensorConfig {
 
 	/**
 	 * The {@link CtBehavior} object corresponding to this sensor configuration.

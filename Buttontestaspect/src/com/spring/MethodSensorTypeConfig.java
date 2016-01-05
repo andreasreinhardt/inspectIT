@@ -10,7 +10,7 @@ import org.apache.commons.collections.MapUtils;
  * 
  * @author Patrice Bouillet
  */
-public class MethodSensorTypeConfig {
+public class MethodSensorTypeConfig extends AbstractSensorTypeConfig  {
 
 	/**
 	 * The name of the sensor type.

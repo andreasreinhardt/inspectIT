@@ -96,7 +96,7 @@ public class Methods {
 
 	public void addMethodSensorData(long sensorTypeIdent, long methodIdent1, String prefix, MethodSensorData methodSensorData) {
 		sensorDataObjects3.clear();
-		agent.saveDataObject(methodSensorData.finalizeData());
+		//agent.saveDataObject(methodSensorData.finalizeData());
 		StringBuffer buffer = new StringBuffer();
 		
 		if (null != prefix) {

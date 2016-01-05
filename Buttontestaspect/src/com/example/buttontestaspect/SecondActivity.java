@@ -13,14 +13,22 @@ public class SecondActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main1);
-		
+		hi();
 	}
 	
     
-	/*public void hi(){
-	  try{
-		  Thread.sleep(3000);
-		  thr.hello();
-	  }catch(Exception e){}
-	}*/
+	public void hi(){
+	 hello();
+	}
+	
+	public int hello(){
+		bye();
+		return 0;
+	}
+	
+	public void bye(){
+		try{
+		Thread.sleep(6000);
+		}catch(Exception e){}
+	}
 }
