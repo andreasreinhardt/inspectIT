@@ -19,6 +19,8 @@ public class ThirdActivity extends Activity {
 		setContentView(R.layout.activity_main2);
         image = (ImageView) findViewById(R.id.imageView1);
      	image.setImageResource(R.drawable.hi);
+     	Test test = new Test();
+     	test.tester();
 	}
 
 	/*public void hello(){

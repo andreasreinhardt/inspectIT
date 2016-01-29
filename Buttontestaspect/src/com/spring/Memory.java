@@ -22,12 +22,16 @@ public class Memory {
 	CoreData cd;
 	public Map<String, DefaultData> sensorDataObjects = new ConcurrentHashMap<String, DefaultData>();//CPU
 	KryoNetConnection kry1;
+	int memlistsize;
+	List<DefaultData> memobj;
 	
-	public Memory(long sensorIDmem,long pltid,CoreData cd,KryoNetConnection kry1){
+	public Memory(long sensorIDmem,long pltid,CoreData cd,KryoNetConnection kry1,int memlistsize){
 		this.sensorIDmem = sensorIDmem;
 		this.pltid = pltid;
 		this.cd = cd;
 		this.kry1 = kry1;
+		this.memlistsize = memlistsize;
+		memobj = new ArrayList<DefaultData>(memlistsize);
 	}
 	
 	public void update() {
@@ -36,7 +40,7 @@ public class Memory {
 		//long comittedVirtualMemSize = getComittedVirtualMemSize();
 		long usedHeapMemorySize = getUsedHeapMemorySize();
 		long comittedHeapMemorySize = getComittedHeapMemorySize();
-		
+		long usedNonHeapMemorySize = getUsedNonHeapMemorySize();
 		//long comittedNonHeapMemorySize = getComittedNonHeapMemoryUsage();
 
 		MemoryInformationData memoryData = (MemoryInformationData) cd.getPlatformSensorData(sensorIDmem);
@@ -49,7 +53,10 @@ public class Memory {
 				memoryData = new MemoryInformationData(timestamp, pltid, sensorIDmem);
 				memoryData.incrementCount();
 
-			
+				//memoryData.addComittedVirtualMemSize(comittedVirtualMemSize);
+				//memoryData.setMinComittedVirtualMemSize(comittedVirtualMemSize);
+				//memoryData.setMaxComittedVirtualMemSize(comittedVirtualMemSize);
+
 
 				memoryData.addUsedHeapMemorySize(usedHeapMemorySize);
 				memoryData.setMinUsedHeapMemorySize(usedHeapMemorySize);
@@ -59,9 +66,9 @@ public class Memory {
 				memoryData.setMinComittedHeapMemorySize(comittedHeapMemorySize);
 				memoryData.setMaxComittedHeapMemorySize(comittedHeapMemorySize);
 
-				//memoryData.addUsedNonHeapMemorySize(usedNonHeapMemorySize);
-				//memoryData.setMinUsedNonHeapMemorySize(usedNonHeapMemorySize);
-				//memoryData.setMaxUsedNonHeapMemorySize(usedNonHeapMemorySize);
+				memoryData.addUsedNonHeapMemorySize(usedNonHeapMemorySize);
+				memoryData.setMinUsedNonHeapMemorySize(usedNonHeapMemorySize);
+				memoryData.setMaxUsedNonHeapMemorySize(usedNonHeapMemorySize);
 
 	
 
@@ -71,12 +78,11 @@ public class Memory {
 			}
 		} else {
 			memoryData.incrementCount();
-		
+			//memoryData.addComittedVirtualMemSize(comittedVirtualMemSize);
 			memoryData.addUsedHeapMemorySize(usedHeapMemorySize);
 			memoryData.addComittedHeapMemorySize(comittedHeapMemorySize);
+			memoryData.addUsedNonHeapMemorySize(usedNonHeapMemorySize);
 			
-			
-
 			if (usedHeapMemorySize < memoryData.getMinUsedHeapMemorySize()) {
 				memoryData.setMinUsedHeapMemorySize(usedHeapMemorySize);
 			} else if (usedHeapMemorySize > memoryData.getMaxUsedHeapMemorySize()) {
@@ -88,11 +94,23 @@ public class Memory {
 			} else if (comittedHeapMemorySize > memoryData.getMaxComittedHeapMemorySize()) {
 				memoryData.setMaxComittedHeapMemorySize(comittedHeapMemorySize);
 			}
-
+            
+			if (usedNonHeapMemorySize < memoryData.getMinUsedNonHeapMemorySize()) {
+				memoryData.setMinUsedNonHeapMemorySize(usedNonHeapMemorySize);
+			} else if (usedNonHeapMemorySize > memoryData.getMaxUsedNonHeapMemorySize()) {
+				memoryData.setMaxUsedNonHeapMemorySize(usedNonHeapMemorySize);
+			}
 			
 		
 			addPlatformSensorData(sensorIDmem, memoryData);
 		}
+	}
+
+	
+
+	private long getUsedNonHeapMemorySize() {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 
 	public long getUsedHeapMemorySize() {
@@ -102,8 +120,7 @@ public class Memory {
 		long freeMemory = rt.freeMemory();//Returns the number of bytes currently available on the heap without expanding the heap
 		long usedMemory = (maxMemory - (freeMemory + (maxMemory - totalMemory)));
 	    Log.d("hi", "heapmem" + usedMemory);
-		
-			return usedMemory;
+	    return usedMemory;
 	    
 	}
 	
@@ -116,18 +133,24 @@ public class Memory {
 		
 			return totalMemory;
 	}
+	
+	
 
-
-	 	
-		
-		public void addPlatformSensorData(long sensorTypeIdent, SystemSensorData systemSensorData) {
+   public void addPlatformSensorData(long sensorTypeIdent, SystemSensorData systemSensorData) {
 			Log.d("hi", "deva" + sensorTypeIdent + systemSensorData);
 			sensorDataObjects.put(Long.toString(sensorTypeIdent), systemSensorData);
 			
 			List<DefaultData> tempListmem = new ArrayList<DefaultData>(sensorDataObjects.values());
 			Log.d("hi", "tempList" + tempListmem);
+			if(memobj.size() != memlistsize){
+				memobj.addAll(tempListmem);
+					Log.d("","memobj = " + memobj);
+				}else{
+					kry1.sendDataObjects(memobj);
+					memobj.clear();
+				}
 			
-			kry1.sendDataObjects(tempListmem);
+			
 		}
 
 }

@@ -23,7 +23,7 @@ public class SecondActivity extends Activity {
 	
 	public int hello(){
 		bye();
-		return 0;
+		return 5;
 	}
 	
 	public void bye(){

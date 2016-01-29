@@ -24,6 +24,7 @@ import org.apache.commons.collections.CollectionUtils;
 
 import com.spring.PropertyAccessor.PropertyPathStart;
 import android.annotation.SuppressLint;
+import android.os.Environment;
 import android.util.Log;
 import info.novatec.inspectit.communication.DefaultData;
 import info.novatec.inspectit.communication.data.InvocationSequenceData;
@@ -84,20 +85,27 @@ public class AndroidAgent  {
 	 private final ThreadLocal<Long> invocationStartIdCount = new ThreadLocal<Long>();
 	// InvocationSequenceData invocationSequenceData ;
 	 private Map<Long, Double> minDurationMap = new HashMap<Long, Double>();
-	 long time3;
+	 long time3,time2;
 	 long dur2;
 	 double duration;
 	 InvocationSequence invos;
 	 private final boolean enhancedExceptionSensor = false;
 	 String minDuration = "100.0";
+	 
 	 //INVO
 	
 	 private static final String CONFIG_COMMENT = "#";
 	 private static final String CONFIG_REPOSITORY = "repository";
+	 private static final String CONFIG_DATA_SIZE_CPU = "cpucmrdata";
+	 private static final String CONFIG_DATA_SIZE_MEM = "memcmrdata";
 	 private static final String CONFIG_SEND_STRATEGY = "send-strategy";
 	 private static final String CONFIG_BUFFER_STRATEGY = "buffer-strategy";
 	 private static final String CONFIG_METHOD_SENSOR_TYPE = "method-sensor-type";
 	 private static final String CONFIG_PLATFORM_SENSOR_TYPE = "platform-sensor-type";
+	 int cpusize;
+	 int memsize;
+	 String cpudatasize;
+	 String memdatasize;
 		
 	public AndroidAgent() {
 		Log.d("hi", "Inside Android Agent");
@@ -139,8 +147,8 @@ public class AndroidAgent  {
 		coredata = new CoreData(kryo);
 		propertyAccessor = new PropertyAccessor();
 		rsc = new RegisteredSensorConfig();
-		cpuclass = new CPU(sensorIDcpu,pltid,coredata,kryo);
-		memclass = new Memory(sensorIDmem,pltid,coredata,kryo);
+		cpuclass = new CPU(sensorIDcpu,pltid,coredata,kryo,cpusize);
+		memclass = new Memory(sensorIDmem,pltid,coredata,kryo,memsize);
 	    met = new Methods(methodtimerID,pltid,coredata,kryo,rsc,propertyAccessor,agent);
 		invos = new InvocationSequence(methodinvoID,pltid,coredata,kryo,rsc,propertyAccessor);
 	} catch (Exception e) {
@@ -154,19 +162,13 @@ public class AndroidAgent  {
                    new java.util.TimerTask() {
                     @Override
                        public void run() {
-                    	
-                    	
                     	cpuclass.update();//CPU Data
-                    	
-                    	
                     	memclass.update();//Memory Data
-                    	
-                    	
-                        Thread myThread = new Thread();
+                    	Thread myThread = new Thread();
                         myThread.start();
                    }
                   },  
-               12000, 10000
+               12000, 10000//delay,period
                );
      }
 	
@@ -174,11 +176,14 @@ public class AndroidAgent  {
 		 public void loadconfig() throws ParserException {
 		    	
 				try{
-				BufferedReader Br=new BufferedReader(new FileReader("/data/local/inspectit-agent.cfg"));
-				File configFile = new File("/data/local/inspectit-agent.cfg");
+					File path = Environment.getDataDirectory();
+					Log.d("hi", "pathhi " + path);
+			
+				File configFile = new File("/sdcard/inspectit-agent.cfg");
 				InputStream is = new FileInputStream(configFile);
 				InputStreamReader reader = new InputStreamReader(is);
-				this.parse(reader,"/data/local/inspectit-agent.cfg");
+			
+				this.parse(reader,"/sdcard/inspectit-agent.cfg");
 				}
 			    catch (FileNotFoundException e) {
 					Log.d("hi","Agent Configuration file not found at ");
@@ -217,6 +222,18 @@ public class AndroidAgent  {
 						//	processSendStrategyLine(tokenizer);
 							continue;
 						}
+						
+						// check for CPU Data to be sent to CMR
+						if (discriminator.equalsIgnoreCase(CONFIG_DATA_SIZE_CPU)) {
+							processcpusizedata(tokenizer);
+							continue;
+						}
+						
+						// check for Memory Data to be sent to CMR
+						if (discriminator.equalsIgnoreCase(CONFIG_DATA_SIZE_MEM)) {
+							processmemsizedata(tokenizer);
+							continue;
+						}
 
 						// check for a buffer strategy
 						if (discriminator.equalsIgnoreCase(CONFIG_BUFFER_STRATEGY)) {
@@ -242,7 +259,33 @@ public class AndroidAgent  {
 				}
 			}
 			
-			/*Read the config file and get-
+			private void processmemsizedata(StringTokenizer tokenizer) {
+			// TODO Auto-generated method stub
+				String memdatasize1 = tokenizer.nextToken();
+				StringTokenizer parameterTokenizer = new StringTokenizer(memdatasize1, "=");
+		
+				String leftSide = parameterTokenizer.nextToken();
+				 memdatasize = parameterTokenizer.nextToken();
+				 Log.d("hi", "leftSide = " + leftSide);
+				 Log.d("hi", "rightSide = " + memdatasize);
+				memsize = Integer.parseInt(memdatasize);
+				 Log.d("hi", "memsize = " + memsize);
+		}
+
+			private void processcpusizedata(StringTokenizer tokenizer) {
+			// TODO Auto-generated method stub
+			String cpudatasize1 = tokenizer.nextToken();
+			StringTokenizer parameterTokenizer = new StringTokenizer(cpudatasize1, "=");
+	
+			String leftSide = parameterTokenizer.nextToken();
+			 cpudatasize = parameterTokenizer.nextToken();
+			 Log.d("hi", "leftSide = " + leftSide);
+			 Log.d("hi", "rightSide = " + cpudatasize);
+			 cpusize = Integer.parseInt(cpudatasize);
+			 Log.d("hi", "cpusize = " + cpusize);
+		}
+
+		/*Read the config file and get-
 			AgentName
 			Hostip
 			Port Address
@@ -334,7 +377,7 @@ public class AndroidAgent  {
 				
 				e1.printStackTrace();
 			}
-			long time2 = stime1/1000000;
+			 time2 = stime1/1000000;
 			
 			try {
 				
@@ -369,14 +412,14 @@ public class AndroidAgent  {
 					Log.d("hi", "invo 7");
 					invocationSequenceData.setChildCount(invocationSequenceData.getChildCount() + 1L);
 	                Log.d("hi", "invo 8"+ invocationSequenceData);
-					InvocationSequenceData nestedInvocationSequenceData = new InvocationSequenceData(timestamp, pltid, invocationSequenceData.getSensorTypeIdent(), methodID);
+	                InvocationSequenceData nestedInvocationSequenceData = new InvocationSequenceData(timestamp, pltid, invocationSequenceData.getSensorTypeIdent(), methodID);
 					Log.d("hi", "invo 9");
 					nestedInvocationSequenceData.setStart(time2);
 					Log.d("hi", "invo 10" + nestedInvocationSequenceData);
 					nestedInvocationSequenceData.setParentSequence(invocationSequenceData);
 					Log.d("hi", "invo 11" + nestedInvocationSequenceData);
 					invocationSequenceData.getNestedSequences().add(nestedInvocationSequenceData);
-
+                    
 					threadLocalInvocationData.set(nestedInvocationSequenceData);
 				}
 			} catch (Exception idNotAvailableException) {
@@ -403,12 +446,12 @@ public class AndroidAgent  {
 					}
 				}
 			}
-			secondafterbody();
+			secondafterbody(dur1);
 		}
 		
-		public void secondafterbody(){
+		public void secondafterbody(long finalduration){
 				//Second After Body
-		
+		    long finalduration1 = finalduration/1000000;
 			String prefix = null;
 			Object object = null;
 			Object[] parameters = null;
@@ -441,19 +484,20 @@ public class AndroidAgent  {
 					// never be overwritten in the core service!
 					if (minDurationMap.containsKey(invocationStartId.get())) {
 						Log.d("hi", "invo 19");
-						checkForSavingOrNot(methodID, methodinvoID, rsc, invocationSequenceData, startTime, endTime, duration);
+						checkForSavingOrNot(methodID, methodinvoID, rsc, invocationSequenceData, startTime, endTime, finalduration1);
 					} else {
 						Log.d("hi", "invo 20");
 						// maybe not saved yet in the map
 						if (rsc.getSettings().containsKey("minduration")) {
 							Log.d("hi", "invo 20a");
 							minDurationMap.put(invocationStartId.get(), Double.valueOf((String) rsc.getSettings().get("minduration")));
-							checkForSavingOrNot(methodID, methodinvoID, rsc, invocationSequenceData, startTime, endTime, duration);
+							checkForSavingOrNot(methodID, methodinvoID, rsc, invocationSequenceData, startTime, endTime, finalduration1);
 						} else {
 							Log.d("hi", "invo 21");
-							invocationSequenceData.setDuration(duration);
-							invocationSequenceData.setStart(startTime);
-							invocationSequenceData.setEnd(endTime);
+							invocationSequenceData.setDuration(finalduration1);
+							
+							invocationSequenceData.setStart(time2);
+							invocationSequenceData.setEnd(time3);
 							invos.addMethodSensorData(methodinvoID, methodID, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
 						}
 					}
@@ -480,7 +524,9 @@ public class AndroidAgent  {
 					} else {
 						Log.d("hi", "invo 35");
 						invocationSequenceData.setEnd(time3);
-						invocationSequenceData.setDuration(invocationSequenceData.getEnd() - invocationSequenceData.getStart());
+						//invocationSequenceData.setDuration(invocationSequenceData.getEnd() - invocationSequenceData.getStart());
+						invocationSequenceData.setDuration(finalduration1);
+						
 						parentSequence.setChildCount(parentSequence.getChildCount() + invocationSequenceData.getChildCount());
 					}
 					threadLocalInvocationData.set(parentSequence);

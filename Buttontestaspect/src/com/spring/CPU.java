@@ -24,6 +24,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Debug;
 import android.os.Environment;
+import android.os.StatFs;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import info.novatec.inspectit.communication.DefaultData;
@@ -39,38 +40,23 @@ public class CPU {
 	CoreData cd;
 	public Map<String, DefaultData> sensorDataObjects = new ConcurrentHashMap<String, DefaultData>();//CPU
 	KryoNetConnection kry1;
-	
-	OutputStreamWriter fileStream;
+	FileOutputStream fout;
+	//OutputStreamWriter fileStream;
 	//ObjectOutputStream fileStream;
 	int count = 0;
-	
-	public CPU(long sensorIDcpu,long pltid,CoreData cd,KryoNetConnection kry1){
+  	ObjectOutputStream oos ;
+  	double utilizedkb;
+  	List<DefaultData> cpuobj;
+  	int cpulistsize;
+  	
+	public CPU(long sensorIDcpu,long pltid,CoreData cd,KryoNetConnection kry1,int cpulistsize){
 		this.sensorIDcpu = sensorIDcpu;
 		this.pltid = pltid;
 		this.cd = cd;
 		this.kry1 = kry1;
-		try {
-			String path;
-			
-			String filename = "CPU.txt";
-			
-				path = Environment.getExternalStorageDirectory() + File.separator + "Documents";
-			
-               path += File.separatorChar + "CPUData";
-               File file = new File(path,filename);
-               new File(path).mkdirs();
-               file.createNewFile();
-                fileStream = new OutputStreamWriter(new FileOutputStream(file));
-                // fileStream = new ObjectOutputStream(new FileOutputStream(file));
-               Log.d("hi", "PATH = " + file.getAbsolutePath());
-              
-            }
-            
-            catch (Exception e) {
-               // TODO Auto-generated catch block
-               e.printStackTrace();
-            }
-	}
+		this.cpulistsize = cpulistsize;
+	    cpuobj = new ArrayList<DefaultData>(cpulistsize);
+    }
 	
 	public void update() {
 		 processCpuTime = getProcessCpuTime();
@@ -148,21 +134,13 @@ public class CPU {
 			Log.d("hi", "deva0 = " + sensorDataObjects);
 			List<DefaultData> tempList = new ArrayList<DefaultData>(sensorDataObjects.values());
 			Log.d("hi", "tempListcpu" + tempList);
-			
-			try {
-				
-				fileStream.write(tempList.toString());
-				//fileStream.writeObject(tempList);
-				count++;
-				if(count == 5){
-				fileStream.flush();
-				fileStream.close();
-				}
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		
-	        //kry1.sendDataObjects(tempList);
+			if(cpuobj.size() != cpulistsize){
+			cpuobj.addAll(tempList);
+			Log.d("","cpuobj = " + cpuobj);
+			}else{
+			kry1.sendDataObjects(cpuobj);
+			cpuobj.clear();
 		}
+				
+	}
 }
