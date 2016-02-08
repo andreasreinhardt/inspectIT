@@ -19,7 +19,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-
+import com.spring.Timer2;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.spring.PropertyAccessor.PropertyPathStart;
@@ -76,15 +76,16 @@ public class AndroidAgent  {
 	
 	//INVO
 	 StringConstraint strConstraint;
-	 private Map<String, DefaultData> sensorDataObjects3 = new ConcurrentHashMap<String, DefaultData>();
+	 //private Map<String, DefaultData> sensorDataObjects3 = new ConcurrentHashMap<String, DefaultData>();
 	 private final ThreadLocal<InvocationSequenceData> threadLocalInvocationData = new ThreadLocal<InvocationSequenceData>();
 	 private final ThreadLocalStack<Double> timeStack = new ThreadLocalStack<Double>();
 	 List<ParameterContentData> parameterContentData = null;
 	 private final ThreadLocal<Long> invocationStartId = new ThreadLocal<Long>();
-     public Timer2 timer2;
+     private final Timer2 timer11 = null;
 	 private final ThreadLocal<Long> invocationStartIdCount = new ThreadLocal<Long>();
 	// InvocationSequenceData invocationSequenceData ;
-	 private Map<Long, Double> minDurationMap = new HashMap<Long, Double>();
+	 @SuppressLint("UseSparseArrays")
+	public Map<Long, Double> minDurationMap = new HashMap<Long, Double>();
 	 long time3,time2;
 	 long dur2;
 	 double duration;
@@ -106,6 +107,8 @@ public class AndroidAgent  {
 	 int memsize;
 	 String cpudatasize;
 	 String memdatasize;
+	 private TimerData timerData;
+	 long finalduration1;
 		
 	public AndroidAgent() {
 		Log.d("hi", "Inside Android Agent");
@@ -363,240 +366,258 @@ public class AndroidAgent  {
    }
 //TIMER METHODS......................................................................................................................................................................
 
-//INVOCATION SENSOR....................................................................................................................................
-	
-	  public void beforeinvocation(long stime1,String function){
-			List<String> parameterTypes = null;
-			try {
-				methodID = kryo.registerMethod(pltid, function,function,parameterTypes);
-				Log.d("hi", "methodIDinvo" + methodID + function);
-			} catch (ServerUnavailableException e1) {
-				
-				e1.printStackTrace();
-			} catch (RegistrationException e1) {
-				
-				e1.printStackTrace();
-			}
-			 time2 = stime1/1000000;
-			
-			try {
-				
-				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-				
 
-				if (null == threadLocalInvocationData.get()) {
-					// save the start time
-					Log.d("hi", "invo 0" + threadLocalInvocationData.get());
-					timeStack.push(new Double(time2));
-					Log.d("hi", "invo 1");
-					// no invocation tracer is currently started, so we do that now.
-					InvocationSequenceData invocationSequenceData = new InvocationSequenceData(timestamp, pltid, methodinvoID, methodID);
-					Log.d("hi", "invo 2");
-					threadLocalInvocationData.set(invocationSequenceData);
-					Log.d("hi", "invo 3" + invocationSequenceData);
-					invocationStartId.set(Long.valueOf(methodID));
-					Log.d("hi", "invo 4");
-					invocationStartIdCount.set(Long.valueOf(1));
-					Log.d("hi", "invo 5" + invocationStartIdCount);
+
+	//INVOCATION SENSOR....................................................................................................................................
+		
+		  public void beforeinvocation(long stime1,String function){
+				List<String> parameterTypes = null;
+				try {
+					methodID = kryo.registerMethod(pltid, function,function,parameterTypes);
+					Log.d("hi", "methodIDinvo" + methodID + function);
+				} catch (ServerUnavailableException e1) {
+					
+					e1.printStackTrace();
+				} catch (RegistrationException e1) {
+					
+					e1.printStackTrace();
+				}
+				 time2 = stime1/1000000;
 				
-				}else {
-					Log.d("hi", "invo 6");
-					if (methodID == invocationStartId.get().longValue()) {
+				try {
+					
+					Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+					
+
+					if (null == threadLocalInvocationData.get()) {
+						// save the start time
+						Log.d("hi", "invo 0" + threadLocalInvocationData.get());
+						timeStack.push(new Double(time2));
+						Log.d("hi", "invo 1");
+						// no invocation tracer is currently started, so we do that now.
+						InvocationSequenceData invocationSequenceData = new InvocationSequenceData(timestamp, pltid, methodinvoID, methodID);
+						Log.d("hi", "invo 2");
+						threadLocalInvocationData.set(invocationSequenceData);
+						Log.d("hi", "invo 3" + invocationSequenceData);
+						invocationStartId.set(Long.valueOf(methodID));
+						Log.d("hi", "invo 4");
+						invocationStartIdCount.set(Long.valueOf(1));
+						Log.d("hi", "invo 5" + invocationStartIdCount);
+					
+					}else {
+						Log.d("hi", "invo 6");
+						if (methodID == invocationStartId.get().longValue()) {
+							Log.d("hi", "invo 7");
+							long count = invocationStartIdCount.get().longValue();
+							invocationStartIdCount.set(Long.valueOf(count + 1));
+						}
+						// A subsequent call to the before body method where an
+						// invocation tracer is already started.
+						InvocationSequenceData invocationSequenceData = threadLocalInvocationData.get();
 						Log.d("hi", "invo 7");
-						long count = invocationStartIdCount.get().longValue();
-						invocationStartIdCount.set(Long.valueOf(count + 1));
+						invocationSequenceData.setChildCount(invocationSequenceData.getChildCount() + 1L);
+		                Log.d("hi", "invo 8"+ invocationSequenceData);
+		                InvocationSequenceData nestedInvocationSequenceData = new InvocationSequenceData(timestamp, pltid, invocationSequenceData.getSensorTypeIdent(), methodID);
+						Log.d("hi", "invo 9");
+						nestedInvocationSequenceData.setStart(time2);
+						Log.d("hi", "invo 10" + nestedInvocationSequenceData);
+						nestedInvocationSequenceData.setParentSequence(invocationSequenceData);
+						Log.d("hi", "invo 11" + nestedInvocationSequenceData);
+						invocationSequenceData.getNestedSequences().add(nestedInvocationSequenceData);
+	                    
+						threadLocalInvocationData.set(nestedInvocationSequenceData);
 					}
-					// A subsequent call to the before body method where an
-					// invocation tracer is already started.
-					InvocationSequenceData invocationSequenceData = threadLocalInvocationData.get();
-					Log.d("hi", "invo 7");
-					invocationSequenceData.setChildCount(invocationSequenceData.getChildCount() + 1L);
-	                Log.d("hi", "invo 8"+ invocationSequenceData);
-	                InvocationSequenceData nestedInvocationSequenceData = new InvocationSequenceData(timestamp, pltid, invocationSequenceData.getSensorTypeIdent(), methodID);
-					Log.d("hi", "invo 9");
-					nestedInvocationSequenceData.setStart(time2);
-					Log.d("hi", "invo 10" + nestedInvocationSequenceData);
-					nestedInvocationSequenceData.setParentSequence(invocationSequenceData);
-					Log.d("hi", "invo 11" + nestedInvocationSequenceData);
-					invocationSequenceData.getNestedSequences().add(nestedInvocationSequenceData);
-                    
-					threadLocalInvocationData.set(nestedInvocationSequenceData);
+				} catch (Exception idNotAvailableException) {
+					
 				}
-			} catch (Exception idNotAvailableException) {
+			}
+			
+			public void afterinvocation(long etime1,long dur1,String function1){
 				
-			}
-		}
-		
-		public void afterinvocation(long etime1,long dur1,String function1){
-			
-			 time3 = etime1/1000000;
+				 time3 = etime1/1000000;
 
-			InvocationSequenceData invocationSequenceData = threadLocalInvocationData.get();
+				InvocationSequenceData invocationSequenceData = threadLocalInvocationData.get();
 
-			if (null != invocationSequenceData) {
-				Log.d("hi", "invo 12");
-				if (methodID == invocationStartId.get().longValue()) {
-					Log.d("hi", "invo 13");
-					long count = invocationStartIdCount.get().longValue();
-					invocationStartIdCount.set(Long.valueOf(count - 1));
+				if (null != invocationSequenceData) {
+					Log.d("hi", "invo 12");
+					if (methodID == invocationStartId.get().longValue()) {
+						Log.d("hi", "invo 13");
+						long count = invocationStartIdCount.get().longValue();
+						invocationStartIdCount.set(Long.valueOf(count - 1));
 
-					if (0 == count - 1) {
-						Log.d("hi", "invo 14");
-						timeStack.push(new Double(time3));
+						if (0 == count - 1) {
+							Log.d("hi", "invo 14");
+							timeStack.push(new Double(time3));
+						}
 					}
 				}
+				secondafterbody(dur1);
 			}
-			secondafterbody(dur1);
-		}
-		
-		public void secondafterbody(long finalduration){
-				//Second After Body
-		    long finalduration1 = finalduration/1000000;
-			String prefix = null;
-			Object object = null;
-			Object[] parameters = null;
-			Object result = null;
 			
-			Log.d("hi", "invo 15");
-			InvocationSequenceData invocationSequenceData = threadLocalInvocationData.get();
+			public void secondafterbody(long finalduration){
+					//Second After Body
+			    long finalduration1 = finalduration/1000000;
+				String prefix = null;
+				Object object = null;
+				Object[] parameters = null;
+				Object result = null;
+				
+				Log.d("hi", "invo 15");
+				InvocationSequenceData invocationSequenceData = threadLocalInvocationData.get();
 
-			if (null != invocationSequenceData) {
-				Log.d("hi", "invo 16");
-				// check if some properties need to be accessed and saved
-				if (rsc.isPropertyAccess()) {
-					List<ParameterContentData> parameterContentData = propertyAccessor.getParameterContentData(rsc.getPropertyAccessorList(), object, parameters, result);
+				if (null != invocationSequenceData) {
+					Log.d("hi", "invo 16");
+					// check if some properties need to be accessed and saved
+					if (rsc.isPropertyAccess()) {
+						List<ParameterContentData> parameterContentData = propertyAccessor.getParameterContentData(rsc.getPropertyAccessorList(), object, parameters, result);
 
-					// crop the content strings of all ParameterContentData
-					for (ParameterContentData contentData : parameterContentData) {
-						contentData.setContent(strConstraint.crop(contentData.getContent()));
+						// crop the content strings of all ParameterContentData
+						for (ParameterContentData contentData : parameterContentData) {
+							contentData.setContent(strConstraint.crop(contentData.getContent()));
+						}
 					}
-				}
 
-				if (methodID == invocationStartId.get().longValue() && 0 == invocationStartIdCount.get().longValue()) {
-					Log.d("hi", "invo 17");
-					double endTime = timeStack.pop().doubleValue();
-					double startTime = timeStack.pop().doubleValue();
-					double duration = endTime - startTime;
-					Log.d("hi", "invo 18");
-					// complete the sequence and store the data object in the 'true'
-					// core service so that it can be transmitted to the server. we
-					// just need an arbitrary prefix so that this sequence will
-					// never be overwritten in the core service!
-					if (minDurationMap.containsKey(invocationStartId.get())) {
-						Log.d("hi", "invo 19");
-						checkForSavingOrNot(methodID, methodinvoID, rsc, invocationSequenceData, startTime, endTime, finalduration1);
-					} else {
-						Log.d("hi", "invo 20");
-						// maybe not saved yet in the map
-						if (rsc.getSettings().containsKey("minduration")) {
-							Log.d("hi", "invo 20a");
-							minDurationMap.put(invocationStartId.get(), Double.valueOf((String) rsc.getSettings().get("minduration")));
+					if (methodID == invocationStartId.get().longValue() && 0 == invocationStartIdCount.get().longValue()) {
+						Log.d("hi", "invo 17");
+						double endTime = timeStack.pop().doubleValue();
+						double startTime = timeStack.pop().doubleValue();
+						double duration = endTime - startTime;
+						Log.d("hi", "invo 18");
+						// complete the sequence and store the data object in the 'true'
+						// core service so that it can be transmitted to the server. we
+						// just need an arbitrary prefix so that this sequence will
+						// never be overwritten in the core service!
+						if (minDurationMap.containsKey(invocationStartId.get())) {
+							Log.d("hi", "invo 19");
 							checkForSavingOrNot(methodID, methodinvoID, rsc, invocationSequenceData, startTime, endTime, finalduration1);
 						} else {
-							Log.d("hi", "invo 21");
+							Log.d("hi", "invo 20");
+							// maybe not saved yet in the map
+							if (rsc.getSettings().containsKey("minduration")) {
+								Log.d("hi", "invo 20a");
+								minDurationMap.put(invocationStartId.get(), Double.valueOf((String) rsc.getSettings().get("minduration")));
+								checkForSavingOrNot(methodID, methodinvoID, rsc, invocationSequenceData, startTime, endTime, finalduration1);
+							} else {
+								Log.d("hi", "invo 21");
+								invocationSequenceData.setDuration(finalduration1);
+								
+								invocationSequenceData.setStart(time2);
+								invocationSequenceData.setEnd(time3);
+								invos.addMethodSensorData(methodinvoID, methodID, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
+							}
+						}
+
+						threadLocalInvocationData.set(null);
+					}  else {
+						Log.d("hi", "invo 31");
+						// just close the nested sequence and set the correct child count
+						InvocationSequenceData parentSequence = invocationSequenceData.getParentSequence();
+						Log.d("hi", "invo 32");
+						// check if we should not include this invocation because of exception delegation or
+						// SQL wrapping
+						if (removeDueToExceptionDelegation(rsc, invocationSequenceData) || removeDueToWrappedSqls(rsc, invocationSequenceData)) {
+							Log.d("hi", "invo 33");
+							parentSequence.getNestedSequences().remove(invocationSequenceData);
+							parentSequence.setChildCount(parentSequence.getChildCount() - 1);
+							// but connect all possible children to the parent then
+							// we are eliminating one level here
+							if (CollectionUtils.isNotEmpty(invocationSequenceData.getNestedSequences())) {
+								Log.d("hi", "invo 34");
+								parentSequence.getNestedSequences().addAll(invocationSequenceData.getNestedSequences());
+								parentSequence.setChildCount(parentSequence.getChildCount() + invocationSequenceData.getChildCount());
+							}
+						} else {
+							Log.d("hi", "invo 35");
+							invocationSequenceData.setEnd(time3);
+							//invocationSequenceData.setDuration(invocationSequenceData.getEnd() - invocationSequenceData.getStart());
 							invocationSequenceData.setDuration(finalduration1);
 							
-							invocationSequenceData.setStart(time2);
-							invocationSequenceData.setEnd(time3);
-							invos.addMethodSensorData(methodinvoID, methodID, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
-						}
-					}
-
-					threadLocalInvocationData.set(null);
-				}  else {
-					Log.d("hi", "invo 31");
-					// just close the nested sequence and set the correct child count
-					InvocationSequenceData parentSequence = invocationSequenceData.getParentSequence();
-					Log.d("hi", "invo 32");
-					// check if we should not include this invocation because of exception delegation or
-					// SQL wrapping
-					if (removeDueToExceptionDelegation(rsc, invocationSequenceData) || removeDueToWrappedSqls(rsc, invocationSequenceData)) {
-						Log.d("hi", "invo 33");
-						parentSequence.getNestedSequences().remove(invocationSequenceData);
-						parentSequence.setChildCount(parentSequence.getChildCount() - 1);
-						// but connect all possible children to the parent then
-						// we are eliminating one level here
-						if (CollectionUtils.isNotEmpty(invocationSequenceData.getNestedSequences())) {
-							Log.d("hi", "invo 34");
-							parentSequence.getNestedSequences().addAll(invocationSequenceData.getNestedSequences());
 							parentSequence.setChildCount(parentSequence.getChildCount() + invocationSequenceData.getChildCount());
 						}
-					} else {
-						Log.d("hi", "invo 35");
-						invocationSequenceData.setEnd(time3);
-						//invocationSequenceData.setDuration(invocationSequenceData.getEnd() - invocationSequenceData.getStart());
-						invocationSequenceData.setDuration(finalduration1);
-						
-						parentSequence.setChildCount(parentSequence.getChildCount() + invocationSequenceData.getChildCount());
+						threadLocalInvocationData.set(parentSequence);
 					}
-					threadLocalInvocationData.set(parentSequence);
 				}
+					//Second After Body
+				}
+			
+			private boolean removeDueToExceptionDelegation(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
+				if (1 == rsc.getSensorTypeConfigs().size()) {
+					MethodSensorTypeConfig methodSensorTypeConfig = rsc.getSensorTypeConfigs().get(0);
+
+					if (ExceptionSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
+						return CollectionUtils.isEmpty(invocationSequenceData.getExceptionSensorDataObjects());
+					}
+				}
+
+				return false;
 			}
-				//Second After Body
+
+			/**
+			 * Returns if the given {@link InvocationSequenceData} should be removed due to the wrapping of
+			 * the prepared SQL statements.
+			 * 
+			 * @param rsc
+			 *            {@link RegisteredSensorConfig}
+			 * @param invocationSequenceData
+			 *            {@link InvocationSequenceData} to check.
+			 * @return True if the invocation should be removed.
+			 */
+			private boolean removeDueToWrappedSqls(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
+				if (1 == rsc.getSensorTypeConfigs().size() || (2 == rsc.getSensorTypeConfigs().size() && enhancedExceptionSensor)) {
+					for (MethodSensorTypeConfig methodSensorTypeConfig : rsc.getSensorTypeConfigs()) {
+
+						//if (PreparedStatementSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
+							if (null == invocationSequenceData.getSqlStatementData() || 0 == invocationSequenceData.getSqlStatementData().getCount()) {
+								return true;
+							}
+						//}
+					}
+				}
+
+				return false;
 			}
 		
-		private boolean removeDueToExceptionDelegation(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
-			if (1 == rsc.getSensorTypeConfigs().size()) {
-				MethodSensorTypeConfig methodSensorTypeConfig = rsc.getSensorTypeConfigs().get(0);
-
-				if (ExceptionSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
-					return CollectionUtils.isEmpty(invocationSequenceData.getExceptionSensorDataObjects());
-				}
+			
+		
+		
+		private void checkForSavingOrNot( long methodId, long sensorTypeId, RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData, double startTime, // NOCHK
+				double endTime, double duration) {
+			Log.d("hi", "invo 25a");
+			double minduration = minDurationMap.get(invocationStartId.get()).doubleValue();
+			if (duration >= minduration) {
+				Log.d("hi", "invo 25b");
+				invocationSequenceData.setDuration(duration);
+				invocationSequenceData.setStart(startTime);
+				invocationSequenceData.setEnd(endTime);
+				invos.addMethodSensorData(sensorTypeId, methodId, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
+			} else {
+			
 			}
-
-			return false;
 		}
 
-		/**
-		 * Returns if the given {@link InvocationSequenceData} should be removed due to the wrapping of
-		 * the prepared SQL statements.
-		 * 
-		 * @param rsc
-		 *            {@link RegisteredSensorConfig}
-		 * @param invocationSequenceData
-		 *            {@link InvocationSequenceData} to check.
-		 * @return True if the invocation should be removed.
-		 */
-		private boolean removeDueToWrappedSqls(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
-			if (1 == rsc.getSensorTypeConfigs().size() || (2 == rsc.getSensorTypeConfigs().size() && enhancedExceptionSensor)) {
-				for (MethodSensorTypeConfig methodSensorTypeConfig : rsc.getSensorTypeConfigs()) {
-
-					//if (PreparedStatementSensor.class.getCanonicalName().equals(methodSensorTypeConfig.getClassName())) {
-						if (null == invocationSequenceData.getSqlStatementData() || 0 == invocationSequenceData.getSqlStatementData().getCount()) {
-							return true;
-						}
-					//}
-				}
-			}
-
-			return false;
-		}
-	
+			
+	//INVOCATION SENSOR................................................................................................................
 		
-	
-	
-	private void checkForSavingOrNot( long methodId, long sensorTypeId, RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData, double startTime, // NOCHK
-			double endTime, double duration) {
-		Log.d("hi", "invo 25a");
-		double minduration = minDurationMap.get(invocationStartId.get()).doubleValue();
-		if (duration >= minduration) {
-			Log.d("hi", "invo 25b");
-			invocationSequenceData.setDuration(duration);
-			invocationSequenceData.setStart(startTime);
-			invocationSequenceData.setEnd(endTime);
-			invos.addMethodSensorData(sensorTypeId, methodId, String.valueOf(System.currentTimeMillis()), invocationSequenceData);
-		} else {
-		
-		}
-	}
-
-		
-//INVOCATION SENSOR.....................................................................................................................................................................
-	
 	public List<PropertyPathStart> getPropertyAccessorList() {
 		return propertyAccessorList;
 	}
 	
+	
+	
+	public void saveDataObject(DefaultData dataObject) {
+		InvocationSequenceData invocationSequenceData = threadLocalInvocationData.get();
+
+	
+
+		if (dataObject.getClass().equals(TimerData.class)) {
+			// don't overwrite an already existing timerdata or httptimerdata object.
+			if (null == invocationSequenceData.getTimerData()) {
+				invocationSequenceData.setTimerData((TimerData) dataObject);
+			}
+		}
+
+		
+	}
 	
 	
 }
