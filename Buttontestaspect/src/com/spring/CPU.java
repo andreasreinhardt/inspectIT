@@ -75,22 +75,13 @@ public class CPU implements Serializable {
 		}
 		
 		
-		path += File.separatorChar + "CPU Data";
+		path += File.separatorChar + "CMR Data";
 		Log.d("hi", "path = " + path);
 		 file = new File(path, filename);
 
 		new File(path).mkdirs();
 		try {
 			file.createNewFile();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		try {
-			//fileStream = new FileOutputStream(filename);
-			//fileStream = new FileOutputStream(file);
-			//oos = new ObjectOutputStream(fileStream);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

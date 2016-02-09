@@ -1,13 +1,18 @@
 package com.spring;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.os.Debug;
+import android.os.Environment;
 import android.util.Log;
 import info.novatec.inspectit.communication.DefaultData;
 import info.novatec.inspectit.communication.SystemSensorData;
@@ -24,7 +29,13 @@ public class Memory {
 	KryoNetConnection kry1;
 	int memlistsize;
 	List<DefaultData> memobj;
-	
+	String filename = "MemoryData.txt";
+  	String path;
+  	File file;
+  	FileOutputStream fileStream;
+  	ObjectOutputStream oos ;
+  	
+	@TargetApi(Build.VERSION_CODES.KITKAT)
 	public Memory(long sensorIDmem,long pltid,CoreData cd,KryoNetConnection kry1,int memlistsize){
 		this.sensorIDmem = sensorIDmem;
 		this.pltid = pltid;
@@ -32,7 +43,29 @@ public class Memory {
 		this.kry1 = kry1;
 		this.memlistsize = memlistsize;
 		memobj = new ArrayList<DefaultData>(memlistsize);
-	}
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+			path = Environment.getExternalStoragePublicDirectory(
+					Environment.DIRECTORY_DOCUMENTS).getAbsolutePath();
+			Log.d("hi", "path: " + path);
+		} else {
+			path = Environment.getExternalStorageDirectory()
+					+ File.separator + "Documents";
+		}
+		
+		
+		path += File.separatorChar + "CMR Data";
+		Log.d("hi", "path = " + path);
+		 file = new File(path, filename);
+
+		new File(path).mkdirs();
+		try {
+			file.createNewFile();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+	
 	
 	public void update() {
 	//	long freePhysMemory = getFreePhysMemory();
@@ -142,13 +175,33 @@ public class Memory {
 			
 			List<DefaultData> tempListmem = new ArrayList<DefaultData>(sensorDataObjects.values());
 			Log.d("hi", "tempList" + tempListmem);
-			if(memobj.size() != memlistsize){
-				memobj.addAll(tempListmem);
-					Log.d("","memobj = " + memobj);
-				}else{
-					kry1.sendDataObjects(memobj);
-					memobj.clear();
-				}
+			
+			//Serialize
+			//if(cpuobj.size() != cpulistsize){
+					try {
+					//FileOutputStream fileStream = new FileOutputStream(filename);
+						Log.d("hi", "Writing Going to write");
+						fileStream = new FileOutputStream(file);
+					    oos = new ObjectOutputStream(fileStream);
+					    memobj.addAll(tempListmem);
+						Log.d("","Writing memobj = " + memobj); 	
+						oos.writeObject(memobj);
+						Log.d("hi", "Writing 0");
+						//oos.close();
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				//}else{
+					try{
+						
+						Log.d("hi", "Writing 1");
+						//cpuobj.clear();
+						oos.close();
+						
+					}catch(Exception e){}
+				//}
+				//Serialize
 			
 			
 		}
