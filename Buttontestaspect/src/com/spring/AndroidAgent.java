@@ -24,6 +24,7 @@ import org.apache.commons.collections.CollectionUtils;
 
 import com.spring.PropertyAccessor.PropertyPathStart;
 import android.annotation.SuppressLint;
+import android.os.Debug;
 import android.os.Environment;
 import android.util.Log;
 import info.novatec.inspectit.communication.DefaultData;
@@ -57,7 +58,8 @@ public class AndroidAgent  {
 	long methodinvoID;
     public  IPropertyAccessor propertyAccessor;   
 	private List<PropertyPathStart> propertyAccessorList = new CopyOnWriteArrayList<PropertyPathStart>();
-	
+	private final TimerStorageFactory timerStorageFactory = TimerStorageFactory.getFactory();
+
     long methodID;
     RegisteredSensorConfig rsc;
 	CPU cpuclass;
@@ -73,7 +75,7 @@ public class AndroidAgent  {
 	String agentname;
 	String agentversion = "1.0";
 	AndroidAgent agent;
-	
+	private final ThreadLocalStack<Long> threadCpuTimeStack = new ThreadLocalStack<Long>();
 	//INVO
 	 StringConstraint strConstraint;
 	 //private Map<String, DefaultData> sensorDataObjects3 = new ConcurrentHashMap<String, DefaultData>();
@@ -109,6 +111,7 @@ public class AndroidAgent  {
 	 String memdatasize;
 	 private TimerData timerData;
 	 long finalduration1;
+	 TimerData td;
 		
 	public AndroidAgent() {
 		Log.d("hi", "Inside Android Agent");
@@ -152,6 +155,7 @@ public class AndroidAgent  {
 		rsc = new RegisteredSensorConfig();
 		cpuclass = new CPU(sensorIDcpu,pltid,coredata,kryo,cpusize);
 		memclass = new Memory(sensorIDmem,pltid,coredata,kryo,memsize);
+		td = new TimerData();
 	    met = new Methods(methodtimerID,pltid,coredata,kryo,rsc,propertyAccessor,agent);
 		invos = new InvocationSequence(methodinvoID,pltid,coredata,kryo,rsc,propertyAccessor);
 	} catch (Exception e) {
@@ -372,6 +376,9 @@ public class AndroidAgent  {
 		
 		  public void beforeinvocation(long stime1,String function){
 				List<String> parameterTypes = null;
+				boolean charting = "true".equals(rsc.getSettings().get("charting"));
+				String prefix = null;
+				
 				try {
 					methodID = kryo.registerMethod(pltid, function,function,parameterTypes);
 					Log.d("hi", "methodIDinvo" + methodID + function);
@@ -419,6 +426,7 @@ public class AndroidAgent  {
 		                Log.d("hi", "invo 8"+ invocationSequenceData);
 		                InvocationSequenceData nestedInvocationSequenceData = new InvocationSequenceData(timestamp, pltid, invocationSequenceData.getSensorTypeIdent(), methodID);
 						Log.d("hi", "invo 9");
+						
 						nestedInvocationSequenceData.setStart(time2);
 						Log.d("hi", "invo 10" + nestedInvocationSequenceData);
 						nestedInvocationSequenceData.setParentSequence(invocationSequenceData);
@@ -461,6 +469,9 @@ public class AndroidAgent  {
 				Object object = null;
 				Object[] parameters = null;
 				Object result = null;
+				boolean charting = "true".equals(rsc.getSettings().get("charting"));
+			    double cpuduration = Debug.threadCpuTimeNanos();
+			    double cpuduration1 = cpuduration/1000000;
 				
 				Log.d("hi", "invo 15");
 				InvocationSequenceData invocationSequenceData = threadLocalInvocationData.get();
@@ -531,7 +542,13 @@ public class AndroidAgent  {
 							invocationSequenceData.setEnd(time3);
 							//invocationSequenceData.setDuration(invocationSequenceData.getEnd() - invocationSequenceData.getStart());
 							invocationSequenceData.setDuration(finalduration1);
-							
+							invocationSequenceData.setTimerData(timerData);
+							//New
+							ITimerStorage storage = (ITimerStorage) coredata.getObjectStorage(methodinvoID, methodID, prefix);
+							storage = timerStorageFactory.newStorage(timestamp, pltid, methodinvoID, methodID, parameterContentData, charting);
+							storage.addData(finalduration1, cpuduration1);
+							addObjectStorage(methodinvoID, methodID, prefix, storage);
+							//New
 							parentSequence.setChildCount(parentSequence.getChildCount() + invocationSequenceData.getChildCount());
 						}
 						threadLocalInvocationData.set(parentSequence);
@@ -540,6 +557,15 @@ public class AndroidAgent  {
 					//Second After Body
 				}
 			
+			public void addObjectStorage(long sensorTypeId, long methodId, String prefix, IObjectStorage objectStorage) {
+				if (null == threadLocalInvocationData.get()) {
+					
+					return;
+				}
+				DefaultData defaultData = objectStorage.finalizeDataObject();
+				saveDataObject(defaultData.finalizeData());
+			}
+
 			private boolean removeDueToExceptionDelegation(RegisteredSensorConfig rsc, InvocationSequenceData invocationSequenceData) {
 				if (1 == rsc.getSensorTypeConfigs().size()) {
 					MethodSensorTypeConfig methodSensorTypeConfig = rsc.getSensorTypeConfigs().get(0);

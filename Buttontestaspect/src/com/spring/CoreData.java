@@ -19,6 +19,7 @@ public class CoreData  {
 		private Map<String, DefaultData> sensorDataObjects2 = new ConcurrentHashMap<String, DefaultData>();//CPU
 		KryoNetConnection kry1;
 		
+		private Map<String, IObjectStorage> objectStorages = new ConcurrentHashMap<String, IObjectStorage>();
 	
 		
 	public CoreData(KryoNetConnection kry1){
@@ -31,6 +32,17 @@ public class CoreData  {
 		return (SystemSensorData) sensorDataObjects.get(Long.toString(sensorTypeIdent));
 	}
 	
+	public IObjectStorage getObjectStorage(long sensorTypeIdent, long methodIdent, String prefix) {
+		StringBuffer buffer = new StringBuffer();
+		if (null != prefix) {
+			buffer.append(prefix);
+			buffer.append('.');
+		}
+		buffer.append(methodIdent);
+		buffer.append('.');
+		buffer.append(sensorTypeIdent);
+		return (IObjectStorage) objectStorages.get(buffer.toString());
+	}
 
 
 	public MethodSensorData getMethodSensorData(long sensorTypeIdent, long methodIdent, String prefix) {
