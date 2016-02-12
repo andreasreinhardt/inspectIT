@@ -7,8 +7,8 @@ import com.spring.AndroidAgent;
 
 public  aspect Tester {
 
-	long start,end,onclickstart,onclickend,onClickduration,t;
-	long activitystart,activityend,activityduration;
+	double start,end,onclickstart,onclickend,onClickduration,t;
+	double activitystart,activityend,activityduration;
 	String n,m,n1,m1,act1,act2;
     String clsname,pckgname;
 	  
@@ -51,7 +51,7 @@ public  aspect Tester {
     	agent.afterinvocation(onclickend,onClickduration,m);
     }
    
-    public void store(long s,long e1,long d,String met,String cls){
+    public void store(double s,double e1,double d,String met,String cls){
     	 Log.d("hi", "Method name : " + met);
         agent.methodhandler(s, e1, d, met, cls);
      }

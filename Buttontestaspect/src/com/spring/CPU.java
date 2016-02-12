@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -53,9 +54,10 @@ public class CPU implements Serializable {
   	String filename = "CPUData.txt";
   	String path;
   	File file;
+  	File file1;
   //	private OutputStreamWriter fileStream;
   	FileOutputStream fileStream;
-  
+  	FileOutputStream fos;
   	
 	@TargetApi(Build.VERSION_CODES.KITKAT)
 	public CPU(long sensorIDcpu,long pltid,CoreData cd,KryoNetConnection kry1,int cpulistsize){
@@ -77,17 +79,44 @@ public class CPU implements Serializable {
 		
 		path += File.separatorChar + "CMR Data";
 		Log.d("hi", "path = " + path);
+		updateininspectit();
 		 file = new File(path, filename);
-
+         
 		new File(path).mkdirs();
 		try {
 			file.createNewFile();
+			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     }
 	
+	public void updateininspectit() {
+		
+		try {
+			file1 = new File("/sdcard/CMRData.txt");
+			fos = new FileOutputStream(file1);
+
+			// if file doesnt exists, then create it
+			if (!file1.exists()) {
+				file1.createNewFile();
+			}
+
+			// get the content in bytes
+			byte[] contentInBytes = path.getBytes();
+
+			fos.write(contentInBytes);
+			fos.flush();
+			fos.close();
+		           
+		        //}
+		    }
+		 catch(Exception e) { 
+		
+		}
+	}
+
 	public void update() {
 		 processCpuTime = getProcessCpuTime();
 		 cpuUsage = retrieveCpuUsage();

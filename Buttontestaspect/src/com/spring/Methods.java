@@ -85,7 +85,7 @@ public class Methods {
 			}
      }
 	
-	public void update(long methodID,long metstarttime,long metendtime,long metduration){
+	public void update(long methodID,double metstarttime,double metendtime,double metduration){
 	
 		String prefix = null;
 		Object object = null;

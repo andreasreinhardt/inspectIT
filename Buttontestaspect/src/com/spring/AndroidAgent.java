@@ -24,6 +24,8 @@ import org.apache.commons.collections.CollectionUtils;
 
 import com.spring.PropertyAccessor.PropertyPathStart;
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.os.Debug;
 import android.os.Environment;
 import android.util.Log;
@@ -88,7 +90,7 @@ public class AndroidAgent  {
 	// InvocationSequenceData invocationSequenceData ;
 	 @SuppressLint("UseSparseArrays")
 	public Map<Long, Double> minDurationMap = new HashMap<Long, Double>();
-	 long time3,time2;
+	 double time3,time2;
 	 long dur2;
 	 double duration;
 	 InvocationSequence invos;
@@ -112,6 +114,7 @@ public class AndroidAgent  {
 	 private TimerData timerData;
 	 long finalduration1;
 	 TimerData td;
+	 String cfgpath;
 		
 	public AndroidAgent() {
 		Log.d("hi", "Inside Android Agent");
@@ -180,9 +183,11 @@ public class AndroidAgent  {
      }
 	
 //Reading Config File...................................................................................................................................................................	
-		 public void loadconfig() throws ParserException {
+		 @TargetApi(Build.VERSION_CODES.KITKAT)
+		public void loadconfig() throws ParserException {
 		    	
 				try{
+				
 					File path = Environment.getDataDirectory();
 					Log.d("hi", "pathhi " + path);
 			
@@ -347,7 +352,7 @@ public class AndroidAgent  {
 	
 
 //TIMER METHODS.....................................................................................................................................................................
-	  public void methodhandler(long start,long end,long duration,String func,String classname){
+	  public void methodhandler(double start,double end,double duration,String func,String classname){
 		List<String> parameterTypes = null;
 		try {
 			methodID = kryo.registerMethod(pltid, func,func,parameterTypes);
@@ -360,9 +365,9 @@ public class AndroidAgent  {
 			e1.printStackTrace();
 		}
 		
-        long startms = start/1000000;
-        long endms = end/1000000;
-        long durationms = duration/1000000;
+		double startms = start/1000000;
+		double endms = end/1000000;
+		double durationms = duration/1000000;
         if(TimerSensor!=null){
         met.update(methodID,startms,endms,durationms);
         }else{}
@@ -374,7 +379,7 @@ public class AndroidAgent  {
 
 	//INVOCATION SENSOR....................................................................................................................................
 		
-		  public void beforeinvocation(long stime1,String function){
+		  public void beforeinvocation(double stime1,String function){
 				List<String> parameterTypes = null;
 				boolean charting = "true".equals(rsc.getSettings().get("charting"));
 				String prefix = null;
@@ -440,7 +445,7 @@ public class AndroidAgent  {
 				}
 			}
 			
-			public void afterinvocation(long etime1,long dur1,String function1){
+			public void afterinvocation(double etime1,double dur1,String function1){
 				
 				 time3 = etime1/1000000;
 
@@ -462,9 +467,9 @@ public class AndroidAgent  {
 				secondafterbody(dur1);
 			}
 			
-			public void secondafterbody(long finalduration){
+			public void secondafterbody(double finalduration){
 					//Second After Body
-			    long finalduration1 = finalduration/1000000;
+			    double finalduration1 = finalduration/1000000;
 				String prefix = null;
 				Object object = null;
 				Object[] parameters = null;
