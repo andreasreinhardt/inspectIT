@@ -80,18 +80,16 @@ public class KryoNetConnection {
 	 * {@inheritDoc}
 	 */
 	public void connect(String host, int port) throws ConnectException {
-		Log.d("hi","Inside connect");
-		if (null == client) {
+	      if (null == client) {
 			try {
-				Log.d("hi","Inside nullisclient");
+				
 				if (!connectionException) {
-					Log.d("hi","Inside no connectionexception");
-					Log.d("hi", "KryoNet: Connecting to " + host + ":" + port);
+					
 					
 				}
-				Log.d("hi","About to goto initclient");
+				
 				initClient(host, port);
-				Log.d("hi","After initclient");
+				
 				int agentStorageServiceId = IAgentStorageService.class.getAnnotation(ServiceInterface.class).serviceId();
 				agentStorageService = ObjectSpace.getRemoteObject(client, agentStorageServiceId, IAgentStorageService.class);
 				((RemoteObject) agentStorageService).setNonBlocking(true);
@@ -101,7 +99,7 @@ public class KryoNetConnection {
 				registrationService = ObjectSpace.getRemoteObject(client, registrationServiceServiceId, IRegistrationService.class);
 				((RemoteObject) registrationService).setNonBlocking(false);
 				((RemoteObject) registrationService).setTransmitReturnValue(true);
-                Log.d("hi", "Connection SUCCESS");
+                
 				//log.info("KryoNet: Connection established!");
 				connected = true;
 				connectionException = false;
@@ -115,8 +113,8 @@ public class KryoNetConnection {
 					//log.trace("connect()", exception);
 				//}
 				ConnectException e = new ConnectException(exception.getMessage());
-				Log.d("hi", "causeviv" + e);
-		     	e.printStackTrace();
+				
+		     	        e.printStackTrace();
 				
 				e.initCause(exception);
 				throw e; // NOPMD root cause exception is set
@@ -135,20 +133,20 @@ public class KryoNetConnection {
 	 *             If {@link Exception} occurs during communication.
 	 */
 	private void initClient(String host, int port) throws Exception {
-		Log.d("hi","Inside init0");
+		
 		prototypesProvider = new PrototypeProvider();
-		Log.d("hi","Inside init1");
+		
 		prototypesProvider.init();
-		Log.d("hi","Inside init2");
+		
 		IExtendedSerialization serialization = new ExtendedSerializationImpl(prototypesProvider);
-		Log.d("hi","Inside init3");
+		
 		client = new Client(serialization, prototypesProvider);
-		Log.d("hi","Inside init4");
+		
 		client.start();
-		Log.d("hi","Inside init5 " + host + port);
+		
 		StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
-        Log.d("hi","Inside init6 " + host + port);
+        
 		client.connect(5000, host, port);
 		
 	}
@@ -222,16 +220,16 @@ public class KryoNetConnection {
 	 */
 	
 	public void sendDataObjects(List<? extends DefaultData> measurements) {
-		Log.d("hi", "Data SUCCESS2" + measurements);
+		
 		if (!connected) {
 			//throw new ServerUnavailableException();
 		}
-		Log.d("hi", "Data SUCCESS0" + measurements);
+		
 		if (null != measurements && !measurements.isEmpty()) {
 			try {
 			//	AbstractRemoteMethodCall remote = new AddDataObjects(agentStorageService, measurements);
 				//remote.makeCall();
-				Log.d("hi", "Data SUCCESS1" + measurements);
+				
 				agentStorageService.addDataObjects(measurements);
 			} catch (Exception e) {
 				
@@ -279,22 +277,20 @@ public class KryoNetConnection {
 	 * {@inheritDoc}
 	 */
 	public long registerPlatformSensorType(long platformId, String platformSensorTypeConfig) throws ServerUnavailableException, RegistrationException {
-		Log.d("hi", "LOLO0");
+		
 		if (!connected) {
-			Log.d("hi", "LOL1");
+			
 			throw new ServerUnavailableException();
 		}
 
 		//RegisterPlatformSensorType register = new RegisterPlatformSensorType(registrationService, platformSensorTypeConfig, platformId);
 		
 		try {
-			Log.d("hi", "LOLO");
+			
 			return registrationService.registerPlatformSensorTypeIdent(platformId, platformSensorTypeConfig);
 		} catch (Exception serverUnavailableException) {
 			
-				Log.d("hi","registerPlatformSensorType(PlatformSensorTypeConfig)", serverUnavailableException);
-			
-			throw new RegistrationException("Could not register the platform sensor type", serverUnavailableException);
+		throw new RegistrationException("Could not register the platform sensor type", serverUnavailableException);
 		}
 	}
 	
