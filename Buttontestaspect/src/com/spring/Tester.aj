@@ -28,10 +28,10 @@ public  aspect Tester {
      
      after() : onCreateandallmethods(){
      	m1 = thisJoinPointStaticPart.getSignature().toString();
-     	Log.d("hi", "MTVIV0 " + m1);
+     
        	end = System.nanoTime();
          t = (end - start);
-         Log.d("hi", "MTVIV1 " + t);
+         
          store(start,end,t,m1,clsname);
          agent.afterinvocation(end,t,m1);
      }
@@ -46,13 +46,13 @@ public  aspect Tester {
      	onclickend = System.nanoTime();
      	m = thisJoinPointStaticPart.getSignature().toString();
      	onClickduration = (onclickend - onclickstart);
-     	Log.d("hi", "onClickduration = " + onClickduration);
+     	
      	store(onclickstart,onclickend,onClickduration,m,clsname);
      	agent.afterinvocation(onclickend,onClickduration,m);
      }
     
      public void store(double s,double e1,double d,String met,String cls){
-     	 Log.d("hi", "Method name : " + met);
+
         agent.methodhandler(s, e1, d, met, cls);
       }
   }
