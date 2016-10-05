@@ -70,7 +70,7 @@ public class CPU implements Serializable {
 	    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
 			path = Environment.getExternalStoragePublicDirectory(
 					Environment.DIRECTORY_DOCUMENTS).getAbsolutePath();
-			Log.d("hi", "path: " + path);
+			
 		} else {
 			path = Environment.getExternalStorageDirectory()
 					+ File.separator + "Documents";
@@ -78,7 +78,7 @@ public class CPU implements Serializable {
 		
 		
 		path += File.separatorChar + "CMR Data";
-		Log.d("hi", "path = " + path);
+		
 		updateininspectit();
 		 file = new File(path, filename);
          
@@ -166,13 +166,12 @@ public class CPU implements Serializable {
 
 		     
 			float end = Debug.threadCpuTimeNanos();
-			Log.d("hi", "torre = " + end);//nanos
+			
 			float start = 10000;//millis
 			float end1 = (end/1000000);
-			Log.d("hi", "end1 = " + end1);
-			Log.d("hi", "start = " + start);
+			
 			 usage = end1/start * 100;
-			Log.d("hi", "cpu = " + usage);
+			
 			return usage;
 	    	
 	    
@@ -185,11 +184,11 @@ public class CPU implements Serializable {
 	 	
         @SuppressLint("ShowToast")
 		public void addPlatformSensorData(long sensorTypeIdent, SystemSensorData systemSensorData) {
-			Log.d("hi", "deva" + sensorTypeIdent + systemSensorData);
+			
 			sensorDataObjects.put(Long.toString(sensorTypeIdent), systemSensorData);
-			Log.d("hi", "deva0 = " + sensorDataObjects);
+			
 			tempList = new ArrayList<DefaultData>(sensorDataObjects.values());
-			Log.d("hi", "tempListcpu" + tempList);
+			
 			
 		//	if(cpuobj.size() != cpulistsize){
 	   	//	cpuobj.addAll(tempList);
@@ -203,13 +202,13 @@ public class CPU implements Serializable {
 		//if(cpuobj.size() != cpulistsize){
 				try {
 				//FileOutputStream fileStream = new FileOutputStream(filename);
-					Log.d("hi", "Writing Going to write");
+					
 					fileStream = new FileOutputStream(file);
 				    oos = new ObjectOutputStream(fileStream);
 				    cpuobj.addAll(tempList);
-					Log.d("","Writing cpuobj = " + cpuobj); 	
+					 	
 					oos.writeObject(cpuobj);
-					Log.d("hi", "Writing 0");
+					
 					//oos.close();
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
@@ -218,7 +217,7 @@ public class CPU implements Serializable {
 			//}else{
 				try{
 					
-					Log.d("hi", "Writing 1");
+					
 					//cpuobj.clear();
 					oos.close();
 					
